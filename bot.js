@@ -11,7 +11,7 @@ const { autoLoadPairs } = require('./autoload');
 const axios = require("axios")
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-const adminFilePath = path.join(__dirname, 'manixmdtimewisher', 'admin.json');
+const adminFilePath = path.join(__dirname, 'manixmdstorage', 'admin.json');
 let adminIDs = [];
 
 // Store user states for pairing flow
@@ -82,7 +82,7 @@ const gracefulShutdown = (signal) => {
 
 // ========== CHECK CHANNELS FUNCTION ==========
 const checkUserJoinedChannels = async (userId) => {
-  const channels = ['@manixtechHelpZone', '@manixtechHelpZone'];
+  const channels = ['@MEZUKAOTP'];
   let allJoined = true;
 
   for (const channel of channels) {
@@ -103,14 +103,12 @@ const checkUserJoinedChannels = async (userId) => {
 // ========== SEND CHANNELS REQUIRED MESSAGE ==========
 const sendChannelsRequiredMessage = async (chatId) => {
   return bot.sendMessage(chatId,
-    `🚨 *You must join our official channels before pairing.*`,
+    `🚨 *You must join our official channel before pairing.*`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📢 Channel 1', url: 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f' }],
-          [{ text: '📢 Channel 2', url: 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f' }],
-          [{ text: '👥 Group', url: 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f' }],
+          [{ text: '📢 Join Channel', url: 'https://t.me/MEZUKAOTP' }],
           [{ text: '✅ I have joined', callback_data: 'check_join' }]
         ]
       }
@@ -212,7 +210,7 @@ bot.onText(/\/pair(?:\s+(.+))?/, async (msg, match) => {
     return bot.sendMessage(chatId, '❌ *Numbers with this country code are not supported.*', { parse_mode: 'Markdown' });
   }
 
-  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
+  const pairingFolder = path.join(__dirname, 'manixmdstorage', 'pairing');
   if (!(await exists(pairingFolder))) {
     await fs.mkdir(pairingFolder, { recursive: true });
   }
@@ -289,10 +287,10 @@ bot.on('callback_query', async (callbackQuery) => {
         text: '✅ Thanks for joining! Now use /pair command.', 
         show_alert: true
       });
-      await bot.sendMessage(chatId, '✅ *Thanks for joining all channels!*\n\nNow send /pair to start pairing.', { parse_mode: 'Markdown' });
+      await bot.sendMessage(chatId, '✅ *Thanks for joining our channel!*\n\nNow send /pair to start pairing.', { parse_mode: 'Markdown' });
     } else {
       await bot.answerCallbackQuery(callbackQuery.id, { 
-        text: '❌ Please join all channels first!', 
+        text: '❌ Please join our channel first!', 
         show_alert: true
       });
     }
@@ -322,14 +320,12 @@ bot.on('message', async (msg) => {
   
   if (!allJoined) {
     return bot.sendMessage(chatId,
-      `🚨 *You must join our official channels before pairing.*`,
+      `🚨 *You must join our official channel before pairing.*`,
       {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '📢 Channel 1', url: 'https://t.me/manixtechHelpZone' }],
-            [{ text: '📢 Channel 2', url: 'https://t.me/manixtechHelpZone' }],
-            [{ text: '👥 Group', url: 'https://t.me/helpzonegc' }],
+            [{ text: '📢 Join Channel', url: 'https://t.me/MEZUKAOTP' }],
             [{ text: '✅ I have joined', callback_data: 'check_join' }]
           ]
         }
@@ -350,7 +346,7 @@ bot.on('message', async (msg) => {
     return bot.sendMessage(chatId, '❌ Numbers with this country code are not supported.');
   }
 
-  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
+  const pairingFolder = path.join(__dirname, 'manixmdstorage', 'pairing');
   if (!(await exists(pairingFolder))) {
     await fs.mkdir(pairingFolder, { recursive: true });
   }
@@ -419,7 +415,7 @@ bot.onText(/\/unpair(?:\s+(.+))?/, async (msg, match) => {
     }
 
     const jidSuffix = `${input}`;
-    const pairingPath = path.join(__dirname, 'manixmdtimewisher', 'pairing');
+    const pairingPath = path.join(__dirname, 'manixmdstorage', 'pairing');
 
     if (!(await exists(pairingPath))) {
       return bot.sendMessage(chatId, 'No paired devices found.');
@@ -459,24 +455,5 @@ bot.on('polling_error', (error) => {
   await loadAdminIDs();
   
   const restartCount = parseInt(process.env.RESTART_COUNT || 0);
-  console.log(`RESTART #${restartCount + 1}`);
-  process.env.RESTART_COUNT = String(restartCount + 1);
-
-  console.log('🤖 Telegram Bot is running...');
-  console.log('✅ Bot Username: @bot_hosting_v1_bot');
-  console.log('✅ Features: /pair, /unpair, /start');
+  console.log(chalk.green(`🚀 Bot started! Restart count: ${restartCount}`));
 })();
-
-// ========== PROCESS HANDLERS ==========
-process.on("uncaughtException", (err) => {
-  console.error('Uncaught Exception:', err);
-});
-process.on("unhandledRejection", (err) => {
-  console.error('Unhandled Rejection:', err);
-});
-process.removeAllListeners("warning");
-process.once('SIGINT', () => gracefulShutdown('SIGINT'));
-process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('message', (msg) => {
-  if (msg === 'shutdown') gracefulShutdown('PM2_SHUTDOWN');
-});
