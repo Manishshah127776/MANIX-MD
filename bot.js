@@ -445,7 +445,13 @@ bot.onText(/\/unpair(?:\s+(.+))?/, async (msg, match) => {
 
 // ========== POLLING ERROR HANDLER ==========
 bot.on('polling_error', (error) => {
-  console.error('Polling error:', error);
+  if (error.message.includes('409 Conflict')) {
+    console.log(chalk.red.bold('\n❌ TELEGRAM CONFLICT ERROR (409)'));
+    console.log(chalk.yellow('⚠️  Multiple instances of this bot are running with the same token.'));
+    console.log(chalk.cyan('👉 FIX: Go to @BotFather, use /revoke to get a NEW token, and update token.js.\n'));
+  } else {
+    console.error('Polling error:', error);
+  }
 });
 
 // ========== BOT START ==========
