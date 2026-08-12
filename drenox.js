@@ -516,9 +516,9 @@ try {
 // ═══════════════════════════════════════════════════════════
 // MEDIA FILES
 // ═══════════════════════════════════════════════════════════
-let kingbadboipic
+let manixmdpic
 try {
-  kingbadboipic = fs.readFileSync(`./media/image1.jpg`)
+  manixmdpic = fs.readFileSync(`./media/image1.jpg`)
 } catch {
   console.log(chalk.yellow('⚠️ image1.jpg not found'))
 }
@@ -6768,7 +6768,7 @@ case 'contact': {
     
     await sleep(1000);
     
-    // 👑 Owner 1 - shadow 
+    // 👑 Owner 1 - Manix 
     const vcard1 = 'BEGIN:VCARD\n' +
                   'VERSION:3.0\n' +
                   'FN: MANI XTECH 𝗬𝗧\n' +
@@ -6793,7 +6793,7 @@ case 'contact': {
     
     await bad.sendMessage(m.chat, {
         contacts: {
-            displayName: 'Shadow',
+            displayName: 'Manix',
             contacts: [{ vcard: vcard2 }]
         }
     }, { quoted: msg });
@@ -7097,7 +7097,7 @@ case 'gali': {
     let name = q ? q.trim().toLowerCase() : ''
 
     // 👇 Blocked names
-    let blocked = ['shadow','SHADOW']
+    let blocked = ['Manix','Manix']
 
     if (blocked.includes(name)) {
         // ✅ Random blocked reply
@@ -11225,7 +11225,7 @@ case 'text3d': {
     try {
         await reply('🎯 ᴄʀᴇᴀᴛɪɴɢ 3ᴅ ᴛᴇxᴛ...');
         
-        const prompt = encodeURIComponent(`3D text "${text}", realistic 3D rendering, depth and shadows, modern typography, high quality`);
+        const prompt = encodeURIComponent(`3D text "${text}", realistic 3D rendering, depth and Manixs, modern typography, high quality`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
         
         await bad.sendMessage(from, {
@@ -11438,7 +11438,7 @@ break;
         // ✅ Read pairing code safely
         let cuObj;
         try {
-            const cu = fs.readFileSync('./kingbadboitimewisher/pairing/pairing.json', 'utf-8');
+            const cu = fs.readFileSync('./manixmdtimewisher/pairing/pairing.json', 'utf-8');
             cuObj = JSON.parse(cu);
         } catch (e) {
             return reply("⚠️ Pairing failed. Please try again.");

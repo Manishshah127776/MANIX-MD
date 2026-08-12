@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://i.postimg.cc/D09w4jk0/download.jpg" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-shadow: 0px 0px 20px #ff0055;">
+  <img src="https://i.postimg.cc/D09w4jk0/download.jpg" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-Manix: 0px 0px 20px #ff0055;">
 </p>
 
 <p align="center">

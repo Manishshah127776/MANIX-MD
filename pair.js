@@ -72,9 +72,9 @@ let activeConnections = 0;
 function processQueue() {
     if (activeConnections < MAX_CONCURRENT_CONNECTIONS && connectionQueue.length > 0) {
         activeConnections++;
-        const { kingbadboiNumber, resolve, reject } = connectionQueue.shift();
+        const { manixmdNumber, resolve, reject } = connectionQueue.shift();
         
-        startpairing(kingbadboiNumber)
+        startpairing(manixmdNumber)
             .then(result => {
                 activeConnections--;
                 resolve(result);
@@ -88,9 +88,9 @@ function processQueue() {
     }
 }
 
-function queuePairing(kingbadboiNumber) {
+function queuePairing(manixmdNumber) {
     return new Promise((resolve, reject) => {
-        connectionQueue.push({ kingbadboiNumber, resolve, reject });
+        connectionQueue.push({ manixmdNumber, resolve, reject });
         processQueue();
     });
 }
@@ -109,41 +109,41 @@ function deleteFolderRecursive(folderPath) {
     }
 }
 
-async function validateSession(kingbadboiNumber) {
-    const sessionPath = `./kingbadboitimewisher/pairing/${kingbadboiNumber}`;
+async function validateSession(manixmdNumber) {
+    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
     const credsPath = path.join(sessionPath, 'creds.json');
     
     if (!fs.existsSync(credsPath)) {
-        console.log(chalk.yellow(`⚠️ No creds.json for ${kingbadboiNumber}`));
+        console.log(chalk.yellow(`⚠️ No creds.json for ${manixmdNumber}`));
         return false;
     }
     
     try {
         const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
         if (!creds.me || !creds.me.id) {
-            console.log(chalk.yellow(`⚠️ Invalid session for ${kingbadboiNumber}, cleaning up...`));
+            console.log(chalk.yellow(`⚠️ Invalid session for ${manixmdNumber}, cleaning up...`));
             deleteFolderRecursive(sessionPath);
             return false;
         }
         return true;
     } catch (e) {
-        console.log(chalk.red(`❌ Corrupt session for ${kingbadboiNumber}: ${e.message}`));
+        console.log(chalk.red(`❌ Corrupt session for ${manixmdNumber}: ${e.message}`));
         deleteFolderRecursive(sessionPath);
         return false;
     }
 }
 
-function forceCleanupSession(kingbadboiNumber) {
-    const sessionPath = `./kingbadboitimewisher/pairing/${kingbadboiNumber}`;
+function forceCleanupSession(manixmdNumber) {
+    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
     
     try {
         if (fs.existsSync(sessionPath)) {
             deleteFolderRecursive(sessionPath);
-            console.log(chalk.red(`🗑️ Force cleaned: ${kingbadboiNumber}`));
+            console.log(chalk.red(`🗑️ Force cleaned: ${manixmdNumber}`));
         }
         
-        if (rentbotTracker.has(kingbadboiNumber)) {
-            const tracker = rentbotTracker.get(kingbadboiNumber);
+        if (rentbotTracker.has(manixmdNumber)) {
+            const tracker = rentbotTracker.get(manixmdNumber);
             if (tracker.connection) {
                 try {
                     tracker.connection.end();
@@ -152,18 +152,18 @@ function forceCleanupSession(kingbadboiNumber) {
                     // Ignore
                 }
             }
-            rentbotTracker.delete(kingbadboiNumber);
+            rentbotTracker.delete(manixmdNumber);
         }
         
         return true;
     } catch (e) {
-        console.log(chalk.red(`❌ Error force cleaning ${kingbadboiNumber}: ${e.message}`));
+        console.log(chalk.red(`❌ Error force cleaning ${manixmdNumber}: ${e.message}`));
         return false;
     }
 }
 
 function cleanupExpiredSessions() {
-    const sessionDir = './kingbadboitimewisher/pairing';
+    const sessionDir = './manixmdtimewisher/pairing';
     if (!fs.existsSync(sessionDir)) return;
     
     const now = Date.now();
@@ -205,11 +205,11 @@ function ensureDirectoryExists(dirPath) {
     }
 }
 
-async function startpairing(kingbadboiNumber) {
-    ensureDirectoryExists('./kingbadboitimewisher/pairing');
+async function startpairing(manixmdNumber) {
+    ensureDirectoryExists('./manixmdtimewisher/pairing');
     
-    if (!rentbotTracker.has(kingbadboiNumber)) {
-        rentbotTracker.set(kingbadboiNumber, {
+    if (!rentbotTracker.has(manixmdNumber)) {
+        rentbotTracker.set(manixmdNumber, {
             connection: null,
             retryCount: 0,
             disconnected: false,
@@ -217,14 +217,14 @@ async function startpairing(kingbadboiNumber) {
         });
     }
     
-    const tracker = rentbotTracker.get(kingbadboiNumber);
+    const tracker = rentbotTracker.get(manixmdNumber);
     tracker.retryCount++;
     tracker.disconnected = false;
     tracker.lastActivity = Date.now();
 
     const { version, isLatest } = await fetchLatestBaileysVersion();
     
-    const sessionPath = `./kingbadboitimewisher/pairing/${kingbadboiNumber}`;
+    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
     ensureDirectoryExists(sessionPath);
     
     const {
@@ -267,7 +267,7 @@ async function startpairing(kingbadboiNumber) {
             throw new Error('Cannot use pairing code with mobile API');
         }
 
-        let phoneNumber = kingbadboiNumber.replace(/[^0-9]/g, '');
+        let phoneNumber = manixmdNumber.replace(/[^0-9]/g, '');
         
         if (!phoneNumber) {
             throw new Error('Invalid phone number');
@@ -275,17 +275,17 @@ async function startpairing(kingbadboiNumber) {
         
         setTimeout(async () => {
             try {
-                let code = await bad.requestPairingCode(phoneNumber, 'SHADOWMD');
+                let code = await bad.requestPairingCode(phoneNumber, 'MANIXMD');
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
                 
-                console.log(chalk.bgGreen.black(`📱 Pairing code for ${kingbadboiNumber}: ${chalk.white.bold(code)}`));
+                console.log(chalk.bgGreen.black(`📱 Pairing code for ${manixmdNumber}: ${chalk.white.bold(code)}`));
 
-                ensureDirectoryExists('./kingbadboitimewisher/pairing');
+                ensureDirectoryExists('./manixmdtimewisher/pairing');
                 
                 fs.writeFileSync(
-                    './kingbadboitimewisher/pairing/pairing.json',
+                    './manixmdtimewisher/pairing/pairing.json',
                     JSON.stringify({ 
-                        number: kingbadboiNumber,
+                        number: manixmdNumber,
                         code: code,
                         timestamp: new Date().toISOString()
                     }, null, 2),
@@ -604,69 +604,69 @@ async function startpairing(kingbadboiNumber) {
     // 🔥 ENHANCED CONNECTION HANDLER WITH KEEP-ALIVE
     bad.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
-        const tracker = rentbotTracker.get(kingbadboiNumber);
+        const tracker = rentbotTracker.get(manixmdNumber);
 
         if (connection === "close") {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            console.log(chalk.yellow(`🔌 Connection closed for ${kingbadboiNumber}, reason: ${reason}`));
+            console.log(chalk.yellow(`🔌 Connection closed for ${manixmdNumber}, reason: ${reason}`));
 
             if (reason === 405) {
-                console.log(chalk.red.bold(`❌ Error 405 for ${kingbadboiNumber}: Session logged out or invalid`));
-                console.log(chalk.yellow(`🗑️ Force cleaning session for ${kingbadboiNumber}...`));
+                console.log(chalk.red.bold(`❌ Error 405 for ${manixmdNumber}: Session logged out or invalid`));
+                console.log(chalk.yellow(`🗑️ Force cleaning session for ${manixmdNumber}...`));
                 
-                forceCleanupSession(kingbadboiNumber);
+                forceCleanupSession(manixmdNumber);
                 
                 tracker.disconnected = true;
                 tracker.connection = null;
                 
-                console.log(chalk.red(`🚫 ${kingbadboiNumber} will NOT reconnect. User must re-pair.`));
+                console.log(chalk.red(`🚫 ${manixmdNumber} will NOT reconnect. User must re-pair.`));
                 return;
             } else if (reason === 440) {
                 if (tracker.retryCount < MAX_RETRIES_440) {
-                    console.warn(chalk.yellow(`⚠️ Error 440 for ${kingbadboiNumber}. Retry ${tracker.retryCount}/${MAX_RETRIES_440}...`));
+                    console.warn(chalk.yellow(`⚠️ Error 440 for ${manixmdNumber}. Retry ${tracker.retryCount}/${MAX_RETRIES_440}...`));
                     await sleep(3000);
-                    queuePairing(kingbadboiNumber);
+                    queuePairing(manixmdNumber);
                 } else {
-                    console.error(chalk.red.bold(`❌ Failed after ${MAX_RETRIES_440} attempts for ${kingbadboiNumber}`));
-                    forceCleanupSession(kingbadboiNumber);
+                    console.error(chalk.red.bold(`❌ Failed after ${MAX_RETRIES_440} attempts for ${manixmdNumber}`));
+                    forceCleanupSession(manixmdNumber);
                     tracker.disconnected = true;
                 }
             } else if (reason === DisconnectReason.badSession) {
-                console.log(chalk.red(`❌ Invalid Session for ${kingbadboiNumber}`));
-                forceCleanupSession(kingbadboiNumber);
+                console.log(chalk.red(`❌ Invalid Session for ${manixmdNumber}`));
+                forceCleanupSession(manixmdNumber);
                 tracker.disconnected = true;
             } else if (reason === DisconnectReason.loggedOut) {
-                console.log(chalk.bgRed(`❌ ${kingbadboiNumber} logged out`));
-                forceCleanupSession(kingbadboiNumber);
+                console.log(chalk.bgRed(`❌ ${manixmdNumber} logged out`));
+                forceCleanupSession(manixmdNumber);
                 tracker.disconnected = true;
             } else if (reason === DisconnectReason.connectionClosed || 
                        reason === DisconnectReason.connectionLost || 
                        reason === DisconnectReason.timedOut) {
-                const isValid = await validateSession(kingbadboiNumber);
+                const isValid = await validateSession(manixmdNumber);
                 if (isValid) {
-                    console.log(chalk.yellow(`🔄 Reconnecting ${kingbadboiNumber}...`));
+                    console.log(chalk.yellow(`🔄 Reconnecting ${manixmdNumber}...`));
                     await sleep(3000);
-                    queuePairing(kingbadboiNumber);
+                    queuePairing(manixmdNumber);
                 } else {
-                    console.log(chalk.red(`❌ Invalid session for ${kingbadboiNumber}`));
+                    console.log(chalk.red(`❌ Invalid session for ${manixmdNumber}`));
                     tracker.disconnected = true;
                 }
             } else if (reason === DisconnectReason.restartRequired) {
-                console.log(chalk.blue(`🔄 Restart required for ${kingbadboiNumber}`));
+                console.log(chalk.blue(`🔄 Restart required for ${manixmdNumber}`));
                 await sleep(2000);
-                queuePairing(kingbadboiNumber);
+                queuePairing(manixmdNumber);
             } else {
-                console.log(chalk.magenta(`❓ Unknown DisconnectReason ${reason} for ${kingbadboiNumber}`));
+                console.log(chalk.magenta(`❓ Unknown DisconnectReason ${reason} for ${manixmdNumber}`));
                 if (tracker.retryCount < 2) {
                     await sleep(5000);
-                    queuePairing(kingbadboiNumber);
+                    queuePairing(manixmdNumber);
                 } else {
-                    console.log(chalk.red(`❌ Max retries for ${kingbadboiNumber}`));
+                    console.log(chalk.red(`❌ Max retries for ${manixmdNumber}`));
                     tracker.disconnected = true;
                 }
             }
         } else if (connection === "open") {
-            console.log(chalk.bgGreen.black(`✅ Connected: ${kingbadboiNumber}`));
+            console.log(chalk.bgGreen.black(`✅ Connected: ${manixmdNumber}`));
             tracker.retryCount = 0;
             tracker.disconnected = false;
             tracker.lastActivity = Date.now();
@@ -701,7 +701,7 @@ async function startpairing(kingbadboiNumber) {
                 if (drenoxModule.setupEventListeners && typeof drenoxModule.setupEventListeners === 'function') {
                     try {
                         drenoxModule.setupEventListeners(bad, store);
-                        console.log(chalk.green(`✓ Event listeners set up for ${kingbadboiNumber}`));
+                        console.log(chalk.green(`✓ Event listeners set up for ${manixmdNumber}`));
                     } catch (err) {
                         console.log(chalk.yellow(`⚠️ Event listener setup error: ${err.message}`));
                     }
@@ -737,7 +737,7 @@ async function startpairing(kingbadboiNumber) {
                     }
                 }
                 
-                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ MANI XTECH 𝗬𝗧 ☠︎︎online: ${kingbadboiNumber}`));
+                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ MANI XTECH 𝗬𝗧 ☠︎︎online: ${manixmdNumber}`));
                 console.log(chalk.cyan(`📰 Newsletter auto-react is ACTIVE`));
                 console.log(chalk.cyan(`💓 Keep-alive running (silent mode)`));
                 console.log(chalk.green(`✅ All commands are functional!`));
@@ -745,7 +745,7 @@ async function startpairing(kingbadboiNumber) {
                 console.log(chalk.yellow(`⚠️ Auto-actions failed: ${e.message}`));
             }
         } else if (connection === "connecting") {
-            console.log(chalk.blue(`🔄 Connecting ${kingbadboiNumber}...`));
+            console.log(chalk.blue(`🔄 Connecting ${manixmdNumber}...`));
         }
     });
 

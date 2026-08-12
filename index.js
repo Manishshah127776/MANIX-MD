@@ -10,7 +10,7 @@ const chalk = require('chalk');
 const figlet = require('figlet');
 
 const AUTH_FILE = './auth.json';
-const PAIRING_DIR = './kingbadboitimewisher/pairing/';
+const PAIRING_DIR = './manixmdtimewisher/pairing/';
 const startpairing = require('./pair');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));

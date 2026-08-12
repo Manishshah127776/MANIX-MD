@@ -11,7 +11,7 @@ const { autoLoadPairs } = require('./autoload');
 const axios = require("axios")
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-const adminFilePath = path.join(__dirname, 'kingbadboitimewisher', 'admin.json');
+const adminFilePath = path.join(__dirname, 'manixmdtimewisher', 'admin.json');
 let adminIDs = [];
 
 // Store user states for pairing flow
@@ -82,7 +82,7 @@ const gracefulShutdown = (signal) => {
 
 // ========== CHECK CHANNELS FUNCTION ==========
 const checkUserJoinedChannels = async (userId) => {
-  const channels = ['@skcybersecuritytricks', '@manixtechHelpZone'];
+  const channels = ['@manixtechHelpZone', '@manixtechHelpZone'];
   let allJoined = true;
 
   for (const channel of channels) {
@@ -212,7 +212,7 @@ bot.onText(/\/pair(?:\s+(.+))?/, async (msg, match) => {
     return bot.sendMessage(chatId, '❌ *Numbers with this country code are not supported.*', { parse_mode: 'Markdown' });
   }
 
-  const pairingFolder = path.join(__dirname, 'kingbadboitimewisher', 'pairing');
+  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
   if (!(await exists(pairingFolder))) {
     await fs.mkdir(pairingFolder, { recursive: true });
   }
@@ -327,7 +327,7 @@ bot.on('message', async (msg) => {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '📢 Channel 1', url: 'https://t.me/skcybersecuritytricks' }],
+            [{ text: '📢 Channel 1', url: 'https://t.me/manixtechHelpZone' }],
             [{ text: '📢 Channel 2', url: 'https://t.me/manixtechHelpZone' }],
             [{ text: '👥 Group', url: 'https://t.me/helpzonegc' }],
             [{ text: '✅ I have joined', callback_data: 'check_join' }]
@@ -350,7 +350,7 @@ bot.on('message', async (msg) => {
     return bot.sendMessage(chatId, '❌ Numbers with this country code are not supported.');
   }
 
-  const pairingFolder = path.join(__dirname, 'kingbadboitimewisher', 'pairing');
+  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
   if (!(await exists(pairingFolder))) {
     await fs.mkdir(pairingFolder, { recursive: true });
   }
@@ -419,7 +419,7 @@ bot.onText(/\/unpair(?:\s+(.+))?/, async (msg, match) => {
     }
 
     const jidSuffix = `${input}`;
-    const pairingPath = path.join(__dirname, 'kingbadboitimewisher', 'pairing');
+    const pairingPath = path.join(__dirname, 'manixmdtimewisher', 'pairing');
 
     if (!(await exists(pairingPath))) {
       return bot.sendMessage(chatId, 'No paired devices found.');
