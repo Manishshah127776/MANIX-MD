@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://i.postimg.cc/D09w4jk0/download.jpg" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-Manix: 0px 0px 20px #ff0055;">
+  <img src="https://i.postimg.cc/D09w4jk0/download.jpg" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-shadow: 0px 0px 20px #ff0055;">
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
   <a href="#-features"><b>Features</b></a> •
   <a href="#-requirements"><b>Requirements</b></a> •
   <a href="#-installation"><b>Installation</b></a> •
-  <a href="#-pairing-method"><b>Pairing</b></a> •
+  <a href="#-pairing-methods"><b>Pairing</b></a> •
   <a href="#-deployment"><b>Deployment</b></a> •
   <a href="#-credits"><b>Credits</b></a>
 </p>
@@ -54,11 +54,11 @@ Crafted and maintained by **MANI XTECH**.
 ## ⚡ Core Features
 
 - **Multi-Device Architecture**: Fully synchronized with the modern WhatsApp Multi-Device protocol (`@whiskeysockets/baileys`).
-- **Pairing Code Authentication**: Seamless pairing via phone number input without needing camera QR scans.
-- **Advanced AI Integration**: Direct connectivity with top-tier LLMs (Groq, GPT, Gemini, DeepSeek, Mistral) for smart natural-language conversations.
-- **Robust Group Moderation**: Automated anti-link defense, welcome greetings, custom admin commands, and security triggers.
-- **Multimedia & Download Utilities**: Rapid downloading of YouTube media, audio processing, and custom sticker generation.
-- **Customizable Theming**: Dynamic emojis, audio-rich responses, and personalizable branding banners.
+- **Web QR Pairing System**: Professional web dashboard to pair your bot visually.
+- **Pairing Code Authentication**: Seamless pairing via phone number input.
+- **Advanced AI Integration**: Direct connectivity with top-tier LLMs (Groq, GPT, Gemini, DeepSeek, Mistral).
+- **Robust Group Moderation**: Automated anti-link defense, welcome greetings, and admin commands.
+- **Multimedia Utilities**: Rapid downloading of YouTube media and custom sticker generation.
 
 ---
 
@@ -68,14 +68,12 @@ Crafted and maintained by **MANI XTECH**.
 | :--- | :--- | :--- |
 | **Runtime** | Node.js | `>= 18.0.0` |
 | **WhatsApp Library** | Baileys (`@whiskeysockets/baileys`) | Latest Stable |
+| **Web Dashboard** | Express & Socket.io | Real-time QR updates |
 | **AI Engine** | Groq & OpenAI APIs | Llama 3.3 / GPT |
-| **Media Processing** | Fluent-FFmpeg & Sharp | High-speed transcoding |
 
 ---
 
 ## ⚙️ Installation & Setup
-
-Get your instance of MANIX MD running in minutes:
 
 1. **Clone the repository:**
    ```bash
@@ -89,7 +87,7 @@ Get your instance of MANIX MD running in minutes:
    ```
 
 3. **Configure your bot parameters:**
-   Open `setting/config.js` and customize your owner number, bot name, and developer credentials.
+   Open `setting/config.js` and customize your owner number and bot name.
 
 4. **Launch the bot:**
    ```bash
@@ -98,15 +96,27 @@ Get your instance of MANIX MD running in minutes:
 
 ---
 
-## 📱 Pairing Code Method
+## 📱 Pairing Methods
 
-Generate a session connection effortlessly:
+MANIX MD offers two convenient ways to pair your bot:
+
+### 1. Web QR System (Recommended)
+Pair your bot visually using a professional web dashboard:
+1. Start the web server:
+   ```bash
+   npm run web
+   ```
+2. Open your browser to `http://localhost:3000` (or your deployed URL).
+3. Scan the generated QR code with **WhatsApp > Linked Devices > Link a Device**.
+
+### 2. Phone Pairing Code
+Pair using a simple 8-character code:
 1. Run the pairing utility:
    ```bash
    node pair.js
    ```
-2. Enter your WhatsApp bot phone number when prompted in the console.
-3. Enter the generated 8-character pairing code into **WhatsApp > Linked Devices > Link with phone number**.
+2. Enter your WhatsApp bot phone number when prompted.
+3. Enter the generated code into **WhatsApp > Linked Devices > Link with phone number**.
 
 ---
 
@@ -116,7 +126,7 @@ Deploy MANIX MD 24/7 on your favorite cloud platforms:
 
 - **Railway / Render / Heroku**:
   - Connect your GitHub repository (`Manishshah127776/MANIX-MD`).
-  - Set the start command to `npm start`.
+  - Set the start command to `npm start` or `npm run web`.
   - Enjoy uninterrupted uptime!
 
 ---
