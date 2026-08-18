@@ -193,6 +193,120 @@ const speed = () => Date.now()
 const example = (cmd) => `*Example:* ${global.prefix || '.'}${cmd}`
 
 // ═══════════════════════════════════════════════════════════
+// AUTOMATIC USER VCARD HELPERS
+// ═══════════════════════════════════════════════════════════
+const vcardProfileCache = new Map()
+
+const normalizeVCardNumber = (value = '') => String(value).replace(/[^0-9]/g, '')
+
+const escapeVCardValue = (value = '') => String(value)
+  .replace(/\\/g, '\\\\')
+  .replace(/\r?\n/g, '\\n')
+  .replace(/;/g, '\\;')
+  .replace(/,/g, '\\,')
+
+const resolveVCardTarget = (message, commandText = '') => {
+  const mentioned = Array.isArray(message?.mentionedJid)
+    ? message.mentionedJid.find(Boolean)
+    : null
+  const quotedSender = message?.quoted?.sender || message?.quoted?.participant
+  const numberMatch = String(commandText).match(/(?:\+|00)?[0-9]{7,15}/)
+
+  if (mentioned) return mentioned
+  if (quotedSender) return quotedSender
+  if (numberMatch) {
+    const number = normalizeVCardNumber(numberMatch[0])
+    if (number) return `${number}@s.whatsapp.net`
+  }
+
+  return message?.sender || message?.key?.participant || ''
+}
+
+const findStoredContact = (store, targetJid) => {
+  const contacts = store?.contacts
+  if (!contacts) return null
+  if (typeof contacts.get === 'function') {
+    return contacts.get(targetJid) || contacts.get(jidNormalizedUser(targetJid)) || null
+  }
+  if (contacts[targetJid]) return contacts[targetJid]
+  const match = Object.entries(contacts).find(([jid]) => isSameUser(jid, targetJid))
+  return match ? match[1] : null
+}
+
+const resolveVCardName = (store, targetJid, message, participants = []) => {
+  const participant = participants.find(item => isSameUser(item?.id, targetJid))
+  const stored = findStoredContact(store, targetJid)
+  const isMessageSender = isSameUser(targetJid, message?.sender)
+  return participant?.name || participant?.notify || stored?.name || stored?.notify ||
+    stored?.verifiedName || (isMessageSender ? message?.pushName : '') ||
+    normalizeVCardNumber(targetJid) || 'WhatsApp User'
+}
+
+const resolveVCardPhoneJid = async (bad, targetJid) => {
+  if (!targetJid || !/@(?:lid|hosted)$/.test(targetJid)) return targetJid
+  try {
+    const mapping = bad?.signalRepository?.lidMapping
+    if (typeof mapping?.getPNForLID === 'function') {
+      const phoneJid = await mapping.getPNForLID(targetJid)
+      if (phoneJid) return phoneJid
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not resolve WhatsApp LID for vCard:', error.message)
+  }
+  return targetJid
+}
+
+const fetchVCardProfile = async (bad, targetJid) => {
+  const cacheKey = jidNormalizedUser(targetJid) || targetJid
+  const cached = vcardProfileCache.get(cacheKey)
+  if (cached && Date.now() - cached.timestamp < 300000) return cached.profile
+
+  const profile = { photoUrl: null, photoBuffer: null, status: '' }
+  try {
+    if (typeof bad.profilePictureUrl === 'function') {
+      profile.photoUrl = await bad.profilePictureUrl(targetJid, 'image')
+    }
+  } catch {}
+
+  if (profile.photoUrl) {
+    try {
+      const downloaded = await getBuffer(profile.photoUrl)
+      if (Buffer.isBuffer(downloaded) && downloaded.length <= 768 * 1024) {
+        profile.photoBuffer = downloaded
+      }
+    } catch {}
+  }
+
+  try {
+    if (typeof bad.fetchStatus === 'function') {
+      const status = await bad.fetchStatus(targetJid)
+      profile.status = typeof status?.status === 'string' ? status.status.trim() : ''
+    }
+  } catch {}
+
+  vcardProfileCache.set(cacheKey, { timestamp: Date.now(), profile })
+  return profile
+}
+
+const buildUserVCard = ({ name, number, photoBuffer, status }) => {
+  const lines = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:${escapeVCardValue(name)}`,
+    `N:${escapeVCardValue(name)};;;;`,
+    `TEL;TYPE=CELL;TYPE=VOICE;waid=${number}:+${number}`,
+    `X-WAID:${number}`,
+    `X-WA-NAME:${escapeVCardValue(name)}`
+  ]
+  if (status) lines.push(`NOTE:${escapeVCardValue(status)}`)
+  if (Buffer.isBuffer(photoBuffer)) {
+    lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${photoBuffer.toString('base64')}`)
+  }
+  lines.push('END:VCARD')
+  return lines.join('\n')
+}
+
+// ═══════════════════════════════════════════════════════════
 // METADATA CACHE FUNCTIONS
 // ═══════════════════════════════════════════════════════════
 const refreshGroupMetadata = async (bad, groupJid, forceRefresh = false) => {
@@ -1303,6 +1417,11 @@ case 'menu2': {
 ┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
 ┃✮╰────────────────
 ╰━━━━━━━━━━━━━━━┈⊷
+
+╭━━〔 👤 ᴄᴏɴᴛᴀᴄᴛ ᴛᴏᴏʟs 〕━━┈⊷
+┃✮│➣ ${prefix}vcard 〔ʀᴇᴘʟʏ / ᴍᴇɴᴛɪᴏɴ / ɴᴜᴍʙᴇʀ〕
+┃✮│➣ ${prefix}vcf
+╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
 ╭━━〔 👑 ᴏᴡɴᴇʀ ᴍᴇɴᴜ 〕━━┈⊷
 ┃✮│➣ ${prefix}ᴘᴜʙʟɪᴄ
@@ -6761,6 +6880,55 @@ case "gen3": {
     }
 }
 break;
+
+case 'vcard':
+case 'vcf':
+case 'contactcard':
+case 'savecontact':
+case 'getcontact': {
+    const requestedJid = resolveVCardTarget(m, text)
+    const targetJid = await resolveVCardPhoneJid(bad, requestedJid)
+    const number = normalizeVCardNumber(targetJid)
+    if (!number || number.length < 7 || number.length > 15) {
+      return reply('❌ ᴄᴏᴜʟᴅ ɴᴏᴛ ғᴇᴛᴄʜ ᴀ ᴡʜᴀᴛsᴀᴘᴘ ɴᴜᴍʙᴇʀ ғᴏʀ ᴛʜɪs ᴜsᴇʀ. ʀᴇᴘʟʏ ᴛᴏ ᴛʜᴇɪʀ ᴍᴇssᴀɢᴇ, ᴍᴇɴᴛɪᴏɴ ᴛʜᴇᴍ, ᴏʀ ᴜsᴇ ᴠᴄᴀʀᴅ ᴡɪᴛʜ ᴀ ɴᴜᴍʙᴇʀ.')
+    }
+
+    const contactName = resolveVCardName(store, targetJid, m, participants)
+    const profile = await fetchVCardProfile(bad, targetJid)
+    const vcard = buildUserVCard({
+      name: contactName,
+      number,
+      photoBuffer: profile.photoBuffer,
+      status: profile.status
+    })
+
+    await bad.sendMessage(from, {
+      contacts: {
+        displayName: contactName,
+        contacts: [{ displayName: contactName, vcard }]
+      }
+    }, { quoted: m })
+
+    if (profile.photoBuffer || profile.photoUrl) {
+      try {
+        await bad.sendMessage(from, {
+          image: profile.photoBuffer || { url: profile.photoUrl },
+          caption: `📸 ${contactName} ᴘʀᴏғɪʟᴇ ᴘʜᴏᴛᴏ`
+        }, { quoted: m })
+      } catch (photoError) {
+        console.error('❌ vCard profile photo send failed:', photoError.message)
+      }
+    }
+
+    const details = [
+      `✅ ᴄᴏɴᴛᴀᴄᴛ ᴄᴀʀᴅ ʀᴇᴀᴅʏ: ${contactName}`,
+      `📞 ɴᴜᴍʙᴇʀ: +${number}`,
+      `🖼️ ᴘʜᴏᴛᴏ: ${profile.photoBuffer || profile.photoUrl ? 'ғᴇᴛᴄʜᴇᴅ' : 'ɴᴏᴛ ᴀᴠᴀɪʟᴀʙʟᴇ'}`,
+      `📝 sᴛᴀᴛᴜs: ${profile.status || 'ɴᴏᴛ ᴀᴠᴀɪʟᴀʙʟᴇ'}`
+    ].join('\n')
+    await reply(details)
+  }
+  break
 
 case 'owner':
 case 'contact': {
