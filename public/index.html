@@ -68,9 +68,9 @@
             </div>
             <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                 <span>System Status</span>
-                <span id="system-status" class="text-green-400 flex items-center">
-                    <span class="h-2 w-2 bg-green-400 rounded-full mr-2 animate-ping"></span>
-                    Online
+                <span id="system-status" class="text-yellow-300 flex items-center">
+                    <span id="system-status-dot" class="h-2 w-2 bg-yellow-300 rounded-full mr-2"></span>
+                    Checking WhatsApp...
                 </span>
             </div>
             <p class="text-slate-500 text-xs italic">
@@ -84,28 +84,43 @@
         const qrImg = document.getElementById('qr-code');
         const qrPlaceholder = document.getElementById('qr-placeholder');
         const qrStatus = document.getElementById('qr-status');
+        const systemStatus = document.getElementById('system-status');
+        const systemStatusDot = document.getElementById('system-status-dot');
+
+        function setSystemStatus(isConnected, label) {
+            systemStatus.className = `flex items-center ${isConnected ? 'text-green-400' : 'text-yellow-300'}`;
+            systemStatusDot.className = `h-2 w-2 rounded-full mr-2 ${isConnected ? 'bg-green-400 animate-ping' : 'bg-yellow-300'}`;
+            systemStatus.lastChild.textContent = ` ${label}`;
+        }
 
         socket.on('qr', (qrDataURL) => {
             qrImg.src = qrDataURL;
             qrImg.classList.remove('hidden');
             qrPlaceholder.classList.add('hidden');
             qrStatus.innerText = 'Scan the QR Code to pair';
-            qrStatus.classList.remove('text-pink-500');
+            qrStatus.classList.remove('text-pink-500', 'text-green-400');
             qrStatus.classList.add('text-violet-400');
+            setSystemStatus(false, 'Waiting for QR scan');
         });
 
         socket.on('status', (status) => {
             qrStatus.innerText = status;
+            if (!status.toLowerCase().includes('connected')) setSystemStatus(false, status);
         });
 
         socket.on('connected', (isConnected) => {
+            setSystemStatus(Boolean(isConnected), isConnected ? 'WhatsApp connected' : 'WhatsApp not paired');
             if (isConnected) {
                 qrStatus.innerText = 'Connected Successfully!';
                 qrStatus.classList.remove('text-violet-400');
                 qrStatus.classList.add('text-green-400');
                 qrImg.style.opacity = '0.5';
+            } else {
+                qrImg.style.opacity = '1';
             }
         });
+
+        socket.on('connect_error', () => setSystemStatus(false, 'Dashboard connected; WhatsApp status unknown'));
     </script>
 </body>
 </html>

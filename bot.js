@@ -243,7 +243,8 @@ bot.onText(/\/unpair(?:\s+.*)?/, async (msg) => {
   }
 
   try {
-    const sessionPath = path.join(__dirname, 'manixmdtimewisher', 'pairing', 'web-session');
+    const sessionRoot = path.resolve(process.env.WHATSAPP_AUTH_DIR || path.join(__dirname, 'manixmdtimewisher', 'pairing'));
+    const sessionPath = path.join(sessionRoot, 'web-session');
     await fs.rm(sessionPath, { recursive: true, force: true });
     return bot.sendMessage(chatId, `✅ ${BRAND_NAME} WhatsApp Web session cleared. Open the pairing dashboard and scan a new QR code.\n\n📲 Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`, {
       parse_mode: 'Markdown',

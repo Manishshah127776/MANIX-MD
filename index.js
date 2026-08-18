@@ -14,7 +14,8 @@ const chalk = require('chalk');
 const figlet = require('figlet');
 
 const AUTH_FILE = './auth.json';
-const PAIRING_DIR = './manixmdtimewisher/pairing/';
+const PAIRING_DIR = path.resolve(process.env.WHATSAPP_AUTH_DIR || path.join(__dirname, 'manixmdtimewisher', 'pairing'));
+const SESSION_NAME = 'web-session';
 const startpairing = require('./pair');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -26,16 +27,23 @@ function startHealthServer() {
     const server = http.createServer(app);
     const io = new Server(server);
     io.currentQr = null;
-    io.currentStatus = 'Preparing WhatsApp Web QR pairing...';
+    io.currentStatus = 'Checking WhatsApp session state...';
     io.currentConnected = false;
 
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/healthz', (req, res) => res.status(200).send('ok'));
+    app.get('/status', (req, res) => res.json({
+        server: 'online',
+        whatsappConnected: Boolean(io.currentConnected),
+        status: io.currentStatus,
+        qrAvailable: Boolean(io.currentQr),
+        authDirectory: process.env.WHATSAPP_AUTH_DIR || 'local filesystem; configure a persistent mount for restart-safe pairing'
+    }));
 
     io.on('connection', (socket) => {
         socket.emit('status', io.currentStatus);
+        socket.emit('connected', Boolean(io.currentConnected));
         if (io.currentQr) socket.emit('qr', io.currentQr);
-        if (io.currentConnected) socket.emit('connected', true);
     });
 
     server.listen(PORT, '0.0.0.0', () => {
@@ -49,7 +57,8 @@ const autoLoadPairs = async () => {
     console.log(chalk.cyan('🔄 Auto-loading all paired users...'));
     
     if (!fs.existsSync(PAIRING_DIR)) {
-        console.log(chalk.red('❌ Pairing directory not found.'));
+        fs.mkdirSync(PAIRING_DIR, { recursive: true });
+        console.log(chalk.yellow(`ℹ️ Auth directory did not exist; created ${PAIRING_DIR}.`));
         return;
     }
 
@@ -110,10 +119,16 @@ const initializeBot = async () => {
 
     try {
         console.log(chalk.blue('📱 Starting WhatsApp Web QR pairing...'));
-        await startpairing('web-session', webRuntime.io);
+        await startpairing(SESSION_NAME, webRuntime.io);
         console.log(chalk.green('✅ WhatsApp Web pairing is ready at the public dashboard.'));
     } catch (error) {
         console.log(chalk.red(`❌ Failed to start WhatsApp Web pairing: ${error.message}`));
+        if (webRuntime?.io) {
+            webRuntime.io.currentConnected = false;
+            webRuntime.io.currentStatus = `WhatsApp startup failed: ${error.message}`;
+            webRuntime.io.emit('status', webRuntime.io.currentStatus);
+            webRuntime.io.emit('connected', false);
+        }
     }
 };
 

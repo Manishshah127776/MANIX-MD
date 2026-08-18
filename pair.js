@@ -25,6 +25,13 @@ const pino = require('pino')
 const FileType = require('file-type')
 const fs = require('fs')
 const path = require('path')
+
+// Use a configurable auth root so Render Persistent Disk (for example /var/data)
+// can retain WhatsApp credentials across restarts and redeploys.
+const AUTH_ROOT = path.resolve(process.env.WHATSAPP_AUTH_DIR || path.join(__dirname, 'manixmdtimewisher', 'pairing'));
+const SESSION_TTL_DAYS = Math.max(7, Number.parseInt(process.env.WHATSAPP_SESSION_TTL_DAYS || '30', 10));
+const sessionPathFor = (manixmdNumber) => path.join(AUTH_ROOT, manixmdNumber);
+
 let themeemoji = "😎";
 const chalk = require('chalk')
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./allfunc/exif');
@@ -107,7 +114,7 @@ function deleteFolderRecursive(folderPath) {
 }
 
 async function validateSession(manixmdNumber) {
-    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
+    const sessionPath = sessionPathFor(manixmdNumber);
     const credsPath = path.join(sessionPath, 'creds.json');
     
     if (!fs.existsSync(credsPath)) {
@@ -131,7 +138,7 @@ async function validateSession(manixmdNumber) {
 }
 
 function forceCleanupSession(manixmdNumber) {
-    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
+    const sessionPath = sessionPathFor(manixmdNumber);
     
     try {
         if (fs.existsSync(sessionPath)) {
@@ -160,35 +167,28 @@ function forceCleanupSession(manixmdNumber) {
 }
 
 function cleanupExpiredSessions() {
-    const sessionDir = './manixmdtimewisher/pairing';
-    if (!fs.existsSync(sessionDir)) return;
-    
-    const now = Date.now();
-    const oneDayAgo = now - (24 * 60 * 60 * 1000);
-    
-    fs.readdirSync(sessionDir).forEach(folder => {
-        const folderPath = path.join(sessionDir, folder);
-        if (fs.lstatSync(folderPath).isDirectory()) {
-            const tracker = rentbotTracker.get(folder);
-            if (tracker && tracker.disconnected) {
-                console.log(chalk.yellow(`🗑️ Cleaning up disconnected session: ${folder}`));
+    if (!fs.existsSync(AUTH_ROOT)) return;
+
+    const cutoff = Date.now() - (SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
+    for (const folder of fs.readdirSync(AUTH_ROOT)) {
+        const folderPath = path.join(AUTH_ROOT, folder);
+        try {
+            if (!fs.lstatSync(folderPath).isDirectory()) continue;
+
+            // Never remove a credentialed session automatically. A valid session
+            // may be temporarily disconnected and must survive reconnects/redeploys.
+            if (fs.existsSync(path.join(folderPath, 'creds.json'))) continue;
+
+            const stats = fs.statSync(folderPath);
+            if (stats.mtimeMs < cutoff) {
+                console.log(chalk.yellow(`🗑️ Cleaning up unpaired session older than ${SESSION_TTL_DAYS} days: ${folder}`));
                 deleteFolderRecursive(folderPath);
                 rentbotTracker.delete(folder);
-                return;
             }
-            
-            try {
-                const stats = fs.statSync(folderPath);
-                if (stats.mtimeMs < oneDayAgo) {
-                    console.log(chalk.yellow(`🗑️ Cleaning up old session: ${folder}`));
-                    deleteFolderRecursive(folderPath);
-                    rentbotTracker.delete(folder);
-                }
-            } catch (e) {
-                console.log(chalk.red(`❌ Error checking session age: ${e.message}`));
-            }
+        } catch (e) {
+            console.log(chalk.red(`❌ Error checking session age for ${folder}: ${e.message}`));
         }
-    });
+    }
 }
 
 setInterval(cleanupExpiredSessions, 60 * 60 * 1000);
@@ -201,7 +201,8 @@ function ensureDirectoryExists(dirPath) {
 }
 
 async function startpairing(manixmdNumber, pairingIo = null) {
-    ensureDirectoryExists('./manixmdtimewisher/pairing');
+    ensureDirectoryExists(AUTH_ROOT);
+    console.log(chalk.blue(`🔐 WhatsApp auth root: ${AUTH_ROOT}`));
     
     if (!rentbotTracker.has(manixmdNumber)) {
         rentbotTracker.set(manixmdNumber, {
@@ -221,11 +222,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         pairingIo.currentConnected = false;
         pairingIo.currentStatus = 'Connecting to WhatsApp Web...';
         pairingIo.emit('status', pairingIo.currentStatus);
+        pairingIo.emit('connected', false);
     }
 
     const { version, isLatest } = await fetchLatestBaileysVersion();
     
-    const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
+    const sessionPath = sessionPathFor(manixmdNumber);
     ensureDirectoryExists(sessionPath);
     
     const {
@@ -584,8 +586,9 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 const qrDataURL = await QRCode.toDataURL(qr);
                 pairingIo.currentQr = qrDataURL;
                 pairingIo.currentConnected = false;
-                pairingIo.currentStatus = 'Scan the QR code with WhatsApp → Linked Devices.';
+                pairingIo.currentStatus = 'WhatsApp is waiting for a fresh QR scan.';
                 pairingIo.emit('qr', qrDataURL);
+                pairingIo.emit('connected', false);
                 pairingIo.emit('status', pairingIo.currentStatus);
                 console.log(chalk.cyan('📱 WhatsApp Web QR code is ready for scanning.'));
             } catch (error) {
@@ -599,8 +602,9 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             if (pairingIo) {
                 pairingIo.currentQr = null;
                 pairingIo.currentConnected = false;
-                pairingIo.currentStatus = 'WhatsApp Web disconnected. Refresh to generate a new QR code.';
+                pairingIo.currentStatus = `WhatsApp Web disconnected (code ${reason}). Reconnecting or waiting for a new QR.`;
                 pairingIo.emit('status', pairingIo.currentStatus);
+                pairingIo.emit('connected', false);
             }
             console.log(chalk.yellow(`🔌 Connection closed for ${manixmdNumber}, reason: ${reason}`));
 
@@ -637,7 +641,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                        reason === DisconnectReason.connectionClosed ||
                        reason === DisconnectReason.connectionLost ||
                        reason === DisconnectReason.timedOut) {
-                const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
+                const sessionPath = sessionPathFor(manixmdNumber);
                 const hasCredentials = fs.existsSync(path.join(sessionPath, 'creds.json'));
                 const isValid = hasCredentials && await validateSession(manixmdNumber);
                 tracker.disconnected = false;
@@ -749,7 +753,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             }
             });
         } else if (connection === "connecting") {
-            if (pairingIo) pairingIo.emit('status', 'Connecting to WhatsApp Web...');
+            if (pairingIo) {
+                pairingIo.currentConnected = false;
+                pairingIo.currentStatus = 'Connecting to WhatsApp Web...';
+                pairingIo.emit('status', pairingIo.currentStatus);
+                pairingIo.emit('connected', false);
+            }
             console.log(chalk.blue(`🔄 Connecting ${manixmdNumber}...`));
         }
     });
