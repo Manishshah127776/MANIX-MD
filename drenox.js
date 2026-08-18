@@ -12747,12 +12747,15 @@ default:
   } catch (err) {
     console.error('Command execution error:', err)
   }
-} // End of module.exports
-
-
+} // End of command handler
+const commandHandler = handleMessage
 /// ==================== MAIN MESSAGE HANDLER ====================
 module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
-    const messages = chatUpdate.messages;
+    const messages = chatUpdate.messages || []
+    if (mek?.key && messages.length) {
+        await commandHandler(bad, mek, chatUpdate, store)
+    }
+
 
     for (const msg of messages) {
         try {
