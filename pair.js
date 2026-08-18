@@ -209,7 +209,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             connection: null,
             retryCount: 0,
             disconnected: false,
-            lastActivity: Date.now()
+            lastActivity: Date.now(),
+            connectedNoticeAt: 0
         });
     }
     
@@ -702,6 +703,20 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             setImmediate(async () => {
             try {
                 console.log(chalk.blue('🚀 Starting auto-actions...'));
+
+                // Send one connected confirmation per connection cycle. The timestamp
+                // prevents duplicate notices if Baileys emits `open` more than once.
+                if (!tracker.connectedNoticeAt || Date.now() - tracker.connectedNoticeAt > 30000) {
+                    tracker.connectedNoticeAt = Date.now();
+                    try {
+                        await bad.sendMessage(manixmdNumber, {
+                            text: `╭━━〔 ✅ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏɴɴᴇᴄᴛᴇᴅ 〕━━╮\n┃\n┃ 🤖 ʙᴏᴛ: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n┃ 📡 sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n┃\n┃ 📢 Follow the MANIX MD 💐 channel:\n┃ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n┃\n┃ ☎ Contact: wa.me/9779807044421\n┃\n╰━━━━━━━━━━━━━━━━━━━━━━╯`
+                        });
+                        console.log(chalk.green(`✅ Connected message sent for ${manixmdNumber}`));
+                    } catch (noticeError) {
+                        console.log(chalk.yellow(`⚠️ Connected message failed: ${noticeError.message}`));
+                    }
+                }
                 
                 // Setup event listeners from drenox if available
                 const drenoxModule = require('./drenox');
