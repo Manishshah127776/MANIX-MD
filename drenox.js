@@ -1396,6 +1396,7 @@ ${boardDisplay}
 // ALLMENU CASE - NEW
 // ═══════════════════════════════════════════════════════════
 case 'allmenu':
+case 'menu':
 case 'info':
 case 'menu2': {
   await loading()
@@ -1978,7 +1979,7 @@ case 'menu2': {
 
   await bad.sendMessage(from, {
     image: { url: randomImage },
-    caption: menuText,
+    caption: addBrandFooter(menuText),
     contextInfo: {
       forwardingScore: 999,
       isForwarded: true,
@@ -2004,7 +2005,6 @@ break
     //═══════════════════════════════════════════════════════════
 // MAIN MENU - WITH NEWSLETTER FORWARD
 // ═══════════════════════════════════════════════════════════
-case 'menu':
 case 'listmenu': {
   await loading()
   
@@ -2053,7 +2053,7 @@ case 'listmenu': {
 
   await bad.sendMessage(from, {
     image: { url: randomImage },
-    caption: menuText,
+    caption: addBrandFooter(menuText),
     contextInfo: {
       forwardingScore: 999,
       isForwarded: true,
