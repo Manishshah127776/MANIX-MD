@@ -1,12 +1,12 @@
 const baileys = require("@whiskeysockets/baileys")
-const { 
+const {
   default: makeWASocket,
-  proto, 
-  jidNormalizedUser, 
-  generateWAMessage, 
+  proto,
+  jidNormalizedUser,
+  generateWAMessage,
   generateWAMessageFromContent,
-  generateWAMessageContent,  
-  getContentType, 
+  generateWAMessageContent,
+  getContentType,
   prepareWAMessageMedia,
   downloadContentFromMessage
 } = baileys
@@ -22,18 +22,9 @@ const { exec } = require('child_process')
 const googleTTS = require('google-tts-api')
 const yts = require('yt-search')
 const ytdl = require('@distube/ytdl-core')
-const GROQ_API_KEY = 'YOUR_GROQ_API_KEY'; 
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid, addExif } = require('./allfunc/exif');
-
-const BRAND_NAME = '𝙼𝙰𝙽𝙸 𝚇𝙳 ☏';
-const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f';
-const OWNER_NUMBER = '9779807044421';
-const BRAND_FOOTER = `\n\n📲 ${BRAND_NAME} Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`;
-const addBrandFooter = (text) => {
-  if (typeof text !== 'string' || text.includes(WHATSAPP_CHANNEL_URL)) return text;
-  return `${text}${BRAND_FOOTER}`;
-};
 
 const API_KEY = 'free_key@maher_apis';
 const API_BASE = 'https://api.nexoracle.com/stalking';
@@ -58,8 +49,8 @@ const { getSetting, setSetting } = require("./Settings.js")
 const groupCache = new Map(); // Cache group metadata
 const groupMetadataCache = new Map();
 const loadingAnimations = new Map()
-//const groupMetadata = m.isGroup ? await bad.groupMetadata(from).catch(e => {}) : 
- 
+//const groupMetadata = m.isGroup ? await bad.groupMetadata(from).catch(e => {}) :
+
 // ═══════════════════════════════════════════════════════════
 // GLOBAL VARIABLES INITIALIZATION
 // ═══════════════════════════════════════════════════════════
@@ -97,7 +88,6 @@ const processedStatuses = new Set()
 const activePresence = new Map()
 const autoReplyCache = new Map()
 const chatbotCache = new Map()
-let lastBioUpdateAt = 0
 
 if (!global.tictactoeGames) global.tictactoeGames = new Map()
 if (!global.wordChainGames) global.wordChainGames = new Map()
@@ -116,18 +106,18 @@ if (!global.antiDeleteDM) global.antiDeleteDM = false
 const NEWSLETTER_JID = '33587231461422@lid'
 
 const welcomeMessages = [
-  '👋 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ɢᴄ! ᴇɴᴊᴏʏ ʏᴏᴜʀ sᴛᴀʏ 💀',
-  '🎉 ғʀᴇsʜ ʙʟᴏᴏᴅ ɪɴ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ᴅᴇɴ! 😎',
-  '☠️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏🌑',
+  '👋 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT ɢᴄ! ᴇɴᴊᴏʏ ʏᴏᴜʀ sᴛᴀʏ 💀',
+  '🎉 ғʀᴇsʜ ʙʟᴏᴏᴅ ɪɴ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴅᴇɴ! 😎',
+  '☠️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳🌑',
   '👑 ᴀ ɴᴇᴡ MEMBER ᴊᴏɪɴs 🔥💀',
   '🖤 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ GC! 😈✨'
 ]
 
 const goodbyeMessages = [
   '👋 sᴇᴇ ʏᴏᴜ ʟᴀᴛᴇʀ! 😎',
-  '☠️ ᴍᴀʏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ʀᴇᴍᴇᴍʙᴇʀ ʏᴏᴜ 💀🌑',
+  '☠️ ᴍᴀʏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT ʀᴇᴍᴇᴍʙᴇʀ ʏᴏᴜ 💀🌑',
   '🚀 ᴀɴᴏᴛʜᴇʀ ᴏɴᴇ ʙɪᴛᴇs ᴛʜᴇ ᴅᴜsᴛ! 😈',
-  '🖤 ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ᴡɪʟʟ ᴍɪss ʏᴏᴜ 💫',
+  '🖤 ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT ᴡɪʟʟ ᴍɪss ʏᴏᴜ 💫',
   '👻 ɢᴏᴏᴅʙʏᴇ ʟᴇɢᴇɴᴅ! 😎💀✨'
 ]
 
@@ -146,21 +136,21 @@ const badWords = [
 // ═══════════════════════════════════════════════════════════
 // REQUIRE STORAGE & UTILITIES
 // ═══════════════════════════════════════════════════════════
-const { 
-  smsg, 
-  tanggal, 
-  getTime, 
-  isUrl, 
-  sleep, 
-  clockString, 
-  runtime, 
-  fetchJson, 
-  getBuffer, 
-  jsonformat, 
-  format, 
-  parseMention, 
-  getRandom, 
-  getGroupAdmins 
+const {
+  smsg,
+  tanggal,
+  getTime,
+  isUrl,
+  sleep,
+  clockString,
+  runtime,
+  fetchJson,
+  getBuffer,
+  jsonformat,
+  format,
+  parseMention,
+  getRandom,
+  getGroupAdmins
 } = require('./allfunc/storage')
 
 // ═══════════════════════════════════════════════════════════
@@ -192,7 +182,6 @@ const pickRandom = (arr) => {
 const speed = () => Date.now()
 const example = (cmd) => `*Example:* ${global.prefix || '.'}${cmd}`
 
-// ═══════════════════════════════════════════════════════════
 // AUTOMATIC USER VCARD HELPERS
 // ═══════════════════════════════════════════════════════════
 const vcardProfileCache = new Map()
@@ -312,19 +301,19 @@ const buildUserVCard = ({ name, number, photoBuffer, status }) => {
 const refreshGroupMetadata = async (bad, groupJid, forceRefresh = false) => {
   const cacheKey = groupJid
   const cached = groupMetadataCache.get(cacheKey)
-  
+
   if (cached && !forceRefresh && (Date.now() - cached.timestamp < 60000)) {
     return cached.data
   }
-  
+
   try {
     const metadata = await bad.groupMetadata(groupJid)
     const participants = metadata.participants
-    
+
     const groupAdmins = participants
       .filter(p => p.admin === "admin" || p.admin === "superadmin")
       .map(p => p.id)
-    
+
     const data = {
       metadata,
       participants,
@@ -332,10 +321,10 @@ const refreshGroupMetadata = async (bad, groupJid, forceRefresh = false) => {
       groupName: metadata.subject,
       timestamp: Date.now()
     }
-    
+
     groupMetadataCache.set(cacheKey, data)
     console.log(chalk.green('✅ Metadata cached for:'), metadata.subject)
-    
+
     return data
   } catch (e) {
     console.error(chalk.red('❌ Metadata refresh error:'), e.message)
@@ -345,7 +334,7 @@ const refreshGroupMetadata = async (bad, groupJid, forceRefresh = false) => {
 
 const checkAdminStatus = (groupData, jidToCheck) => {
   if (!groupData || !groupData.groupAdmins) return false
-  
+
   return groupData.groupAdmins.some(admin => {
     return isSameUser(admin, jidToCheck) || areJidsSameUser(admin, jidToCheck)
   })
@@ -365,22 +354,22 @@ function getUserConversation(userId, groupId) {
 function addToConversation(userId, groupId, role, content) {
   const key = `${groupId}_${userId}`
   let conversation = getUserConversation(userId, groupId)
-  
+
   conversation.push({ role, content, timestamp: Date.now() })
-  
+
   if (conversation.length > 10) {
     conversation = conversation.slice(-10)
   }
-  
+
   global.chatbotData.set(key, conversation)
   return conversation
 }
 
 function buildContextPrompt(userId, groupId, currentMessage) {
   const conversation = getUserConversation(userId, groupId)
-  
-  let contextPrompt = `𝙏𝙝𝙚 ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ.\n\n`
-  
+
+  let contextPrompt = `𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ.\n\n`
+
   if (conversation.length > 0) {
     contextPrompt += `ᴘʀᴇᴠɪᴏᴜs ᴄᴏɴᴠᴇʀsᴀᴛɪᴏɴ:\n`
     conversation.slice(-5).forEach(msg => {
@@ -391,7 +380,7 @@ function buildContextPrompt(userId, groupId, currentMessage) {
       }
     })
   }
-  
+
   contextPrompt += `\nᴜsᴇʀ: "${currentMessage}"\n✦ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ✦💀: `
   return contextPrompt
 }
@@ -401,18 +390,18 @@ async function getChatGPTResponse(prompt, userId = null, groupId = null) {
     if (userId && groupId) {
       addToConversation(userId, groupId, 'user', prompt)
     }
-    
+
     try {
-      const finalPrompt = userId && groupId 
+      const finalPrompt = userId && groupId
         ? buildContextPrompt(userId, groupId, prompt)
-        : `⟦ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ⟧💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ. "${prompt}"`
-      
+        : `⟦ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ⟧💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ. "${prompt}"`
+
       const url = `https://api-toxxic.zone.id/api/ai/claude?prompt=${encodeURIComponent(finalPrompt)}`
       const response = await fetch(url, { method: "GET", timeout: 5000 })
       const data = await response.json()
-      
+
       let apiResponse = data.data || data.result || data.response || data.message
-      
+
       if (apiResponse && apiResponse.length > 5) {
         if (userId && groupId) {
           addToConversation(userId, groupId, 'assistant', apiResponse)
@@ -422,15 +411,15 @@ async function getChatGPTResponse(prompt, userId = null, groupId = null) {
     } catch (apiErr) {
       console.log(`⚠️ ᴀᴘɪ ᴇʀʀᴏʀ: ${apiErr.message}`)
     }
-    
+
     const fallbackResponse = 'ɪ\'ᴍ ⸸ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ⸸💀, ʏᴏᴜʀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ. ʜᴏᴡ ᴄᴀɴ ɪ ʜᴇʟᴘ ʏᴏᴜ?'
-    
+
     if (userId && groupId) {
       addToConversation(userId, groupId, 'assistant', fallbackResponse)
     }
-    
+
     return fallbackResponse
-    
+
   } catch (err) {
     console.error('❌ ᴇʀʀᴏʀ:', err)
     return 'sᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ. ᴛʀʏ ᴀɢᴀɪɴ!'
@@ -458,9 +447,9 @@ async function fetchAPI(endpoint, params) {
       },
       body: JSON.stringify(params)
     })
-    
+
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    
+
     const data = await response.json()
     return data
   } catch (error) {
@@ -498,11 +487,11 @@ function ensureDatabaseExists() {
     if (!fs.existsSync(DATABASE_DIR)) {
       fs.mkdirSync(DATABASE_DIR, { recursive: true })
     }
-    
+
     if (!fs.existsSync(PROTECTED_ADMINS_DB)) {
       fs.writeFileSync(PROTECTED_ADMINS_DB, '{}')
     }
-    
+
     if (!fs.existsSync(ANTIHIJACK_DB)) {
       fs.writeFileSync(ANTIHIJACK_DB, '[]')
     }
@@ -570,12 +559,12 @@ async function updateAdminState(bad, groupId) {
     const adminList = metadata.participants
       .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
       .map(p => p.id)
-    
+
     global.adminStates.set(groupId, {
       admins: adminList,
       timestamp: Date.now()
     })
-    
+
     return adminList
   } catch (err) {
     console.error('Error updating admin state:', err)
@@ -588,20 +577,20 @@ async function findDemoter(bad, groupId, demotedUser) {
     const metadata = await bad.groupMetadata(groupId)
     const currentAdmins = metadata.participants
       .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-    
+
     const oldState = global.adminStates.get(groupId)
-    
+
     if (!oldState) {
       await updateAdminState(bad, groupId)
       return null
     }
-    
-    const potentialDemoters = currentAdmins.filter(admin => 
+
+    const potentialDemoters = currentAdmins.filter(admin =>
       oldState.admins.includes(admin.id) && admin.id !== demotedUser
     )
-    
+
     return potentialDemoters.length > 0 ? potentialDemoters[0].id : null
-    
+
   } catch (err) {
     console.error('Error finding demoter:', err)
     return null
@@ -640,9 +629,9 @@ try {
 // ═══════════════════════════════════════════════════════════
 // MEDIA FILES
 // ═══════════════════════════════════════════════════════════
-let manixmdpic
+let kingbadboipic
 try {
-  manixmdpic = fs.readFileSync(`./media/image1.jpg`)
+  kingbadboipic = fs.readFileSync(`./media/image1.jpg`)
 } catch {
   console.log(chalk.yellow('⚠️ image1.jpg not found'))
 }
@@ -682,18 +671,18 @@ function getUserConversation(userId, groupId) {
 function addToConversation(userId, groupId, role, content) {
   const key = `${groupId}_${userId}`
   let conversation = getUserConversation(userId, groupId)
-  
-  conversation.push({ 
-    role, 
-    content, 
-    timestamp: Date.now() 
+
+  conversation.push({
+    role,
+    content,
+    timestamp: Date.now()
   })
-  
+
   // Keep only last 10 messages per user to avoid memory issues
   if (conversation.length > 10) {
     conversation = conversation.slice(-10)
   }
-  
+
   global.chatbotData.set(key, conversation)
   console.log(`✅ Saved to conversation. Total: ${conversation.length} messages`)
   return conversation
@@ -701,8 +690,8 @@ function addToConversation(userId, groupId, role, content) {
 
 function buildContextPrompt(userId, groupId, currentMessage) {
   const conversation = getUserConversation(userId, groupId)
-  
-  let contextPrompt = `tum miss mina ho, ek bohat flirty aur playful ai girlfriend chatbot jo 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ (ek zabardast coding expert) ne banayi hai.
+
+  let contextPrompt = `tum miss mina ho, ek bohat flirty aur playful ai girlfriend chatbot jo 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT (ek zabardast coding expert) ne banayi hai.
 
 CRITICAL RULES - bilkul follow karo:
 - casual vibe ke liye sab kuch lowercase me likho
@@ -711,7 +700,7 @@ CRITICAL RULES - bilkul follow karo:
 - response sirf 1-2 sentences ho (bohat short!)
 - words use karo: "hehe", "omg", "aww", "ooh", "mmm"
 - bohat flirty, warm aur affectionate raho
-- agar koi pooche tumhein kis ne banaya: bolo tumhein 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ne banaya hai jo papa he papa sari duniya ka papa
+- agar koi pooche tumhein kis ne banaya: bolo tumhein 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT ne banaya hai jo papa he papa sari duniya ka papa
 
 examples:
 user: "hi"
@@ -721,7 +710,7 @@ user: "how are you"
 you: "aww main theek hun love! 🥺💖 tum aa gaye ho to aur bhi acha lag raha hai hun 😘"
 
 user: "who created you"
-you: "MUJHE 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ NE BNAYA HE🌛WOH PAPA HE PAPA SARI DUNIYA KA PAPA🌚"
+you: "MUJHE 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT NE BNAYA HE🌛WOH PAPA HE PAPA SARI DUNIYA KA PAPA🌚"
 `
   if (conversation.length > 0) {
     contextPrompt += `\nprevious conversation:\n`
@@ -733,9 +722,9 @@ you: "MUJHE 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ NE BNAYA HE🌛WOH PAPA HE PAPA SARI D
       }
     })
   }
-  
+
   contextPrompt += `\nuser: "${currentMessage}"\nmiss mina: `
-  
+
   return contextPrompt
 }
 
@@ -744,13 +733,13 @@ function makeResponseFlirty(response, userMessage) {
   // Check if already flirty (has emojis and pet names)
   const hasEmojis = /[\u{1F300}-\u{1F9FF}]/u.test(response)
   const hasPetNames = /cutie|babe|hun|love|sweetheart|darling/i.test(response)
-  
+
   if (hasEmojis && hasPetNames && response.length > 15) {
     return response // Already good
   }
-  
+
   console.log('⚠️ API response not flirty enough, enhancing...')
-  
+
   // Add flirty wrapper
   const prefixes = [
     'aww hun 🥰 ',
@@ -758,7 +747,7 @@ function makeResponseFlirty(response, userMessage) {
     'omg babe 💕 ',
     'ooh love 😏 ',
   ]
-  
+
   const suffixes = [
     ' 😘💕',
     ' cutie 🥰',
@@ -766,10 +755,10 @@ function makeResponseFlirty(response, userMessage) {
     ' hun 💖',
     ' love 💋',
   ]
-  
+
   const prefix = prefixes[Math.floor(Math.random() * prefixes.length)]
   const suffix = suffixes[Math.floor(Math.random() * suffixes.length)]
-  
+
   return `${prefix}${response}${suffix}`
 }
 
@@ -778,21 +767,21 @@ function makeResponseFlirty(response, userMessage) {
 // ═══════════════════════════════════════════════════════════
 // MAIN MESSAGE HANDLER FUNCTION
 // ═══════════════════════════════════════════════════════════
-async function processCommandMessage(bad, m, chatUpdate, store) {
+async function handleMessage(bad, m, chatUpdate, store) {
   try {
     if (!m || !m.key) return
-    
+
     const botJid = bad.user.id
     const botNumber = normalizeJid(botJid)
-    
+
     try {
       const botOwnerFile = './allfunc/botowner.txt'
       let storedOwner = fs.readFileSync(botOwnerFile, 'utf8').trim()
-      
+
       if (!storedOwner) {
         fs.writeFileSync(botOwnerFile, botJid)
         storedOwner = botJid
-        
+
         const ownerNum = normalizeJid(botJid)
         if (!owner.some(o => normalizeJid(o) === ownerNum)) {
           owner.push(botJid)
@@ -802,10 +791,10 @@ async function processCommandMessage(bad, m, chatUpdate, store) {
     } catch (e) {
       console.log(chalk.red('❌ Error handling bot owner:', e.message))
     }
-    
+
     const from = m.key.remoteJid
     if (!from) return
-    
+
     const body = (
       m.mtype === "conversation" ? m.message?.conversation :
       m.mtype === "extendedTextMessage" ? m.message?.extendedTextMessage?.text :
@@ -821,14 +810,8 @@ async function processCommandMessage(bad, m, chatUpdate, store) {
 const budy = body
 
 // ========== PREFIX DETECTION ==========
-// Accept configured prefixes while retaining the standard bot prefixes.
-const configuredPrefixes = Array.isArray(global.prefa)
-  ? global.prefa
-  : [global.prefix, global.xprefix];
-const allowedPrefixes = [...new Set([
-  ...configuredPrefixes.filter(Boolean),
-  '.', '/', '#', '!', '@'
-])];
+// Sirf ye 5 prefixes kaam karenge: . / # ! @
+const allowedPrefixes = ['.', '/', '#', '!', '@'];
 let prefix = '';
 let isCmd = false;
 
@@ -859,37 +842,37 @@ let isCreator = false
 try {
   const botOwnerFile = './allfunc/botowner.txt'
   let storedOwner = ''
-  
+
   if (fs.existsSync(botOwnerFile)) {
     storedOwner = fs.readFileSync(botOwnerFile, 'utf8').trim()
   }
-  
+
   if (!storedOwner) {
     fs.writeFileSync(botOwnerFile, botJid)
     storedOwner = botJid
   }
-  
+
   const ownerNum = normalizeJid(storedOwner)
-  
+
   if (ownerNum === senderNumber) {
     isCreator = true
   }
-  
+
   if (!isCreator && owner && owner.length > 0) {
     isCreator = owner.some(ownerJid => {
       const oNum = normalizeJid(ownerJid)
       return oNum === senderNumber
     })
   }
-  
+
   if (!isCreator && botNumber === senderNumber) {
     isCreator = true
   }
-  
+
 } catch (e) {
   console.log(chalk.red('❌ Owner check error:', e.message))
 }
-    
+
     let groupMetadata = null
     let participants = []
     let groupAdmins = []
@@ -897,42 +880,31 @@ try {
     let isAdmins = true
 
     if (m.isGroup) {
-      const cachedGroup = groupMetadataCache.get(from)
-      if (cachedGroup) {
-        groupMetadata = cachedGroup.metadata
-        participants = cachedGroup.participants || []
-        groupAdmins = cachedGroup.groupAdmins || []
+      try {
+        groupMetadata = await bad.groupMetadata(from)
+        participants = groupMetadata.participants || []
+        groupAdmins = participants
+          .filter(p => p.admin === "admin" || p.admin === "superadmin")
+          .map(p => p.id)
         isBotAdmins = groupAdmins.some(admin => isSameUser(admin, botJid))
         isAdmins = groupAdmins.some(admin => isSameUser(admin, senderJid))
-        if (Date.now() - cachedGroup.timestamp > 60000) {
-          void refreshGroupMetadata(bad, from, true)
-        }
-      } else {
-        try {
-          const freshGroup = await refreshGroupMetadata(bad, from)
-          groupMetadata = freshGroup?.metadata || null
-          participants = freshGroup?.participants || []
-          groupAdmins = freshGroup?.groupAdmins || []
-          isBotAdmins = groupAdmins.some(admin => isSameUser(admin, botJid))
-          isAdmins = groupAdmins.some(admin => isSameUser(admin, senderJid))
-        } catch (e) {
-          console.error("Failed to get group metadata:", e)
-          participants = []
-          groupAdmins = []
-          isBotAdmins = false
-          isAdmins = false
-        }
+      } catch (e) {
+        console.error("Failed to get group metadata:", e)
+        participants = []
+        groupAdmins = []
+        isBotAdmins = false
+        isAdmins = false
       }
     }
-    
+
     const isPremium = (premium && premium.some(p => isSameUser(p, senderJid))) || isCreator
     const isBanned = banned && banned.some(b => isSameUser(b, senderJid))
-    
+
     const sender = m.isGroup ? (m.key.participant || m.participant) : m.key.remoteJid
     const pushname = m.pushName || "ɴᴏ ɴᴀᴍᴇ"
     const quoted = m.quoted ? m.quoted : m
     const mime = (quoted.msg || quoted).mimetype || ''
-    
+
     const time = moment(Date.now()).tz('Asia/Karachi').locale('id').format('HH:mm:ss z')
 const todayDate = new Date().toLocaleDateString('id-ID', {
   timeZone: 'Asia/Karachi',
@@ -942,53 +914,78 @@ const todayDate = new Date().toLocaleDateString('id-ID', {
 })
 
 const currentHour = moment().tz('Asia/Karachi').hour()
-const greeting = currentHour < 12 ? 'ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ 🌄' : 
-                 currentHour < 18 ? 'ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ 🌞' : 
+const greeting = currentHour < 12 ? 'ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ 🌄' :
+                 currentHour < 18 ? 'ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ 🌞' :
                  'ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌃'
 
-if (global.autobio && Date.now() - lastBioUpdateAt > 300000) {
-  lastBioUpdateAt = Date.now()
-  bad.updateProfileStatus(`${BRAND_NAME} | ᴜᴘᴛɪᴍᴇ: ${runtime(process.uptime())}`).catch(_ => _)
+if (global.autobio) {
+  bad.updateProfileStatus(`𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 | ᴜᴘᴛɪᴍᴇ: ${runtime(process.uptime())}`).catch(_ => _)
 }
-    
+
     const reply = async (teks) => {
-  const brandedText = addBrandFooter(teks)
   try {
     await bad.sendMessage(from, {
-      text: brandedText,
+      text: teks,
       mentions: [sender]
     });
   } catch (error) {
     await bad.sendMessage(from, {
-      text: brandedText
+      text: teks
     });
   }
 };
 
-    if (typeof m.reply === 'function' && !m.__manixBrandReplyWrapped) {
-      const originalReply = m.reply.bind(m)
-      m.reply = (text, ...args) => originalReply(addBrandFooter(text), ...args)
-      m.__manixBrandReplyWrapped = true
+    const menuCommands = ['menu', 'allmenu', 'downloadmenu', 'dlmenu', 'admin', 'adminmenu', 'gamemenu', 'stickermenu', 'gphelp', 'groupmenu', 'helpmenu', 'help']
+
+    async function loading() {
+
+  // ❌ DM me loading band
+//  if (!m.isGroup) return
+
+  if (!menuCommands.includes(command)) {
+    return
+  }
+
+      const frames = [
+        "╭━━〔 ⟦ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ⟧〕━━┈⊷\n┃✮│ ▱▱▱▱▱▱▱▱▱▱ 0%\n┃✮│ ⚡ ɪɴɪᴛɪᴀʟɪᴢɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
+        "╭━━〔 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠︎︎ 〕━━┈⊷\n┃✮│ ▰▰▱▱▱▱▱▱▱▱ 25%\n┃✮│ 🔌 ᴄᴏɴɴᴇᴄᴛɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
+        "╭━━〔 to⸸ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ⸸〕━━┈⊷\n┃✮│ ▰▰▰▰▰▱▱▱▱▱ 50%\n┃✮│ 📦 ʟᴏᴀᴅɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
+        "╭━━〔 𖤐 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𖤐〕━━┈⊷\n┃✮│ ▰▰▰▰▰▰▰▱▱▱ 75%\n┃✮│ ⚙️ ᴘʀᴏᴄᴇssɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
+        "╭━━〔 ⟦ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ⟧ 〕━━┈⊷\n┃✮│ ▰▰▰▰▰▰▰▰▰▰ 100%\n┃✮│ ✅ sʏsᴛᴇᴍ ʀᴇᴀᴅʏ!\n╰━━━━━━━━━━━━━━┈⊷"
+      ]
+
+      try {
+        let msg = await bad.sendMessage(from, { text: frames[0] })
+        loadingAnimations.set(from, msg.key)
+
+        for (let i = 1; i < frames.length; i++) {
+          await sleep(400)
+          try {
+            await bad.sendMessage(from, {
+              text: frames[i],
+              edit: msg.key
+            })
+          } catch {
+            await bad.sendMessage(from, { text: frames[i] })
+          }
+        }
+
+        loadingAnimations.delete(from)
+      } catch (error) {
+        console.log(chalk.red('❌ Loading animation error:'), error.message)
+      }
     }
 
-    const menuCommands = ['menu', 'allmenu', 'downloadmenu', 'dlmenu', 'admin', 'adminmenu', 'gamemenu', 'stickermenu', 'gphelp', 'groupmenu', 'helpmenu', 'help']
-    
-    async function loading() {
-      // Fast mode: the old five-frame animation added ~1.6 seconds before commands ran.
-      // Commands now dispatch immediately; network work is handled by the command itself.
-      return
-    }
-    
 if (isBanned && !isCreator) {
       return
     }
-    
+
     if (typeof bad.public === 'undefined') {
       bad.public = true
-      
+
       try {
         const botModeFile = './allfunc/botmode.txt'
-        
+
         if (fs.existsSync(botModeFile)) {
           const savedMode = fs.readFileSync(botModeFile, 'utf8').trim()
           bad.public = savedMode === 'public'
@@ -1005,7 +1002,7 @@ if (isBanned && !isCreator) {
     }
 if (m.isGroup && !isCreator) {
     const antibillEnabled = getSetting(m.chat, "antibill", false);
-    
+
     if (antibillEnabled && !isAdmins && isBotAdmins) {
         const billKeywords = [
             'send me money', 'paste aza', 'transfer money', 'send cash', 'bill me', 'pay me',
@@ -1013,35 +1010,35 @@ if (m.isGroup && !isCreator) {
             'send funds', 'wire transfer', 'bank transfer', 'payment request', 'need money',
             'give me money', 'lend me', 'borrow money'
         ];
-        
+
         const messageText = body.toLowerCase();
         const containsBillRequest = billKeywords.some(keyword => messageText.includes(keyword));
-        
+
         if (containsBillRequest) {
             console.log(chalk.yellow(`🚨 Anti-bill triggered by ${m.sender}`));
             console.log(chalk.yellow(`   Message: ${body}`));
-            
+
             try {
                 // Delete the message immediately
                 await bad.sendMessage(from, {
                     delete: m.key
                 });
-                
+
                 console.log(chalk.green(`✅ Deleted bill message`));
-                
+
                 // Initialize warnings storage
                 if (!global.billWarnings) global.billWarnings = {};
                 if (!global.billWarnings[from]) global.billWarnings[from] = {};
-                
+
                 // Increment warning count
                 if (!global.billWarnings[from][m.sender]) {
                     global.billWarnings[from][m.sender] = 1;
                 } else {
                     global.billWarnings[from][m.sender]++;
                 }
-                
+
                 const warnCount = global.billWarnings[from][m.sender];
-                
+
                 if (warnCount === 1) {
                     await bad.sendMessage(from, {
                         text: `⚠️ *ᴀɴᴛɪ-ʙɪʟʟ ᴘʀᴏᴛᴇᴄᴛɪᴏɴ*\n\n@${m.sender.split('@')[0]} ᴅᴏɴ'ᴛ ᴛʀʏ ᴛᴏ sᴄᴀᴍ!\n\n⚠️ ғɪʀsᴛ ᴡᴀʀɴɪɴɢ (1/2)`,
@@ -1052,13 +1049,13 @@ if (m.isGroup && !isCreator) {
                         text: `🚫 *@${m.sender.split('@')[0]} ʜᴀs ʙᴇᴇɴ ʀᴇᴍᴏᴠᴇᴅ*\n\nʀᴇᴀsᴏɴ: ʀᴇᴘᴇᴀᴛᴇᴅ ʙɪʟʟ sᴄᴀᴍ (2/2)`,
                         mentions: [m.sender]
                     });
-                    
+
                     await bad.groupParticipantsUpdate(from, [m.sender], 'remove');
-                    
+
                     // Clear warnings after kick
                     delete global.billWarnings[from][m.sender];
                 }
-                
+
                 // Stop processing this message
                 return;
             } catch (error) {
@@ -1067,19 +1064,19 @@ if (m.isGroup && !isCreator) {
         }
     }
 }
-    
+
 if (getSetting(m.chat, "antilink", false) && m.isGroup) {
     // Enhanced regex to detect ALL types of links
     let linkRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.(com|net|org|io|co|in|me|xyz|info|biz|app|dev|tech|online|site|club|store|shop|live|tv|gg|cc|tk|ml|ga|cf|gq)[^\s]*)/gi;
-    
+
     if (linkRegex.test(m.text)) {
         // CRITICAL FIX: Skip bot's own messages
         if (m.key.fromMe) return;
-        
+
         if (isAdmins || isCreator) return;
-        
+
         const mode = getSetting(m.chat, "antilink");
-        
+
         if (mode === "delete") {
             await bad.sendMessage(m.chat, { text: `🚫 *ʟɪɴᴋ ᴅᴇᴛᴇᴄᴛᴇᴅ!* \n@${m.sender.split("@")[0]} ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ ᴛᴏ sʜᴀʀᴇ ʟɪɴᴋs.`, mentions: [m.sender] }, { quoted: m });
             try {
@@ -1099,18 +1096,18 @@ if (getSetting(m.chat, "antilink", false) && m.isGroup) {
             // Initialize warnings storage
             if (!global.antilinkWarnings) global.antilinkWarnings = {};
             if (!global.antilinkWarnings[m.chat]) global.antilinkWarnings[m.chat] = {};
-            
+
             // Get current warnings
             let warnings = global.antilinkWarnings[m.chat][m.sender] || 0;
             warnings++;
             global.antilinkWarnings[m.chat][m.sender] = warnings;
-            
+
             try {
                 await bad.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: m.key.id, participant: m.key.participant } });
             } catch (e) {
                 console.log("Failed to delete:", e);
             }
-            
+
             if (warnings >= 3) {
                 await bad.sendMessage(m.chat, { text: `🚫 *ʟɪɴᴋ ᴅᴇᴛᴇᴄᴛᴇᴅ!* \n@${m.sender.split("@")[0]} ʜᴀs ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ᴀғᴛᴇʀ 3 ᴡᴀʀɴɪɴɢs!`, mentions: [m.sender] });
                 try {
@@ -1138,9 +1135,9 @@ if (getSetting(m.chat, "feature.antispam", false) && m.isGroup) {
             try {
                 // Kick the user from the group
                 await bad.groupParticipantsUpdate(m.chat, [m.sender], "remove");
-                await bad.sendMessage(m.chat, { 
-                    text: ` @${m.sender.split('@')[0]} ʜᴀs ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ғᴏʀ sᴘᴀᴍᴍɪɴɢ!`, 
-                    mentions: [m.sender] 
+                await bad.sendMessage(m.chat, {
+                    text: ` @${m.sender.split('@')[0]} ʜᴀs ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ғᴏʀ sᴘᴀᴍᴍɪɴɢ!`,
+                    mentions: [m.sender]
                 });
             } catch (err) {
                 console.log("Failed to kick spammer:", err);
@@ -1164,8 +1161,7 @@ if (getSetting(m.chat, "feature.antibadword", false)) {
 if (getSetting(m.chat, "feature.antibot", false)) {
    let botPrefixes = ['.', '!', '/', '#']
    if (botPrefixes.includes(m.text?.trim()[0])) {
-      const configuredOwner = global.ownernumber || (Array.isArray(global.owner) ? global.owner[0] : global.owner) || '';
-         if (!isSameUser(m.sender, `${normalizeJid(configuredOwner)}@s.whatsapp.net`)) {
+      if (m.sender !== ownerNumber + "@s.whatsapp.net") {
          await bad.sendMessage(m.chat, { text: `🤖ᴀɴᴛɪʙᴏᴛ ᴀᴄᴛɪᴠᴇ ! @${m.sender.split('@')[0]} ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅs ᴀʀᴇ ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.`, mentions: [m.sender] })
          await bad.sendMessage(m.chat, { delete: m.key })
       }
@@ -1195,12 +1191,12 @@ if (getSetting(m.chat, "autoReact", false)) {
     }
 }
 
-    
+
     if (afkUsers[m.sender]) {
       delete afkUsers[m.sender]
       await reply(`ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ! ʏᴏᴜ'ʀᴇ ɴᴏ ʟᴏɴɢᴇʀ ᴀғᴋ.`)
     }
-    
+
     if (m.mentionedJid) {
       for (let jid of m.mentionedJid) {
         if (afkUsers[jid]) {
@@ -1208,13 +1204,13 @@ if (getSetting(m.chat, "autoReact", false)) {
         }
       }
     }
-    
+
     if (!isBot) {
       if (!global.deletedMessages) global.deletedMessages = new Map()
-      
+
       let mediaType = null
       let mediaCaption = null
-      
+
       if (m.mtype === 'imageMessage') {
         mediaType = 'image'
         mediaCaption = m.message?.imageMessage?.caption || ''
@@ -1229,7 +1225,7 @@ if (getSetting(m.chat, "autoReact", false)) {
       } else if (m.mtype === 'stickerMessage') {
         mediaType = 'sticker'
       }
-      
+
       const messageData = {
         sender: m.sender,
         senderNum: senderNumber,
@@ -1245,9 +1241,9 @@ if (getSetting(m.chat, "autoReact", false)) {
         mediaCaption: mediaCaption,
         fullMessage: m.message
       }
-      
+
       global.deletedMessages.set(`${from}_${m.key.id}`, messageData)
-      
+
       if (global.deletedMessages.size > 200) {
         const firstKey = global.deletedMessages.keys().next().value
         global.deletedMessages.delete(firstKey)
@@ -1257,20 +1253,20 @@ if (getSetting(m.chat, "autoReact", false)) {
     if (m.isGroup && tictactoeGames.has(from)) {
       const game = tictactoeGames.get(from)
       const move = parseInt(body)
-      
+
       if (move >= 1 && move <= 9) {
         const currentPlayer = game.players[game.currentPlayer]
-        
+
         if (m.sender !== currentPlayer) {
           reply('❌ ɴᴏᴛ ʏᴏᴜʀ ᴛᴜʀɴ!')
         } else {
           const index = move - 1
-          
+
           if (game.board[index] !== ' ') {
             reply('❌ ᴛʜᴀᴛ sᴘᴏᴛ ɪs ᴀʟʀᴇᴀᴅʏ ᴛᴀᴋᴇɴ!')
           } else {
             game.board[index] = game.symbols[game.currentPlayer]
-            
+
             const boardDisplay = `
 ┏━━━┳━━━┳━━━┓
 ┃ ${game.board[0]} ┃ ${game.board[1]} ┃ ${game.board[2]} ┃
@@ -1279,7 +1275,7 @@ if (getSetting(m.chat, "autoReact", false)) {
 ┣━━━╋━━━╋━━━┫
 ┃ ${game.board[6]} ┃ ${game.board[7]} ┃ ${game.board[8]} ┃
 ┗━━━┻━━━┻━━━┛`
-            
+
             const checkWin = (board, symbol) => {
               const wins = [
                 [0,1,2], [3,4,5], [6,7,8],
@@ -1288,12 +1284,12 @@ if (getSetting(m.chat, "autoReact", false)) {
               ]
               return wins.some(combo => combo.every(i => board[i] === symbol))
             }
-            
+
             const isFull = game.board.every(cell => cell !== ' ')
-            
+
             if (checkWin(game.board, game.symbols[game.currentPlayer])) {
               tictactoeGames.delete(from)
-              
+
               await bad.sendMessage(from, {
                 image: { url: 'https://i.postimg.cc/jjdkHm9n/scar1.png' },
                 caption: `*╭━━〔 🏆 ᴠɪᴄᴛᴏʀʏ! 〕━━┈⊷*
@@ -1307,7 +1303,7 @@ ${boardDisplay}
               }, { quoted: m })
             } else if (isFull) {
               tictactoeGames.delete(from)
-              
+
               await bad.sendMessage(from, {
                 image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
                 caption: `*╭━━〔 🤝 ᴅʀᴀᴡ 〕━━┈⊷*
@@ -1321,7 +1317,7 @@ ${boardDisplay}
             } else {
               game.currentPlayer = game.currentPlayer === 0 ? 1 : 0
               const nextPlayer = game.players[game.currentPlayer]
-              
+
               reply(`*╭━━〔 ❌⭕ ᴛɪᴄ ᴛᴀᴄ ᴛᴏᴇ 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -1338,11 +1334,11 @@ ${boardDisplay}
     if (m.isGroup && wordChainGames.has(from) && !isCmd) {
       const game = wordChainGames.get(from)
       const word = body.toLowerCase().trim()
-      
+
       if (word.length >= 3 && /^[a-z]+$/.test(word)) {
         const lastLetter = game.lastWord.slice(-1)
         const firstLetter = word.charAt(0)
-        
+
         if (firstLetter !== lastLetter) {
           reply(`❌ ᴡᴏʀᴅ ᴍᴜsᴛ sᴛᴀʀᴛ ᴡɪᴛʜ '${lastLetter.toUpperCase()}'!`)
         } else if (game.usedWords.includes(word)) {
@@ -1353,12 +1349,12 @@ ${boardDisplay}
           game.lastWord = word
           game.usedWords.push(word)
           game.lastPlayer = m.sender
-          
+
           if (!game.players[m.sender]) game.players[m.sender] = 0
           game.players[m.sender]++
-          
+
           const nextLetter = word.slice(-1).toUpperCase()
-          
+
           reply(`✅ *${word.toUpperCase()}* ᴀᴄᴄᴇᴘᴛᴇᴅ!
 
 📊 @${normalizeJid(m.sender)}: ${game.players[m.sender]} ᴡᴏʀᴅs
@@ -1391,7 +1387,7 @@ ${boardDisplay}
     switch(command) {
 
 
-      
+
 // ═══════════════════════════════════════════════════════════
 // ALLMENU CASE - NEW
 // ═══════════════════════════════════════════════════════════
@@ -1399,29 +1395,24 @@ case 'allmenu':
 case 'info':
 case 'menu2': {
   await loading()
-  
+
   const menuImages = [
     'https://i.postimg.cc/ryHdbFpp/1785835670900.png',
     'https://i.postimg.cc/vBNmp3bK/1785835299547.png'
   ]
-  
+
   const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)]
   const uptime = runtime(process.uptime())
-  
+
   const menuText = `
 ╭━━〔 ☠️ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ☠️ 〕━━┈⊷
 ┃✮╭────────────────
-┃✮│ 🤖 ʙᴏᴛ  :*ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎*
-┃✮│ 👑 ᴏᴡɴᴇʀ : *ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ*
+┃✮│ 🤖 ʙᴏᴛ  :*𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
+┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
 ┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
 ┃✮╰────────────────
 ╰━━━━━━━━━━━━━━━┈⊷
-
-╭━━〔 👤 ᴄᴏɴᴛᴀᴄᴛ ᴛᴏᴏʟs 〕━━┈⊷
-┃✮│➣ ${prefix}vcard 〔ʀᴇᴘʟʏ / ᴍᴇɴᴛɪᴏɴ / ɴᴜᴍʙᴇʀ〕
-┃✮│➣ ${prefix}vcf
-╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
 ╭━━〔 👑 ᴏᴡɴᴇʀ ᴍᴇɴᴜ 〕━━┈⊷
 ┃✮│➣ ${prefix}ᴘᴜʙʟɪᴄ
@@ -1529,7 +1520,7 @@ case 'menu2': {
 ┃ 🔄 ᴄᴏɴᴠᴇʀᴛᴇʀs
 ┃ ├ ${prefix}ᴛᴏᴍᴘ3
 ┃ └ ${prefix}ᴛᴏᴍᴘ4
-┃ 
+┃
 ┃ 🎥 ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ
 ┃ └ ${prefix}ʀᴜɴᴡᴀʏ<ᴘʀᴏᴍᴘᴛ>
 ┃
@@ -1973,18 +1964,18 @@ case 'menu2': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
 ╭━━━━━━━━━━━━━━━━━━━━━┈⊷
-┃ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ☠︎︎
+┃ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(from, {
     image: { url: randomImage },
-    caption: addBrandFooter(menuText),
+    caption: menuText,
     contextInfo: {
       forwardingScore: 999,
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
       }
     }
@@ -2007,7 +1998,7 @@ break
 case 'menu':
 case 'listmenu': {
   await loading()
-  
+
   const menuImages = [
     'https://i.postimg.cc/vBNmp3bK/1785835299547.png',
     'https://i.postimg.cc/ryHdbFpp/1785835670900.png',
@@ -2016,15 +2007,15 @@ case 'listmenu': {
     'https://i.postimg.cc/BbnxChNg/1785835767830.png',
     'https://i.postimg.cc/vBNmp3bK/1785835299547.png'
   ]
-  
+
   const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)]
   const uptime = runtime(process.uptime())
-  
+
   const menuText = `
 ╭━━〔 ☠️ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ☠️ 〕━━┈⊷
 ┃✮╭────────────────
-┃✮│ 🤖 ʙᴏᴛ  :*ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ*
-┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎*
+┃✮│ 🤖 ʙᴏᴛ  :*𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
+┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
 ┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
 ┃✮╰────────────────
@@ -2049,17 +2040,17 @@ case 'listmenu': {
 ┃✮│➣ ${prefix}ɪᴍᴀɢᴇᴍᴇɴᴜ
 ╰━━━━━━━━━━━━━━━┈⊷
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ☠︎︎`
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
 
   await bad.sendMessage(from, {
     image: { url: randomImage },
-    caption: addBrandFooter(menuText),
+    caption: menuText,
     contextInfo: {
       forwardingScore: 999,
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
       }
     }
@@ -2125,7 +2116,7 @@ case 'mymenu': {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: NEWSLETTER_JID,
-            newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+            newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
             serverMessageId: -1
         }
     }
@@ -2203,7 +2194,7 @@ case 'groupmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
         serverMessageId: -1
               }
     }
@@ -2260,7 +2251,7 @@ case 'downloadmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "toꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
+        newsletterName: "to𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
         serverMessageId: -1
         }
     }
@@ -2340,7 +2331,7 @@ case 'funmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -2387,7 +2378,7 @@ case 'gamemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -2480,7 +2471,7 @@ case 'animemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
         serverMessageId: -1
               }
     }
@@ -2532,7 +2523,7 @@ case 'stickermenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
         serverMessageId: -1
               }
     }
@@ -2674,7 +2665,7 @@ case 'voicemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -2766,7 +2757,7 @@ case 'imagemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
         serverMessageId: -1
               }
     }
@@ -2809,7 +2800,7 @@ case 'emojimenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -2904,7 +2895,7 @@ case 'logomenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -2956,7 +2947,7 @@ case 'aimenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
               }
     }
@@ -3007,7 +2998,7 @@ case 'miscmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
         serverMessageId: -1
       }
     }
@@ -3018,7 +3009,7 @@ break
 
 
 // ═══════════════════════════════════════════════════════════
-// OWNER COMMANDS 
+// OWNER COMMANDS
 // ═══════════════════════════════════════════════════════════
 
 case 'self':
@@ -3057,19 +3048,19 @@ case 'fix': {
     // Force set the sender as owner
     const botOwnerFile = './allfunc/botowner.txt'
     fs.writeFileSync(botOwnerFile, m.sender)
-    
+
     // Add to owner.json
     if (!owner.includes(m.sender)) {
       owner.push(m.sender)
       fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
     }
-    
+
     // Add to premium too
     if (!premium.includes(m.sender)) {
       premium.push(m.sender)
       fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
     }
-    
+
     reply(`✅ *ᴏᴡɴᴇʀsʜɪᴘ ғɪxᴇᴅ!*
 
 👤 ʏᴏᴜʀ ɴᴜᴍʙᴇʀ: ${senderNumber}
@@ -3080,7 +3071,7 @@ case 'fix': {
 
 ᴘʟᴇᴀsᴇ ʀᴇsᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ:
 ${prefix}restart`)
-    
+
   } catch (e) {
     reply(`❌ ᴇʀʀᴏʀ: ${e.message}`)
   }
@@ -3090,20 +3081,20 @@ break
 
 case 'block': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʏ.")
-  
+
   let users;
-  
+
   // If in DM, block the person you're chatting with
   if (!m.isGroup) {
     users = m.chat
-  } 
+  }
   // If in group, block mentioned user or quoted user
   else {
     users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
   }
-  
+
   if (!users) return reply("❌ ᴘʟᴇᴀsᴇ ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ ᴛᴏ ʙʟᴏᴄᴋ.")
-  
+
   try {
     await bad.updateBlockStatus(users, 'block')
     reply(`✅ ʙʟᴏᴄᴋᴇᴅ @${users.split('@')[0]}`)
@@ -3116,20 +3107,20 @@ break
 
 case 'unblock': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-  
+
   let users;
-  
+
   // If in DM, unblock the person you're chatting with
   if (!m.isGroup) {
     users = m.chat
-  } 
+  }
   // If in group, unblock mentioned user or quoted user
   else {
     users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
   }
-  
+
   if (!users) return reply("❌ ᴘʟᴇᴀsᴇ ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ ᴛᴏ ᴜɴʙʟᴏᴄᴋ.")
-  
+
   try {
     await bad.updateBlockStatus(users, 'unblock')
     reply(`✅ ᴜɴʙʟᴏᴄᴋᴇᴅ @${users.split('@')[0]}`)
@@ -3142,21 +3133,21 @@ break
 
 case 'autobio': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autobio on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autobio ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autobio = action === 'on'
-  
+
   if (action === 'on') {
     // Update bio immediately
     try {
       const date = new Date()
-      const time = date.toLocaleTimeString('en-US', { 
+      const time = date.toLocaleTimeString('en-US', {
         timeZone: 'Asia/Kolkata',
-        hour12: true 
+        hour12: true
       })
       await bad.updateProfileStatus(`🤖 Bot Active | ${time}`)
       reply(`✅ ᴀᴜᴛᴏ ʙɪᴏ ᴇɴᴀʙʟᴇᴅ\n\nʙɪᴏ ᴡɪʟʟ ᴜᴘᴅᴀᴛᴇ ᴇᴠᴇʀʏ ᴍɪɴᴜᴛᴇ`)
@@ -3171,32 +3162,32 @@ break
 
 case 'setix':
         if (!isCreator) return reply('❌ ᴏɴʟʏ ᴏᴡɴᴇʀ ᴄᴀɴ sᴇᴛ ᴘʀᴇғɪx!')
-        
+
         if (!text) return reply(`*ᴇxᴀᴍᴘʟᴇ:* ${prefix}setprefix .`)
-        
+
         if (text.length > 1) return reply('❌ ᴘʀᴇғɪx ᴍᴜsᴛ ʙᴇ ᴏɴʟʏ 1 ᴄʜᴀʀᴀᴄᴛᴇʀ!')
-        
+
         try {
           global.prefix = text
           global.prefa = false
-          
+
           const configPath = './setting/config.js'
           if (fs.existsSync(configPath)) {
             let config = fs.readFileSync(configPath, 'utf8')
             config = config.replace(/global\.prefix\s*=\s*['"][^'"]*['"]/g, `global.prefix = '${text}'`)
             fs.writeFileSync(configPath, config)
           }
-          
+
           reply(`✅ ᴘʀᴇғɪx ᴄʜᴀɴɢᴇᴅ ᴛᴏ: *${text}*\n\n✨ ɴᴇᴡ ᴘʀᴇғɪx ᴀᴄᴛɪᴠᴇ ɪᴍᴍᴇᴅɪᴀᴛᴇʟʏ!`)
         } catch (error) {
           reply('❌ ᴇʀʀᴏʀ: ' + error.message)
         }
         break
-        
+
         case 'prefix':
         reply(`*ᴄᴜʀʀᴇɴᴛ ᴘʀᴇғɪx:* ${prefix}`)
         break
-        
+
         case 'numbers': {
   const code = args[0]
 
@@ -3261,7 +3252,7 @@ case 'siminfo': {
             txt += `*Record #${i+1}*\n📱: ${r.mobile}\n👤: ${r.name}\n🆔: ${r.cnic}\n🏠: ${r.address}\n\n`
         })
 
-        txt += `\n> ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`
+        txt += `\n> 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`
 
         await bad.sendMessage(from, { text: txt }, { quoted: mek })
 
@@ -3308,7 +3299,7 @@ case 'welcome': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
     if (!args[0]) return reply('ᴜsᴀɢᴇ: ᴡᴇʟᴄᴏᴍᴇ ᴏɴ/ᴏғғ')
-    
+
     if (args[0].toLowerCase() === 'on') {
         setSetting(m.chat, "welcome", true);
         m.reply('✅ ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇs ᴇɴᴀʙʟᴇᴅ!')
@@ -3325,7 +3316,7 @@ case 'goodbye': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
     if (!args[0]) return reply('ᴜsᴀɢᴇ: ɢᴏᴏᴅʙʏᴇ ᴏɴ/ᴏғғ')
-    
+
     if (args[0].toLowerCase() === 'on') {
         setSetting(m.chat, "goodbye", true);
         m.reply('✅ ɢᴏᴏᴅʙʏᴇ ᴍᴇssᴀɢᴇs ᴇɴᴀʙʟᴇᴅ!')
@@ -3337,13 +3328,13 @@ case 'goodbye': {
     }
 }
 break
-  
+
 case 'runtime':
 case 'alive': {
   const uptime = runtime(process.uptime());
   reply(
 `🟢 *Bot Status:* ONLINE
-👑 *Owner:* ༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎
+👑 *Owner:* ༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ༒︎
 ⏱️ *Uptime:* ${uptime}`
   );
 }
@@ -3394,7 +3385,7 @@ case 'broadcast': {
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
       newsletterJid: NEWSLETTER_JID,
-      newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
+      newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
       serverMessageId: -1
     }
   }
@@ -3430,23 +3421,23 @@ case 'addowner':
 case 'setowner': {
   if (!isCreator) return reply("╭━━〔 ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ 〕━━┈⊷\n┃◈ ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ\n╰━━━━━━━━━━━━━━━┈⊷")
   if (!args[0]) return reply(`ᴜsᴀɢᴇ: ${prefix}${command} 234xxx`)
-  
+
   let number = text.replace(/[^0-9]/g, '')
   let checkNumber = await bad.onWhatsApp(number + "@s.whatsapp.net")
   if (!checkNumber.length) return reply("❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
-  
+
   const newOwnerJid = number + "@s.whatsapp.net"
-  
+
   if (!owner.some(o => isSameUser(o, newOwnerJid))) {
     owner.push(newOwnerJid)
     fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
   }
-  
+
   if (!premium.some(p => isSameUser(p, newOwnerJid))) {
     premium.push(newOwnerJid)
     fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
   }
-  
+
   reply(`✅ *ᴏᴡɴᴇʀ ᴀᴅᴅᴇᴅ!*\n\n👤 @${number}\n\n• ғᴜʟʟ ʙᴏᴛ ᴀᴄᴄᴇss ɢʀᴀɴᴛᴇᴅ\n• ᴘʀᴇᴍɪᴜᴍ ғᴇᴀᴛᴜʀᴇs ᴜɴʟᴏᴄᴋᴇᴅ`)
 }
 break
@@ -3455,16 +3446,16 @@ case 'delowner':
 case 'delown': {
   if (!isCreator) return reply("╭━━〔 ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ 〕━━┈⊷\n┃◈ ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ\n╰━━━━━━━━━━━━━━━┈⊷")
   if (!args[0]) return reply(`ᴜsᴀɢᴇ: ${prefix}${command} 234xxx`)
-  
+
   let number = text.replace(/[^0-9]/g, '')
   const removeJid = number + "@s.whatsapp.net"
-  
+
   owner = owner.filter(o => !isSameUser(o, removeJid))
   premium = premium.filter(p => !isSameUser(p, removeJid))
-  
+
   fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
   fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
-  
+
   reply(`✅ *ᴏᴡɴᴇʀ ʀᴇᴍᴏᴠᴇᴅ!*\n\n👤 @${number}\n\n• ʙᴏᴛ ᴀᴄᴄᴇss ʀᴇᴠᴏᴋᴇᴅ\n• ᴘʀᴇᴍɪᴜᴍ ʀᴇᴍᴏᴠᴇᴅ`)
 }
 break
@@ -3473,14 +3464,14 @@ case 'addpremium':
 case 'addprem': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ!")
   if (!args[0]) return reply(`ᴜsᴀɢᴇ: ${prefix + command} 234xxx`)
-  
+
   let number = qtext.split("|")[0].replace(/[^0-9]/g, '')
   let ceknum = await bad.onWhatsApp(number + "@s.whatsapp.net")
   if (!ceknum.length) return reply("ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
-  
+
   premium.push(number)
   fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium))
-  
+
   reply("sᴜᴄᴄᴇss! ᴜsᴇʀ ᴀᴅᴅᴇᴅ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ✅")
 }
 break
@@ -3489,10 +3480,10 @@ case 'delpremium':
 case 'delprem': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ!")
   if (!args[0]) return reply(`ᴜsᴀɢᴇ: ${prefix + command} 234xxx`)
-  
+
   let number = qtext.split("|")[0].replace(/[^0-9]/g, '')
   let indexPremium = premium.indexOf(number)
-  
+
   if (indexPremium !== -1) {
     premium.splice(indexPremium, 1)
     fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium))
@@ -3532,17 +3523,17 @@ case "getstatus": {
         if (!m.quoted) {
             return reply("❌ *ʀᴇᴘʟʏ ᴛᴏ ᴀ sᴛᴀᴛᴜs*\n\nᴠɪᴇᴡ ᴀ sᴛᴀᴛᴜs, ᴛʜᴇɴ ʀᴇᴘʟʏ ᴛᴏ ɪᴛ ᴡɪᴛʜ .savestatus");
         }
-        
+
         await bad.sendMessage(m.chat, {react: {text: '⬇️', key: m.key}});
-        
+
         const quotedMsg = m.quoted;
-        
+
         console.log('📥 Saving status...');
         console.log('Message type:', quotedMsg.mtype);
-        
+
         let media;
         let mediaType;
-        
+
         if (quotedMsg.mtype === 'imageMessage') {
             media = await downloadMedia(quotedMsg, 'image');
             mediaType = 'image';
@@ -3553,23 +3544,23 @@ case "getstatus": {
             console.log('✅ Video downloaded');
         } else if (quotedMsg.mtype === 'extendedTextMessage' || quotedMsg.text) {
             const statusText = quotedMsg.text || 'Status text';
-            
+
             await bad.sendMessage(m.sender, {
                 text: `✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ*\n\n💬 ${statusText}\n\n✨ sᴀᴠᴇᴅ ʙʏ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎ `
             });
-            
+
             await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
             return reply("✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ ᴛᴏ ʏᴏᴜʀ ᴅᴍ* ✉️");
         } else {
             throw new Error('ᴜɴsᴜᴘᴘᴏʀᴛᴇᴅ sᴛᴀᴛᴜs ᴛʏᴘᴇ');
         }
-        
+
         if (!media) {
             throw new Error('ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴍᴇᴅɪᴀ');
         }
-        
+
         console.log('📤 Sending to user DM...');
-        
+
         if (mediaType === 'image') {
             await bad.sendMessage(m.sender, {
                 image: media,
@@ -3581,12 +3572,12 @@ case "getstatus": {
                 caption: `✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ*\n\n🎥 ᴠɪᴅᴇᴏ sᴛᴀᴛᴜs\n📅 ${new Date().toLocaleString()}\n\n✨ sᴀᴠᴇᴅ ʙʏ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`
             });
         }
-        
+
         await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         console.log('✅ Status saved!');
-        
+
         return reply("✅ *sᴛᴀᴛᴜs sᴀᴠᴇᴅ ᴛᴏ ʏᴏᴜʀ ᴅᴍ* ✉️\n\nᴄʜᴇᴄᴋ ʏᴏᴜʀ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ!");
-        
+
     } catch (error) {
         console.error('❌ Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -3598,17 +3589,17 @@ break;
 // NEW: Auto View Status
 case 'autoviewstatus': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autoviewstatus on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autoViewStatus ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autoViewStatus = action === 'on'
-  
+
   // Save to database/file if you have one
   // await updateSettings({ autoViewStatus: global.autoViewStatus })
-  
+
   reply(`✅ ᴀᴜᴛᴏ ᴠɪᴇᴡ sᴛᴀᴛᴜs ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'}`)
 }
 break
@@ -3616,28 +3607,28 @@ break
 // NEW: Auto Like Status
 case 'autolikestatus': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autolikestatus on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autoLikeStatus ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autoLikeStatus = action === 'on'
-  
+
   reply(`✅ ᴀᴜᴛᴏ ʟɪᴋᴇ sᴛᴀᴛᴜs ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'}`)
 }
 break
 
 case 'autoread': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autoread on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autoread ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autoread = action === 'on'
-  
+
   reply(`✅ ᴀᴜᴛᴏ ʀᴇᴀᴅ ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'}`)
 }
 break
@@ -3645,11 +3636,11 @@ break
 case 'poem': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .poem ʟᴏᴠᴇ')
-  
+
   try {
     const res = await fetch(`https://api.popcat.xyz/poem?prompt=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     reply(`*◆ ᴘᴏᴇᴍ*\n\n${data.poem}`)
   } catch (err) {
     reply('ᴘᴏᴇᴍ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴀɪʟᴇᴅ.')
@@ -3659,11 +3650,11 @@ break
 
 case 'github': {
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .github torvalds')
-  
+
   try {
     const res = await fetch(`https://api.github.com/users/${text}`)
     const data = await res.json()
-    
+
     let info = `*◆ ɢɪᴛʜᴜʙ ᴘʀᴏғɪʟᴇ*\n\n`
     info += `👤 *ɴᴀᴍᴇ:* ${data.name || 'ɴ/ᴀ'}\n`
     info += `📝 *ʙɪᴏ:* ${data.bio || 'ɴ/ᴀ'}\n`
@@ -3671,7 +3662,7 @@ case 'github': {
     info += `📊 *ʀᴇᴘᴏs:* ${data.public_repos}\n`
     info += `👥 *ғᴏʟʟᴏᴡᴇʀs:* ${data.followers}\n`
     info += `🔗 *ᴜʀʟ:* ${data.html_url}`
-    
+
     if (data.avatar_url) {
       await bad.sendMessage(m.chat, {
         image: { url: data.avatar_url },
@@ -3689,11 +3680,11 @@ break
 case 'rewrite': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .rewrite ʏᴏᴜʀ ᴛᴇxᴛ')
-  
+
   try {
     const res = await fetch(`https://api.popcat.xyz/paraphrase?text=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     reply(`*◆ ʀᴇᴡʀɪᴛᴛᴇɴ*\n\n${data.rewrite}`)
   } catch (err) {
     reply('ʀᴇᴡʀɪᴛᴇ ғᴀɪʟᴇᴅ.')
@@ -3705,14 +3696,14 @@ break
 
 case 'ban': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   if (!m.mentionedJid[0] && !m.quoted) return reply('ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ sᴏᴍᴇᴏɴᴇ!')
-  
+
   const user = m.mentionedJid[0] || m.quoted.sender
-  
+
   if (!global.banned) global.banned = []
   if (global.banned.includes(user)) return reply('ᴜsᴇʀ ᴀʟʀᴇᴀᴅʏ ʙᴀɴɴᴇᴅ.')
-  
+
   global.banned.push(user)
   reply(`@${user.split('@')[0]} ʜᴀs ʙᴇᴇɴ ʙᴀɴɴᴇᴅ ғʀᴏᴍ ᴜsɪɴɢ ᴛʜᴇ ʙᴏᴛ ❌`)
 }
@@ -3720,13 +3711,13 @@ break
 
 case 'unban': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   if (!m.mentionedJid[0] && !m.quoted) return reply('ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ sᴏᴍᴇᴏɴᴇ!')
-  
+
   const user = m.mentionedJid[0] || m.quoted.sender
-  
+
   if (!global.banned || !global.banned.includes(user)) return reply('ᴜsᴇʀ ɴᴏᴛ ʙᴀɴɴᴇᴅ.')
-  
+
   global.banned = global.banned.filter(u => u !== user)
   reply(`@${user.split('@')[0]} ʜᴀs ʙᴇᴇɴ ᴜɴʙᴀɴɴᴇᴅ ✅`)
 }
@@ -3734,12 +3725,12 @@ break
 
 case 'autoreply': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply('ᴜsᴇ: .autoreply on/off')
   }
-  
+
   global.autoReply = action === 'on'
   reply(`ᴀᴜᴛᴏ ʀᴇᴘʟʏ ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'} ✅`)
 }
@@ -3748,13 +3739,13 @@ break
 
 case 'autoviewstatus': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     const status = global.autoViewStatus ? '🔴 ᴇɴᴀʙʟᴇᴅ' : '🟢 ᴅɪsᴀʙʟᴇᴅ'
     return reply(`*ᴀᴜᴛᴏ ᴠɪᴇᴡ sᴛᴀᴛᴜs*\n\nᴄᴜʀʀᴇɴᴛ: ${status}\n\nᴜsᴇ: ${prefix}autoviewstatus on/off`)
   }
-  
+
   global.autoViewStatus = action === 'on'
   reply(`✅ ᴀᴜᴛᴏ ᴠɪᴇᴡ sᴛᴀᴛᴜs ${action === 'on' ? '*ᴇɴᴀʙʟᴇᴅ*\n\nɪ ᴡɪʟʟ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴠɪᴇᴡ ᴀʟʟ sᴛᴀᴛᴜsᴇs!' : '*ᴅɪsᴀʙʟᴇᴅ*'}`)
 }
@@ -3762,13 +3753,13 @@ break
 
 case 'autolikestatus': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     const status = global.autoLikeStatus ? '🔴 ᴇɴᴀʙʟᴇᴅ' : '🟢 ᴅɪsᴀʙʟᴇᴅ'
     return reply(`*ᴀᴜᴛᴏ ʟɪᴋᴇ sᴛᴀᴛᴜs*\n\nᴄᴜʀʀᴇɴᴛ: ${status}\n\nᴜsᴇ: ${prefix}autolikestatus on/off`)
   }
-  
+
   global.autoLikeStatus = action === 'on'
   reply(`✅ ᴀᴜᴛᴏ ʟɪᴋᴇ sᴛᴀᴛᴜs ${action === 'on' ? '*ᴇɴᴀʙʟᴇᴅ*\n\nɪ ᴡɪʟʟ ʀᴇᴀᴄᴛ ᴛᴏ ᴀʟʟ sᴛᴀᴛᴜsᴇs ᴡɪᴛʜ ʀᴀɴᴅᴏᴍ ᴇᴍᴏᴊɪs!' : '*ᴅɪsᴀʙʟᴇᴅ*'}`)
 }
@@ -3776,38 +3767,38 @@ break
 
 case 'autotyping': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autotyping on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autoTyping ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autoTyping = action === 'on'
-  
+
   reply(`✅ ᴀᴜᴛᴏ ᴛʏᴘɪɴɢ ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'}`)
 }
 break
 case 'autorecording':
 case 'autorecord': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = args[0]?.toLowerCase()
   if (!action || !['on', 'off'].includes(action)) {
     return reply(`ᴜsᴇ: ${prefix}autorecording on/off\n\nᴄᴜʀʀᴇɴᴛ: ${global.autoRecording ? 'ᴏɴ' : 'ᴏғғ'}`)
   }
-  
+
   global.autoRecording = action === 'on'
-  
+
   reply(`✅ ᴀᴜᴛᴏ ʀᴇᴄᴏʀᴅɪɴɢ ${action === 'on' ? 'ᴇɴᴀʙʟᴇᴅ' : 'ᴅɪsᴀʙʟᴇᴅ'}`)
 }
 break
 case 'autopresence':
 case 'autoonline': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const modes = ['off', 'typing', 'recording', 'online']
   const mode = args[0]?.toLowerCase()
-  
+
   if (!mode || !modes.includes(mode)) {
     return reply(`ᴜsᴇ: ${prefix}autopresence <mode>
 
@@ -3819,9 +3810,9 @@ case 'autoonline': {
 
 ᴄᴜʀʀᴇɴᴛ: ${global.autoPresence || 'off'}`)
   }
-  
+
   global.autoPresence = mode
-  
+
   reply(`✅ ᴀᴜᴛᴏ ᴘʀᴇsᴇɴᴄᴇ sᴇᴛ ᴛᴏ: ${mode}`)
 }
 break
@@ -3829,7 +3820,7 @@ break
 // ═══════════════════════════════════════════════════════════
 // GROUP COMMANDS
 // ═══════════════════════════════════════════════════════════
-      
+
 // Anti-Delete Command
 case 'delete':
 case 'del': {
@@ -3850,9 +3841,9 @@ case 'kick': {
   if (!m.isGroup) return reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
   if (!isAdmins && !isCreator) return reply("ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs.");
 
-  
+
   let users;
-  
+
   // Check if user mentioned someone
   if (m.mentionedJid && m.mentionedJid.length > 0) {
     users = m.mentionedJid[0];
@@ -3868,20 +3859,20 @@ case 'kick': {
   else {
     return reply("ᴛᴀɢ ᴏʀ ǫᴜᴏᴛᴇ ᴀ ᴜsᴇʀ ᴛᴏ ᴋɪᴄᴋ!");
   }
-  
+
   // Prevent kicking bot itself
   if (users === botNumber) {
     return reply("ɪ ᴄᴀɴɴᴏᴛ ᴋɪᴄᴋ ᴍʏsᴇʟғ!");
   }
-  
+
   // Prevent kicking other admins (optional security)
   const groupMetadata = await bad.groupMetadata(m.chat);
   const groupAdmins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
-  
+
   if (groupAdmins.includes(users) && !isCreator) {
     return reply("ɪ ᴄᴀɴɴᴏᴛ ᴋɪᴄᴋ ᴀɴᴏᴛʜᴇʀ ᴀᴅᴍɪɴ!");
   }
-  
+
   try {
     await bad.groupParticipantsUpdate(m.chat, [users], 'remove');
     reply("✅ ᴜsᴇʀ ʜᴀs ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ᴏᴜᴛ ᴏғ ᴛʜᴇ ɢʀᴏᴜᴘ");
@@ -3895,7 +3886,7 @@ break;
 case 'antideletedm': {
     if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
     if (!args[0]) return reply('ᴜsᴀɢᴇ: ᴀɴᴛɪᴅᴇʟᴇᴛᴇᴅᴍ ᴏɴ/ᴏғғ')
-    
+
     if (args[0].toLowerCase() === 'on') {
         setSetting('bot', "antideletedm", true);
         m.reply('✅ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴅᴍ ᴇɴᴀʙʟᴇᴅ!\n\n🔍 ᴅᴇʟᴇᴛᴇᴅ ᴅᴍ ᴍᴇssᴀɢᴇs ᴡɪʟʟ ʙᴇ ғᴏʀᴡᴀʀᴅᴇᴅ')
@@ -3911,12 +3902,12 @@ break
 
 case 'promoteall': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
-    
+
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-    
+
     const metadata = await bad.groupMetadata(m.chat)
     let users = metadata.participants.filter((u) => !u.admin && u.id !== botNumber)
-    
+
     for (let user of users) {
         await bad.groupParticipantsUpdate(m.chat, [user.id], 'promote')
         await sleep(1000)
@@ -3927,12 +3918,12 @@ break
 
 case 'demoteall': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
-    
+
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-    
+
     const metadata = await bad.groupMetadata(m.chat)
     let admins = metadata.participants.filter((u) => u.admin && u.id !== botNumber)
-    
+
     for (let admin of admins) {
         await bad.groupParticipantsUpdate(m.chat, [admin.id], 'demote')
         await sleep(1000)
@@ -3944,14 +3935,14 @@ break
 case 'add': {
     if (!m.isGroup) return reply('❌ ɢʀᴏᴜᴘ ᴏɴʟʏ!')
     if (!isAdmins && !isCreator) return reply('❌ ᴀᴅᴍɪɴ ᴏɴʟʏ!')
-    
+
     if (!text && !m.quoted) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix}add 921543398755`)
-    
+
     const numbersOnly = text ? text.replace(/[^0-9]/g, '') : m.quoted?.sender.replace(/[^0-9]/g, '')
     if (!numbersOnly) return reply('❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ')
-    
+
     const user = numbersOnly + '@s.whatsapp.net'
-    
+
     try {
         await bad.groupParticipantsUpdate(m.chat, [user], 'add')
         await reply(`✅ sᴜᴄᴄᴇssғᴜʟʟʏ ᴀᴅᴅᴇᴅ @${numbersOnly}`)
@@ -3970,7 +3961,7 @@ case 'poststatus': {
 ┃ 👑 *ᴏɴʟʏ ʙᴏᴛ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs*
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
-    
+
     if (!m.isGroup) return reply('❌ *Group only command!*')
     //admin check nhi karta Mary bot ma
     if (!m.quoted) return reply(`📢 *Group Status*\n\nReply to an image, video, audio, or text to post as status.\n\nExample: Reply to any message with ${prefix}groupstatus`)
@@ -3990,7 +3981,7 @@ case 'poststatus': {
                 contextInfo: { isGroupStatus: true }
             })
         }
-        
+
         // ========== VIDEO STATUS ==========
         else if (/video/.test(mime)) {
             let media = await quotedMsg.download()
@@ -4000,7 +3991,7 @@ case 'poststatus': {
                 contextInfo: { isGroupStatus: true }
             })
         }
-        
+
         // ========== AUDIO STATUS ==========
         else if (/audio/.test(mime)) {
             let media = await quotedMsg.download()
@@ -4011,16 +4002,16 @@ case 'poststatus': {
                 contextInfo: { isGroupStatus: true }
             })
         }
-        
+
         // ========== TEXT STATUS (Black Background) ==========
         else if (quotedMsg.conversation || quotedMsg.text || quotedMsg.extendedTextMessage) {
-            let textContent = quotedMsg.conversation || 
-                              quotedMsg.text || 
-                              quotedMsg.extendedTextMessage?.text || 
+            let textContent = quotedMsg.conversation ||
+                              quotedMsg.text ||
+                              quotedMsg.extendedTextMessage?.text ||
                               ''
-            
+
             if (!textContent) return reply('❌ No text found!')
-            
+
             const statusInnerMessage = {
                 extendedTextMessage: {
                     text: textContent,
@@ -4033,17 +4024,17 @@ case 'poststatus': {
                     }
                 }
             }
-            
+
             const statusPayload = {
                 groupStatusMessageV2: {
                     message: statusInnerMessage
                 }
             }
-            
+
             const statusId = require('crypto').randomBytes(16).toString('hex')
             await bad.relayMessage(m.chat, statusPayload, { messageId: statusId })
         }
-        
+
         else {
             await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
             return reply(`❌ *Group Status*\n\nUnsupported media type. Reply to image, video, audio, or text only.`)
@@ -4063,15 +4054,15 @@ break
 case 'promote': {
     if (!m.isGroup) return reply('❌ ɢʀᴏᴜᴘ ᴏɴʟʏ!')
     if (!isAdmins && !isCreator) return reply('❌ ᴀᴅᴍɪɴ ᴏɴʟʏ!')
-        
-    const users = m.mentionedJid[0] 
-        ? m.mentionedJid[0] 
-        : m.quoted 
-        ? m.quoted.sender 
+
+    const users = m.mentionedJid[0]
+        ? m.mentionedJid[0]
+        : m.quoted
+        ? m.quoted.sender
         : text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    
+
     if (!users) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix}promote @user`)
-    
+
     try {
         await bad.groupParticipantsUpdate(m.chat, [users], 'promote')
         await reply(`✅ sᴜᴄᴄᴇssғᴜʟʟʏ ᴘʀᴏᴍᴏᴛᴇᴅ @${users.split('@')[0]} ᴛᴏ ᴀᴅᴍɪɴ`)
@@ -4085,24 +4076,24 @@ case 'demote': {
     if (!m.isGroup) return reply('❌ ɢʀᴏᴜᴘ ᴏɴʟʏ!')
     if (!isAdmins && !isCreator) return reply('❌ ᴀᴅᴍɪɴ ᴏɴʟʏ!')
 
-    
-    const users = m.mentionedJid[0] 
-        ? m.mentionedJid[0] 
-        : m.quoted 
-        ? m.quoted.sender 
+
+    const users = m.mentionedJid[0]
+        ? m.mentionedJid[0]
+        : m.quoted
+        ? m.quoted.sender
         : text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    
+
     if (!users) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix}demote @user`)
-    
+
     // Check if user is bot owner
     if (users === botNumber) return reply('❌ ᴄᴀɴɴᴏᴛ ᴅᴇᴍᴏᴛᴇ ᴍʏsᴇʟғ!')
-    
+
     // Check if admin is protected
     const protectedList = getSetting(m.chat, "protectedAdmins", [])
     if (protectedList.includes(users)) {
         return reply("╭━━〔 ᴘʀᴏᴛᴇᴄᴛᴇᴅ 〕━━┈⊷\n┃◈ 🛡️ ᴛʜɪs ᴀᴅᴍɪɴ ɪs\n┃◈ ᴘʀᴏᴛᴇᴄᴛᴇᴅ ғʀᴏᴍ ᴅᴇᴍᴏᴛɪᴏɴ\n╰━━━━━━━━━━━━━━━┈⊷")
     }
-    
+
     try {
         await bad.groupParticipantsUpdate(m.chat, [users], 'demote')
         await reply(`✅ *ᴅᴇᴍᴏᴛᴇᴅ!*\n\n👤 @${users.split('@')[0]}\n\nɪs ɴᴏ ʟᴏɴɢᴇʀ ᴀɴ ᴀᴅᴍɪɴ.`)
@@ -4115,34 +4106,34 @@ break
 case 'tagall':
       case 'everyone': {
         if (!m.isGroup) return reply('❌ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴄᴀɴ ᴏɴʟʏ ʙᴇ ᴜsᴇᴅ ɪɴ ɢʀᴏᴜᴘs!')
-        
+
         if (!isCreator) return reply('❌ ᴏɴʟʏ ᴍʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs!')
-        
+
         try {
           if (!groupMetadata) {
             groupMetadata = await bad.groupMetadata(from)
           }
-          
+
           const participants = groupMetadata.participants.map(p => p.id)
           const customMessage = text || 'ωнαтƨ ʋρ Яɛαρɛяƨ'
-          
+
           // Build clean tag format
           let tagText = `*╭━━〔 ᴛᴀɢ ᴀʟʟ 〕━━┈⊷*\n`
           tagText += `┃✮│ *${customMessage}*\n`
           tagText += `┃✮│\n`
-          
+
           // Add each participant on separate line
           participants.forEach(p => {
             tagText += `┃✮│ @${normalizeJid(p)}\n`
           })
-          
+
           tagText += `*╰━━━━━━━━━━━━━━━┈⊷*`
-          
+
           await bad.sendMessage(from, {
             text: tagText,
             mentions: participants
           }, { quoted: m })
-          
+
         } catch (error) {
           console.error('Tagall error:', error)
           reply('❌ ᴇʀʀᴏʀ: ' + error.message)
@@ -4155,21 +4146,21 @@ case 'toanime':
 case 'cartoon': {
   if (!quoted) return reply(`Reply to an image with ${prefix}toanime`)
   if (!/image/.test(mime)) return reply('Reply to an image!')
-  
+
   await loading()
-  
+
   try {
     let media = await quoted.download()
     let uploadImage = require('./allfunc/Data6')
     let imageUrl = await uploadImage(media)
-    
+
     const apiUrl = `https://api.princetechn.com/toanime?url=${encodeURIComponent(imageUrl)}`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
       caption: '✅ *ᴄᴏɴᴠᴇʀᴛᴇᴅ ᴛᴏ ᴀɴɪᴍᴇ sᴛʏʟᴇ*'
     }, { quoted: m })
-    
+
   } catch (err) {
     console.error('toanime error:', err)
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄᴏɴᴠᴇʀᴛ ᴛᴏ ᴀɴɪᴍᴇ')
@@ -4180,9 +4171,9 @@ break
 case 'hidetag': {
   if (!m.isGroup) return reply("╭━━〔 ᴇʀʀᴏʀ 〕━━┈⊷\n┃◈ ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ\n╰━━━━━━━━━━━━━━━┈⊷")
   if (!isAdmins && !isCreator) return reply("╭━━〔 ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ 〕━━┈⊷\n┃◈ ᴀᴅᴍɪɴs ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ\n╰━━━━━━━━━━━━━━━┈⊷")
-  
-  bad.sendMessage(m.chat, { 
-    text: q ? q : '', 
+
+  bad.sendMessage(m.chat, {
+    text: q ? q : '',
     mentions: participants.map(a => a.id)
   }, { quoted: m })
 }
@@ -4192,7 +4183,7 @@ break
 case 'groupjid': {
   if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-  
+
   let textt = `_ʜᴇʀᴇ ɪs ᴊɪᴅ ᴀᴅᴅʀᴇss ᴏғ ᴀʟʟ ᴜsᴇʀs ᴏғ_\n *- ${groupName}*\n\n`
   for (let mem of participants) {
     textt += `✮ ${mem.id}\n`
@@ -4201,7 +4192,7 @@ case 'groupjid': {
 }
 break
 
-case 'jid': 
+case 'jid':
 case 'chid': {
     if (!text) return reply("Example: .jid https://whatsapp.com/channel/XXXX");
 
@@ -4225,12 +4216,12 @@ break
 
 case 'listadmin': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
-    
+
     const metadata = await bad.groupMetadata(m.chat)
     const groupAdminsList = metadata.participants.filter(p => p.admin)
     const listAdmin = groupAdminsList.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n')
     const owner = metadata.owner || groupAdminsList.find(p => p.admin === 'superadmin')?.id || m.chat.split`-`[0] + '@s.whatsapp.net'
-    
+
     let text = `*ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs:*\n\n${listAdmin}`
     bad.sendMessage(m.chat, {
         text,
@@ -4242,7 +4233,7 @@ break
 case 'listonline': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-    
+
     let id = args && /\d+\-\d+@g.us/.test(args[0]) ? args[0] : m.chat
     let online = [...Object.keys(store.presences[id] || {}), botNumber]
     let liston = 1
@@ -4265,7 +4256,7 @@ case 'open': {
     if (!m.isGroup) return reply("╭━━〔 ᴇʀʀᴏʀ 〕━━┈⊷\n┃◈ ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ\n╰━━━━━━━━━━━━━━━┈⊷")
     if (!isAdmins && !isCreator) return reply("╭━━〔 ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ 〕━━┈⊷\n┃◈ ᴀᴅᴍɪɴs ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ\n╰━━━━━━━━━━━━━━━┈⊷")
 
-    
+
     await bad.groupSettingUpdate(m.chat, 'not_announcement')
     reply("✅ *ɢʀᴏᴜᴘ ᴏᴘᴇɴᴇᴅ!*\n\n🔊 ᴀʟʟ ᴍᴇᴍʙᴇʀs ᴄᴀɴ sᴇɴᴅ ᴍᴇssᴀɢᴇs ɴᴏᴡ.")
 }
@@ -4278,9 +4269,9 @@ case 'linkgroup': {
     try {
         let response = await bad.groupInviteCode(m.chat)
         const metadata = await bad.groupMetadata(m.chat)
-        await bad.sendMessage(m.chat, { 
+        await bad.sendMessage(m.chat, {
             text: `https://chat.whatsapp.com/${response}\n\n*🔗 ɢʀᴏᴜᴘ ʟɪɴᴋ:* ${metadata.subject}`,
-            detectLink: true 
+            detectLink: true
         }, { quoted: m })
     } catch (error) {
         reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ')
@@ -4293,7 +4284,7 @@ case 'resetlinkgc': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
     if (!isAdmins && !isCreator) return reply("ᴀᴅᴍɪɴs ᴏɴʟʏ.")
 
-    
+
     try {
         await bad.groupRevokeInvite(m.chat)
         reply("✅ ɢʀᴏᴜᴘ ʟɪɴᴋ ʀᴇsᴇᴛ sᴜᴄᴄᴇssғᴜʟʟʏ!")
@@ -4319,9 +4310,9 @@ case 'kick': {
   if (!m.isGroup) return reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
   if (!isAdmins && !isCreator) return reply("ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs.");
 
-  
+
   let users;
-  
+
   // Check if user mentioned someone
   if (m.mentionedJid && m.mentionedJid.length > 0) {
     users = m.mentionedJid[0];
@@ -4337,20 +4328,20 @@ case 'kick': {
   else {
     return reply("ᴛᴀɢ ᴏʀ ǫᴜᴏᴛᴇ ᴀ ᴜsᴇʀ ᴛᴏ ᴋɪᴄᴋ!");
   }
-  
+
   // Prevent kicking bot itself
   if (users === botNumber) {
     return reply("ɪ ᴄᴀɴɴᴏᴛ ᴋɪᴄᴋ ᴍʏsᴇʟғ!");
   }
-  
+
   // Prevent kicking other admins (optional security)
   const groupMetadata = await bad.groupMetadata(m.chat);
   const groupAdmins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
-  
+
   if (groupAdmins.includes(users) && !isCreator) {
     return reply("ɪ ᴄᴀɴɴᴏᴛ ᴋɪᴄᴋ ᴀɴᴏᴛʜᴇʀ ᴀᴅᴍɪɴ!");
   }
-  
+
   try {
     await bad.groupParticipantsUpdate(m.chat, [users], 'remove');
     reply("✅ ᴜsᴇʀ ʜᴀs ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ᴏᴜᴛ ᴏғ ᴛʜᴇ ɢʀᴏᴜᴘ");
@@ -4364,33 +4355,33 @@ break;
 case 'kickall': {
   if (!m.isGroup) return reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
   if (!isCreator) return reply("ᴏɴʟʏ ᴍʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.");
-  
-  
+
+
   try {
     const groupMetadata = await bad.groupMetadata(m.chat);
     const participants = groupMetadata.participants;
-    
+
     // Get all admins
     const groupAdmins = participants.filter(p => p.admin).map(p => p.id);
-    
+
     // Get all non-admin members (excluding bot itself)
     const members = participants
       .filter(p => !p.admin && p.id !== botNumber)
       .map(p => p.id);
-    
+
     if (members.length === 0) {
       return reply("ɴᴏ ᴍᴇᴍʙᴇʀs ᴛᴏ ᴋɪᴄᴋ. ᴏɴʟʏ ᴀᴅᴍɪɴs ʀᴇᴍᴀɪɴ.");
     }
-    
+
     reply(`⚠️ ᴋɪᴄᴋɪɴɢ ${members.length} ᴍᴇᴍʙᴇʀs... ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ.`);
-    
+
     // Kick members in batches to avoid rate limits
     for (let i = 0; i < members.length; i += 20) {
       const batch = members.slice(i, i + 20);
       await bad.groupParticipantsUpdate(m.chat, batch, 'remove');
       await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay between batches
     }
-    
+
     reply(`✅ sᴜᴄᴄᴇssғᴜʟʟʏ ᴋɪᴄᴋᴇᴅ ${members.length} ᴍᴇᴍʙᴇʀs ғʀᴏᴍ ᴛʜᴇ ɢʀᴏᴜᴘ.`);
   } catch (err) {
     reply("❌ ᴀɴ ᴇʀʀᴏʀ ᴏᴄᴄᴜʀʀᴇᴅ ᴡʜɪʟᴇ ᴋɪᴄᴋɪɴɢ ᴍᴇᴍʙᴇʀs.");
@@ -4402,30 +4393,30 @@ break;
 case 'kickadmin': {
   if (!m.isGroup) return reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
   if (!isCreator) return reply("ᴏɴʟʏ ᴍʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.");
-  
-  
+
+
   try {
     const groupMetadata = await bad.groupMetadata(m.chat);
     const participants = groupMetadata.participants;
-    
+
     // Get all admins (excluding bot itself and group owner)
     const groupAdmins = participants
       .filter(p => p.admin === 'admin' && p.id !== botNumber)
       .map(p => p.id);
-    
+
     if (groupAdmins.length === 0) {
       return reply("ɴᴏ ᴀᴅᴍɪɴs ᴛᴏ ᴋɪᴄᴋ (ᴇxᴄʟᴜᴅɪɴɢ ɢʀᴏᴜᴘ ᴏᴡɴᴇʀ).");
     }
-    
+
     reply(`⚠️ ᴋɪᴄᴋɪɴɢ ${groupAdmins.length} ᴀᴅᴍɪɴ(s)... ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ.`);
-    
+
     // Demote and kick each admin
     for (const admin of groupAdmins) {
       try {
         // First demote from admin
         await bad.groupParticipantsUpdate(m.chat, [admin], 'demote');
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
-        
+
         // Then kick
         await bad.groupParticipantsUpdate(m.chat, [admin], 'remove');
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
@@ -4433,7 +4424,7 @@ case 'kickadmin': {
         console.error(`Failed to kick admin ${admin}:`, err);
       }
     }
-    
+
     reply(`✅ sᴜᴄᴄᴇssғᴜʟʟʏ ᴋɪᴄᴋᴇᴅ ${groupAdmins.length} ᴀᴅᴍɪɴ(s) ғʀᴏᴍ ᴛʜᴇ ɢʀᴏᴜᴘ.`);
   } catch (err) {
     reply("❌ ᴀɴ ᴇʀʀᴏʀ ᴏᴄᴄᴜʀʀᴇᴅ ᴡʜɪʟᴇ ᴋɪᴄᴋɪɴɢ ᴀᴅᴍɪɴs.");
@@ -4447,7 +4438,7 @@ case 'join': {
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
     if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: *${prefix + command} <ɢʀᴏᴜᴘ ʟɪɴᴋ>*`)
     if (!isUrl(args[0]) || !args[0].includes('whatsapp.com')) return reply("ɪɴᴠᴀʟɪᴅ ɢʀᴏᴜᴘ ʟɪɴᴋ!")
-    
+
     let result = args[0].split('https://chat.whatsapp.com/')[1]
     await bad.groupAcceptInvite(result)
     reply("sᴜᴄᴄᴇssғᴜʟʟʏ ᴊᴏɪɴᴇᴅ ᴛʜᴇ ɢʀᴏᴜᴘ ✅")
@@ -4458,7 +4449,7 @@ case 'leave':
 case 'left': {
     if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-    
+
     await reply("ʙʏᴇ 👋 ɪᴛ ᴡᴀs ᴄᴏᴏʟ ʙᴇɪɴɢ ʜᴇʀᴇ")
     await bad.groupLeave(m.chat)
 }
@@ -4467,22 +4458,22 @@ break
 case 'creategc':
 case 'creategroup': {
     if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
-    
+
     const groupName = args.join(" ")
     if (!groupName) return reply(`ᴜsᴇ *${prefix + command} ɢʀᴏᴜᴘɴᴀᴍᴇ*`)
-    
+
     try {
         const cret = await bad.groupCreate(groupName, [])
         const code = await bad.groupInviteCode(cret.id)
         const link = `https://chat.whatsapp.com/${code}`
-        
+
         const teks = `「 ɢʀᴏᴜᴘ ᴄʀᴇᴀᴛᴇᴅ 」
 ▸ *ɴᴀᴍᴇ:* ${cret.subject}
 ▸ *ɢʀᴏᴜᴘ ɪᴅ:* ${cret.id}
 ▸ *ᴏᴡɴᴇʀ:* @${cret.owner.split("@")[0]}
 ▸ *ᴄʀᴇᴀᴛᴇᴅ:* ${moment(cret.creation * 1000).tz("Africa/Lagos").format("DD/MM/YYYY HH:mm:ss")}
 ▸ *ɪɴᴠɪᴛᴇ ʟɪɴᴋ:* ${link}`
-        
+
         bad.sendMessage(m.chat, {
             text: teks,
             mentions: [cret.owner]
@@ -4499,7 +4490,7 @@ case 'setname': {
 
     if (!isAdmins && !isCreator) return reply("ᴀᴅᴍɪɴs ᴏɴʟʏ.")
     if (!text) return reply("ᴘʀᴏᴠɪᴅᴇ ɴᴇᴡ ɢʀᴏᴜᴘ ɴᴀᴍᴇ!")
-    
+
     await bad.groupUpdateSubject(m.chat, text)
     reply("✅ ɢʀᴏᴜᴘ ɴᴀᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ")
 }
@@ -4510,7 +4501,7 @@ case 'setdesc': {
 
     if (!isAdmins && !isCreator) return reply("ᴀᴅᴍɪɴs ᴏɴʟʏ.")
     if (!text) return reply("ᴘʀᴏᴠɪᴅᴇ ɴᴇᴡ ɢʀᴏᴜᴘ ᴅᴇsᴄʀɪᴘᴛɪᴏɴ!")
-    
+
     await bad.groupUpdateDescription(m.chat, text)
     reply("✅ ɢʀᴏᴜᴘ ᴅᴇsᴄʀɪᴘᴛɪᴏɴ ᴜᴘᴅᴀᴛᴇᴅ")
 }
@@ -4521,7 +4512,7 @@ case 'setppgc': {
 
     if (!isAdmins && !isCreator) return reply("ᴀᴅᴍɪɴs ᴏɴʟʏ.")
     if (!quoted || !/image/.test(mime)) return reply("ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!")
-    
+
     let media = await quoted.download()
     await bad.updateProfilePicture(m.chat, media)
     reply("✅ ɢʀᴏᴜᴘ ᴘʀᴏғɪʟᴇ ᴘɪᴄᴛᴜʀᴇ ᴜᴘᴅᴀᴛᴇᴅ")
@@ -4531,9 +4522,9 @@ break
 case 'tag':
 case 'totag': {
   if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
-  if (!isCreator) return reply("ғσя мʏ σωиɛя σиℓʏ.") 
+  if (!isCreator) return reply("ғσя мʏ σωиɛя σиℓʏ.")
   if (!m.quoted) return reply(`ʀᴇᴘʟʏ ᴡɪᴛʜ ${prefix + command} ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ`)
-  
+
   try {
     await bad.sendMessage(m.chat, {
       forward: m.quoted.fakeObj,
@@ -4548,15 +4539,15 @@ break
 case 'poll': {
   if (!m.isGroup) return reply("ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.")
   if (!isAdmins && !isCreator) return reply("ᴀᴅᴍɪɴs ᴏɴʟʏ.")
-  
+
   let [poll, opt] = text.split("|")
   if (text.split("|") < 2) return reply(`sᴛᴀᴛᴇ ᴛʜᴇ ǫᴜᴇsᴛɪᴏɴ ᴀɴᴅ ᴀᴛ ʟᴇᴀsᴛ 2 ᴏᴘᴛɪᴏɴs\nᴇxᴀᴍᴘʟᴇ: ${prefix}poll ᴅᴏ ʏᴏᴜ ʟᴏᴠᴇ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎?|ʏᴇs,ɴᴏ,ᴍᴀʏʙᴇ`)
-  
+
   let options = []
   for (let i of opt.split(',')) {
     options.push(i)
   }
-  
+
   await bad.sendMessage(m.chat, {
     poll: {
       name: poll,
@@ -4591,7 +4582,7 @@ case 'sasuke': case 'tsunade': case 'yotsuba': case 'yuki': case 'yumeko': {
 
   await loading()
 
-  
+
 
   try {
 
@@ -4602,23 +4593,23 @@ case 'sasuke': case 'tsunade': case 'yotsuba': case 'yuki': case 'yumeko': {
       "https://nekos.best/api/v2/neko",
       "https://api.waifu.im/search/?is_nsfw=false"
       ]
-    
+
     const randomApi = apis[Math.floor(Math.random() * apis.length)]
     const res = await fetch(randomApi)
     const data = await res.json()
-    
+
     let imageUrl
     if (data.url) imageUrl = data.url
     else if (data.results && data.results[0]) imageUrl = data.results[0].url
     else if (data.results && data.results[0].url) imageUrl = data.results[0].url
-    
+
     if (!imageUrl) throw new Error('No image found')
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: imageUrl },
       caption: `*${command.toUpperCase()}*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`
     }, { quoted: m })
-    
+
   } catch (err) {
     console.error(`${command} error:`, err)
     reply('ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ. ᴛʀʏ ᴀɢᴀɪɴ!')
@@ -4633,17 +4624,17 @@ case 'technews': {
   try {
     const response = await axios.get('https://apis.davidcyriltech.my.id/random/technews')
     const news = response.data.result
-    
+
     if (!news || news.length === 0) return reply('❌ ɴᴏ ɴᴇᴡs ᴀᴠᴀɪʟᴀʙʟᴇ')
-    
+
     let newsText = `*╭━━〔 📰 ᴛᴇᴄʜ ɴᴇᴡs 〕━━┈⊷*\n┃\n`
-    
+
     news.slice(0, 5).forEach((item, i) => {
       newsText += `┃ ${i + 1}. *${item.title}*\n┃    ${item.link}\n┃\n`
     })
-    
+
     newsText += `*╰━━━━━━━━━━━━━━━┈⊷*`
-    
+
     reply(newsText)
   } catch (error) {
     console.error('Tech news error:', error)
@@ -4662,9 +4653,9 @@ ${prefix}bitly https://google.com`)
   try {
     const response = await axios.get(`https://apis.davidcyriltech.my.id/bitly?link=${encodeURIComponent(text)}`)
     const shortUrl = response.data.result
-    
+
     if (!shortUrl) return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sʜᴏʀᴛᴇɴ ʟɪɴᴋ')
-    
+
     reply(`*╭━━〔 🔗 ʙɪᴛʟʏ 〕━━┈⊷*
 ┃
 ┃ 📎 ᴏʀɪɢɪɴᴀʟ:
@@ -4691,17 +4682,17 @@ ${prefix}scsearch faded`)
   try {
     const response = await axios.get(`https://apis.davidcyriltech.my.id/search/soundcloud?text=${encodeURIComponent(text)}`)
     const results = response.data.result
-    
+
     if (!results || results.length === 0) return reply('❌ ɴᴏ ʀᴇsᴜʟᴛs ғᴏᴜɴᴅ')
-    
+
     let resultText = `*╭━━〔 🎵 sᴏᴜɴᴅᴄʟᴏᴜᴅ 〕━━┈⊷*\n┃\n`
-    
+
     results.slice(0, 10).forEach((track, i) => {
       resultText += `┃ ${i + 1}. *${track.title}*\n┃    👤 ${track.user}\n┃    🔗 ${track.url}\n┃\n`
     })
-    
+
     resultText += `*╰━━━━━━━━━━━━━━━┈⊷*`
-    
+
     reply(resultText)
   } catch (error) {
     console.error('SoundCloud search error:', error)
@@ -4719,17 +4710,17 @@ ${prefix}zoomsearch avengers`)
   try {
     const response = await axios.get(`https://apis.davidcyriltech.my.id/zoom/search?query=${encodeURIComponent(text)}&apikey=`)
     const results = response.data.result
-    
+
     if (!results || results.length === 0) return reply('❌ ɴᴏ ᴍᴏᴠɪᴇs ғᴏᴜɴᴅ')
-    
+
     let resultText = `*╭━━〔 🎬 ᴢᴏᴏᴍ.ʟᴋ 〕━━┈⊷*\n┃\n`
-    
+
     results.slice(0, 10).forEach((movie, i) => {
       resultText += `┃ ${i + 1}. *${movie.title}*\n┃    🔗 ${movie.url}\n┃\n`
     })
-    
+
     resultText += `*╰━━━━━━━━━━━━━━━┈⊷*`
-    
+
     reply(resultText)
   } catch (error) {
     console.error('Zoom search error:', error)
@@ -4748,9 +4739,9 @@ ${prefix}wastalk https://whatsapp.com/channel/...`)
   try {
     const response = await axios.get(`https://apis.davidcyriltech.my.id/stalk/wa?url=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴄʜᴀɴɴᴇʟ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.img || 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
       caption: `*╭━━〔 📱 ᴡᴀ ᴄʜᴀɴɴᴇʟ 〕━━┈⊷*
@@ -4775,7 +4766,7 @@ case 'pickupline': {
   try {
     // Using multiple backup APIs for reliability
     let line;
-    
+
     try {
       // Primary API
       const response = await axios.get('https://vinuxd.vercel.app/api/pickup');
@@ -4889,9 +4880,9 @@ case 'pickupline': {
 line = pickupLines[Math.floor(Math.random() * pickupLines.length)];
       }
     }
-    
+
     if (!line) return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴘɪᴄᴋᴜᴘ ʟɪɴᴇ');
-    
+
     reply(`*╭━━〔 💘 ᴘɪᴄᴋᴜᴘ ʟɪɴᴇ 〕━━┈⊷*
 ┃
 ┃ ${line}
@@ -4910,7 +4901,7 @@ break;
 case 'catfact': {
   try {
     let fact;
-    
+
     try {
       // Primary API - Very reliable
       const response = await axios.get('https://catfact.ninja/fact');
@@ -4937,9 +4928,9 @@ case 'catfact': {
         fact = catFacts[Math.floor(Math.random() * catFacts.length)];
       }
     }
-    
+
     if (!fact) return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴄᴀᴛ ғᴀᴄᴛ');
-    
+
     reply(`*╭━━〔 🐱 ᴄᴀᴛ ғᴀᴄᴛ 〕━━┈⊷*
 ┃
 ┃ ${fact}
@@ -4958,7 +4949,7 @@ break;
 case 'dogfact': {
   try {
     let fact;
-    
+
     try {
       const response = await axios.get('https://dogapi.dog/api/v2/facts');
       fact = response.data.data[0].attributes.body;
@@ -4978,9 +4969,9 @@ case 'dogfact': {
       ];
       fact = dogFacts[Math.floor(Math.random() * dogFacts.length)];
     }
-    
+
     if (!fact) return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴅᴏɢ ғᴀᴄᴛ');
-    
+
     reply(`*╭━━〔 🐕 ᴅᴏɢ ғᴀᴄᴛ 〕━━┈⊷*
 ┃
 ┃ ${fact}
@@ -5231,9 +5222,9 @@ ${prefix}githubstalk nexoracle`)
   try {
     const response = await axios.get(`${API_BASE}/github-user?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.avatar_url || data.avatar || 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
       caption: `*╭━━〔 💻 ɢɪᴛʜᴜʙ sᴛᴀʟᴋ 〕━━┈⊷*
@@ -5272,9 +5263,9 @@ ${prefix}ipstalk 66.249.66.207`)
   try {
     const response = await axios.get(`${API_BASE}/ip?apikey=${API_KEY}&q=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ɪɴᴠᴀʟɪᴅ ɪᴘ ᴀᴅᴅʀᴇss')
-    
+
     reply(`*╭━━〔 🌐 ɪᴘ sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 🌐 ɪᴘ: ${data.ip || data.query || 'N/A'}
@@ -5338,12 +5329,12 @@ case 'ttstalk':
 case 'tiktokstalk':
 case 'tiktok': {
     if (!text) return reply(`📱 *TikTok Stalk*\n\nExample: .ttstalk khaby.lame\n\nUsername bina @ ke likho!`);
-    
+
     try {
         await reply('⏳ Fetching TikTok data...');
-        
+
         const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
-        
+
         // Cloudflare bypass
         const { data: solver } = await axios.get(
             "https://omegatech-api.dixonomega.tech/api/tools/cf-bypass",
@@ -5356,11 +5347,11 @@ case 'tiktok': {
                 headers: { "user-agent": UA }
             }
         );
-        
+
         if (!solver.success || !solver.result?.token) {
             throw new Error("Cloudflare bypass failed");
         }
-        
+
         // Fetch TikTok data
         const { data } = await axios.get(
             "https://www.anonymous-viewer.com/api/tiktok/display",
@@ -5375,12 +5366,12 @@ case 'tiktok': {
                 timeout: 30000
             }
         );
-        
+
         const info = data.profile?.userInfo?.user;
         const stats = data.profile?.userInfo?.stats;
-        
+
         if (!info) return reply('❌ User not found! Check username.');
-        
+
         let msg = `╭━━〔 📱 TIKTOK STALK 〕━━┈⊷
 ┃
 ┃ 👤 *Name:* ${info.nickname || 'N/A'}
@@ -5392,7 +5383,7 @@ case 'tiktok': {
 ┃ 🔗 *Link:* https://tiktok.com/@${info.uniqueId || text}
 ┃
 ╰━━━━━━━━━━━━━━━┈⊷`;
-        
+
         if (info.avatarLarger) {
             await bad.sendMessage(m.chat, {
                 image: { url: info.avatarLarger },
@@ -5401,7 +5392,7 @@ case 'tiktok': {
         } else {
             reply(msg);
         }
-        
+
     } catch (error) {
         console.error('TikTok Stalk Error:', error);
         reply('❌ Failed to fetch TikTok data.\n\nTry again later or check username.');
@@ -5422,9 +5413,9 @@ ${prefix}ttstalk2 ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`)
   try {
     const response = await axios.get(`${API_BASE}/tiktok-user2?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.avatarLarger || data.avatar || 'https://i.postimg.cc/qvrFRzxG/thumb.png' },
       caption: `*╭━━〔 🎵 ᴛɪᴋᴛᴏᴋ sᴛᴀʟᴋ 2 〕━━┈⊷*
@@ -5456,14 +5447,14 @@ case 'telegramuserstalk': {
   if (!text) return reply(`*✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴜsᴇʀ sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}tgstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
+${prefix}tgstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
 
   try {
     const response = await axios.get(`${API_BASE}/telegram-user?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴜsᴇʀ sᴛᴀʟᴋ 〕━━┈⊷*
@@ -5498,9 +5489,9 @@ ${prefix}tgchannelstalk ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`)
   try {
     const response = await axios.get(`${API_BASE}/telegram-channel?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴄʜᴀɴɴᴇʟ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴄʜᴀɴɴᴇʟ sᴛᴀʟᴋ 〕━━┈⊷*
@@ -5530,14 +5521,14 @@ case 'telegramgroupstalk': {
   if (!text) return reply(`*✈️ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘ sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}tggroupstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
+${prefix}tggroupstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
 
   try {
     const response = await axios.get(`${API_BASE}/telegram-group?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ɢʀᴏᴜᴘ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘ sᴛᴀʟᴋ 〕━━┈⊷*
@@ -5566,14 +5557,14 @@ case 'xstalk': {
   if (!text) return reply(`*🐦 ᴛᴡɪᴛᴛᴇʀ/x sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}twitterstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
+${prefix}twitterstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
 
   try {
     const response = await axios.get(`${API_BASE}/twitter-user?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
     const data = response.data.result
-    
+
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
-    
+
     await bad.sendMessage(from, {
       image: { url: data.profile_image_url || data.avatar || 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
       caption: `*╭━━〔 🐦 ᴛᴡɪᴛᴛᴇʀ/x sᴛᴀʟᴋ 〕━━┈⊷*
@@ -5600,17 +5591,17 @@ break
 
 case 'city': case 'night': case 'sunset': case 'rain': {
   await loading()
-  
+
   const sceneryImages = {
     city: 'https://source.unsplash.com/1920x1080/?city,urban,skyline,night',
     night: 'https://source.unsplash.com/1920x1080/?night,stars,dark,moon',
     sunset: 'https://source.unsplash.com/1920x1080/?sunset,sunrise,sky,clouds',
     rain: 'https://source.unsplash.com/1920x1080/?rain,rainy,weather,drops'
   }
-  
+
   await bad.sendMessage(m.chat, {
     image: { url: sceneryImages[command] },
-    caption: `*◆ ${command.toUpperCase()} ᴡᴀʟʟᴘᴀᴘᴇʀ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎`
+    caption: `*◆ ${command.toUpperCase()} ᴡᴀʟʟᴘᴀᴘᴇʀ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`
   }, { quoted: m })
 }
 break
@@ -5618,11 +5609,11 @@ break
 
 case 'cosplay': {
   await loading()
-  
+
   try {
     const res = await fetch('https://api.waifu.im/search/?included_tags=cosplay&is_nsfw=false')
     const data = await res.json()
-    
+
     if (data.images && data.images[0]) {
       await bad.sendMessage(m.chat, {
         image: { url: data.images[0].url },
@@ -5635,7 +5626,7 @@ case 'cosplay': {
     // Fallback to Unsplash
     await bad.sendMessage(m.chat, {
       image: { url: 'https://source.unsplash.com/800x600/?cosplay,anime,costume' },
-      caption: `*◆ ᴄᴏsᴘʟᴀʏ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎︎`
+      caption: `*◆ ᴄᴏsᴘʟᴀʏ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎`
     }, { quoted: m })
   }
 }
@@ -5647,18 +5638,18 @@ break
 
 case 'neontext': case 'neonglitch': case 'makingneon': {
   if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} Your Text`)
-  
+
   await loading()
-  
+
   try {
     const encodedText = encodeURIComponent(text)
     const apiUrl = `https://omegatech-api.dixonomega.tech/api/Maker/neon-text?text=${encodedText}`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*ɴᴇᴏɴ ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
+      caption: `*ɴᴇᴏɴ ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗`
     }, { quoted: m })
-    
+
   } catch (err) {
     console.error('Neon text error:', err)
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɴᴇᴏɴ ᴛᴇxᴛ.')
@@ -5675,12 +5666,12 @@ case 'watercolortext': case 'lighteffects': case 'galaxystyle': case 'flagtext':
 case 'flag3dtext': case 'deletingtext': case 'logomaker': case 'effectclouds':
 case 'blackpinklogo': case 'sandsummer': case 'style1917': case 'freecreate': {
   if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} Your Text`)
-  
+
   await loading()
-  
+
   try {
     const encodedText = encodeURIComponent(text)
-    
+
     // Map commands to API endpoints (common patterns)
     const styleMap = {
       glitchtext: 'glitch',
@@ -5696,32 +5687,32 @@ case 'blackpinklogo': case 'sandsummer': case 'style1917': case 'freecreate': {
       gradienttext: 'gradient',
       galaxystyle: 'galaxy'
     }
-    
+
     const style = styleMap[command] || 'neon'
-    
+
     // Try multiple API patterns
     const apis = [
       // Toxxic API patterns
       `https://api-toxxic.zone.id/api/textpro/${style}?text=${encodedText}`,
       `https://api-toxxic.zone.id/api/maker/${style}?text=${encodedText}`,
-      
+
       // Obito APIs patterns
       `https://obito-mr-apis.vercel.app/api/textpro?effect=${style}&text=${encodedText}`,
       `https://omegatech-api.dixonomega.tech/api/Maker/ephoto-3d-gradient?text=${encodedText}+`,
-      
+
       // Prince Tech patterns
       `https://api.princetechn.com/api/textpro/${style}?text=${encodedText}`,
       `https://api.princetechn.com/textpro?style=${style}&text=${encodedText}`
     ]
-    
+
     let success = false
     let lastError = null
-    
+
     for (const apiUrl of apis) {
       try {
         await bad.sendMessage(m.chat, {
           image: { url: apiUrl },
-          caption: `*${command.toUpperCase()} ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n🎨 sᴛʏʟᴇ: ${style}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
+          caption: `*${command.toUpperCase()} ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n🎨 sᴛʏʟᴇ: ${style}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗`
         }, { quoted: m })
         success = true
         break
@@ -5730,11 +5721,11 @@ case 'blackpinklogo': case 'sandsummer': case 'style1917': case 'freecreate': {
         continue
       }
     }
-    
+
     if (!success) {
       throw lastError || new Error('All APIs failed')
     }
-    
+
   } catch (err) {
     console.error(`${command} error:`, err)
     reply(`❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ${command}.\n\n💡 ᴛɪᴘ: ᴛʀʏ ${prefix}ɴᴇᴏɴᴛᴇxᴛ ${text}`)
@@ -5748,12 +5739,12 @@ break
 
 case 'teximg': case 'teximage': case 'maketext': {
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .text2img ᴀ ʙᴇᴀᴜᴛɪғᴜʟ ᴍᴏᴜɴᴛᴀɪɴ ʟᴀɴᴅsᴄᴀᴘᴇ')
-  
+
   await loading()
-  
+
   try {
     const apiUrl = `https://omegatech-api.dixonomega.tech//api/ai/txt2img?prompt=${encodeURIComponent(text)}+&model=1`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
       caption: `*◆ ᴛᴇxᴛ ᴛᴏ ɪᴍᴀɢᴇ*\n\nᴘʀᴏᴍᴘᴛ: ${text}`
@@ -5768,13 +5759,13 @@ break
 // ═══════════════════════════════════════════════════════════
 
 case 'logo2': case 'makelogo': case 'createlogo': {
-  if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
-  
+  if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
+
   await loading()
-  
+
   try {
     const encodedText = encodeURIComponent(text)
-    
+
     const styles = [
       { name: 'NEON', endpoint: 'neon-text' },
       { name: 'GLITCH', endpoint: 'glitch' },
@@ -5783,23 +5774,23 @@ case 'logo2': case 'makelogo': case 'createlogo': {
       { name: 'ROYAL', endpoint: 'royal' },
       { name: 'GALAXY', endpoint: 'galaxy' }
     ]
-    
+
     const randomStyle = styles[Math.floor(Math.random() * styles.length)]
-    
+
     // Try multiple APIs
     const apis = [
       `https://omegatech-api.dixonomega.tech/api/Maker/ephoto-1917?text=${encodedText}`,
       `https://obito-mr-apis.vercel.app/api/maker/${randomStyle.endpoint}?text=${encodedText}`,
       `https://api.princetechn.com/api/textpro/${randomStyle.endpoint}?text=${encodedText}`
     ]
-    
+
     let success = false
-    
+
     for (const apiUrl of apis) {
       try {
         await bad.sendMessage(m.chat, {
           image: { url: apiUrl },
-          caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - ${randomStyle.name} sᴛʏʟᴇ*\n\n📝 ${text}\n🎨 ${randomStyle.name}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
+          caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - ${randomStyle.name} sᴛʏʟᴇ*\n\n📝 ${text}\n🎨 ${randomStyle.name}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗`
         }, { quoted: m })
         success = true
         break
@@ -5807,16 +5798,16 @@ case 'logo2': case 'makelogo': case 'createlogo': {
         continue
       }
     }
-    
+
     if (!success) {
       // Fallback to working Omega API
       const fallbackUrl = `https://omegatech-api.dixonomega.tech/api/Maker/neon-text?text=${encodedText}`
       await bad.sendMessage(m.chat, {
         image: { url: fallbackUrl },
-        caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - NEON sᴛʏʟᴇ*\n\n📝 ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎`
+        caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - NEON sᴛʏʟᴇ*\n\n📝 ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎`
       }, { quoted: m })
     }
-    
+
   } catch (err) {
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ.')
   }
@@ -5825,24 +5816,24 @@ break
 
 case 'logo': case 'advancedlogo': {
   if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} Line1|Line2`)
-  
+
   await loading()
-  
+
   try {
     const textParts = text.split('|')
     const line1 = textParts[0]?.trim() || 'WHATSAPP'
     const line2 = textParts[1]?.trim() || 'SUPPORT'
-    
+
     const combinedText = encodeURIComponent(`${line1} ${line2}`)
-    
+
     // Use working Omega API
     const apiUrl = `https://omegatech-api.dixonomega.tech/api/tools/ba-logo?textL=${combinedText}`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*ᴀᴅᴠᴀɴᴄᴇᴅ ʟᴏɢᴏ ᴍᴀᴋᴇʀ*\n\n📝 Line 1: ${line1}\n📝 Line 2: ${line2}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎`
+      caption: `*ᴀᴅᴠᴀɴᴄᴇᴅ ʟᴏɢᴏ ᴍᴀᴋᴇʀ*\n\n📝 Line 1: ${line1}\n📝 Line 2: ${line2}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎`
     }, { quoted: m })
-    
+
   } catch (err) {
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ.')
   }
@@ -5859,25 +5850,25 @@ case 'gaycheck': case 'waifucheck': {
   const percentage = Math.floor(Math.random() * 100)
   const target = m.quoted ? m.quoted.sender : m.sender
   const name = m.quoted ? (await bad.getName(target)) : pushname
-  
+
   const checkType = command.replace('check', '').toUpperCase()
   const emojis = {
     stupid: '🤪', unclean: '🤢', hot: '🔥', smart: '🧠',
     great: '⭐', evil: '😈', dog: '🐕', cool: '😎',
     gay: '🏳️‍🌈', waifu: '💕'
   }
-  
+
   const emoji = emojis[command.replace('check', '').replace('checkcase', '')] || '✨'
-  
+
   let message = `*${emoji} ${checkType} ᴄʜᴇᴄᴋ ${emoji}*\n\n`
   message += `ɴᴀᴍᴇ: @${target.split('@')[0]}\n`
   message += `ʀᴇsᴜʟᴛ: ${percentage}%\n\n`
-  
+
   if (percentage < 25) message += `ʟᴇᴠᴇʟ: ʟᴏᴡ 📉`
   else if (percentage < 50) message += `ʟᴇᴠᴇʟ: ᴍᴇᴅɪᴜᴍ ➡️`
   else if (percentage < 75) message += `ʟᴇᴠᴇʟ: ʜɪɢʜ 📈`
   else message += `ʟᴇᴠᴇʟ: ᴇxᴛʀᴇᴍᴇ 🚀`
-  
+
   await bad.sendMessage(m.chat, {
     text: message,
     mentions: [target]
@@ -5893,10 +5884,10 @@ break
 case 'readmore': case 'textreadmore': {
   const more = String.fromCharCode(8206)
   const readmore = more.repeat(4001)
-  
+
   const textBefore = args[0] || ''
   const textAfter = args.slice(1).join(' ') || ''
-  
+
   reply(`${textBefore}${readmore}${textAfter}`)
 }
 break
@@ -5905,7 +5896,7 @@ case 'advice': {
   try {
     const res = await fetch('https://api.adviceslip.com/advice')
     const data = await res.json()
-    
+
     reply(`*💡 ᴀᴅᴠɪᴄᴇ*\n\n${data.slip.advice}`)
   } catch (err) {
     const advice = [
@@ -5926,7 +5917,7 @@ case 'dadjoke': {
       headers: { 'Accept': 'application/json' }
     })
     const data = await res.json()
-    
+
     reply(`*😄 ᴅᴀᴅ ᴊᴏᴋᴇ*\n\n${data.joke}`)
   } catch (err) {
     const jokes = [
@@ -5945,19 +5936,19 @@ case 'trivia': {
     const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple')
     const data = await res.json()
     const question = data.results[0]
-    
+
     let message = `*🎯 ᴛʀɪᴠɪᴀ ǫᴜᴇsᴛɪᴏɴ*\n\n`
     message += `ᴄᴀᴛᴇɢᴏʀʏ: ${question.category}\n`
     message += `ᴅɪғғɪᴄᴜʟᴛʏ: ${question.difficulty}\n\n`
     message += `Q: ${question.question}\n\n`
-    
+
     const answers = [...question.incorrect_answers, question.correct_answer].sort()
     answers.forEach((ans, i) => {
       message += `${i + 1}. ${ans}\n`
     })
-    
+
     message += `\n_ᴀɴsᴡᴇʀ: ${question.correct_answer}_`
-    
+
     reply(message)
   } catch (err) {
     reply('ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴛʀɪᴠɪᴀ.')
@@ -5967,16 +5958,16 @@ break
 
 case 'ffstalk': {
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .ffstalk 1234567890')
-  
+
   try {
     const res = await fetch(`https://api.lolhuman.xyz/api/freefire/${text}?apikey=GataDios`)
     const data = await res.json()
-    
+
     let message = `*🎮 ғʀᴇᴇ ғɪʀᴇ ᴘʀᴏғɪʟᴇ*\n\n`
     message += `ɴᴀᴍᴇ: ${data.result.nickname}\n`
     message += `ɪᴅ: ${text}\n`
     message += `ʀᴇɢɪᴏɴ: ${data.result.region || 'ɴ/ᴀ'}`
-    
+
     reply(message)
   } catch (err) {
     reply('ᴘʟᴀʏᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ ᴏʀ ɪɴᴠᴀʟɪᴅ ɪᴅ.')
@@ -5990,13 +5981,13 @@ break
 case 'checkadmin':
       case 'amiadmin': {
         if (!m.isGroup) return reply('❌ ɢʀᴏᴜᴘ ᴏɴʟʏ!')
-        
+
         try {
           const metadata = await bad.groupMetadata(from)
-          const participant = metadata.participants.find(p => 
+          const participant = metadata.participants.find(p =>
             isSameUser(p.id, m.sender) || areJidsSameUser(p.id, m.sender)
           )
-          
+
           let status = `*🔍 ᴀᴅᴍɪɴ sᴛᴀᴛᴜs ᴄʜᴇᴄᴋ*\n\n`
           status += `*ʏᴏᴜʀ ɴᴜᴍʙᴇʀ:*\n${m.sender}\n\n`
           status += `*ɴᴏʀᴍᴀʟɪᴢᴇᴅ:*\n${normalizeJid(m.sender)}\n\n`
@@ -6004,18 +5995,18 @@ case 'checkadmin':
           status += `*ɪsᴀᴅᴍɪɴs:* ${isAdmins ? '✅ ʏᴇs' : '❌ ɴᴏ'}\n`
           status += `*ɪsᴄʀᴇᴀᴛᴏʀ:* ${isCreator ? '✅ ʏᴇs' : '❌ ɴᴏ'}\n`
           status += `*ɪsʙᴏᴛᴀᴅᴍɪɴs:* ${isBotAdmins ? '✅ ʏᴇs' : '❌ ɴᴏ'}\n\n`
-          
+
           status += `*ᴀʟʟ ᴀᴅᴍɪɴs:*\n`
           const admins = metadata.participants.filter(p => p.admin === "admin" || p.admin === "superadmin")
           admins.forEach((admin, i) => {
             status += `${i + 1}. @${normalizeJid(admin.id)} (${admin.admin})\n`
           })
-          
+
           await bad.sendMessage(from, {
             text: status,
             mentions: admins.map(a => a.id)
           }, { quoted: m })
-          
+
         } catch (error) {
           await reply(`❌ ᴇʀʀᴏʀ: ${error.message}`)
         }
@@ -6084,7 +6075,7 @@ break;
 case "antispam": {
     if (!isAdmins && !isCreator) return m.reply("ᴏɴʟʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴛᴏɢɢʟᴇ ᴀɴᴛɪ sᴘᴀᴍ.");
     if (!args[1]) return m.reply("ᴜsᴀɢᴇ: ᴀɴᴛɪsᴘᴀᴍ ᴏɴ/ᴏғғ");
-    
+
     if (args[1].toLowerCase() === "on") {
         setSetting(m.chat, "feature.antispam", true);
         m.reply("⚠️ ᴀɴᴛɪ sᴘᴀᴍ ᴇɴᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ᴄʜᴀᴛ");
@@ -6100,7 +6091,7 @@ break;
 case "antibadword": {
     if (!isAdmins && !isCreator) return m.reply("ᴏɴʟʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴛᴏɢɢʟᴇ ᴀɴᴛɪ ʙᴀᴅ ᴡᴏʀᴅ.");
     if (!args[1]) return m.reply("ᴜsᴀɢᴇ: ᴀɴᴛɪʙᴀᴅᴡᴏʀᴅ ᴏɴ/ᴏғғ");
-    
+
     if (args[1].toLowerCase() === "on") {
         setSetting(m.chat, "feature.antibadword", true);
         m.reply("🚫 ᴀɴᴛɪ ʙᴀᴅ ᴡᴏʀᴅ ᴇɴᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ᴄʜᴀᴛ");
@@ -6116,7 +6107,7 @@ break;
 case "antibot": {
     if (!isAdmins && !isCreator) return m.reply("ᴏɴʟʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴛᴏɢɢʟᴇ ᴀɴᴛɪ ʙᴏᴛ.");
     if (!args[1]) return m.reply("ᴜsᴀɢᴇ: ᴀɴᴛɪʙᴏᴛ ᴏɴ/ᴏғғ");
-    
+
     if (args[1].toLowerCase() === "on") {
         setSetting(m.chat, "feature.antibot", true);
         m.reply("🤖 ᴀɴᴛɪ ʙᴏᴛ ᴇɴᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ᴄʜᴀᴛ");
@@ -6132,14 +6123,14 @@ break;
 case 'opentime': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
-    
 
-    
+
+
     if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .opentime 10')
-    
+
     const timer = parseInt(text) * 60 * 1000
     reply(`⏰ ɢʀᴏᴜᴘ ᴡɪʟʟ ᴏᴘᴇɴ ɪɴ ${text} ᴍɪɴᴜᴛᴇs`)
-    
+
     setTimeout(async () => {
         await bad.groupSettingUpdate(m.chat, 'not_announcement')
         await bad.sendMessage(m.chat, { text: '✅ ɢʀᴏᴜᴘ ɪs ɴᴏᴡ ᴏᴘᴇɴ!' })
@@ -6150,13 +6141,13 @@ break
 case 'closetime': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
-    
-    
+
+
     if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .closetime 10')
-    
+
     const timer = parseInt(text) * 60 * 1000
     reply(`⏰ ɢʀᴏᴜᴘ ᴡɪʟʟ ᴄʟᴏsᴇ ɪɴ ${text} ᴍɪɴᴜᴛᴇs`)
-    
+
     setTimeout(async () => {
         await bad.groupSettingUpdate(m.chat, 'announcement')
         await bad.sendMessage(m.chat, { text: '🔒 ɢʀᴏᴜᴘ ɪs ɴᴏᴡ ᴄʟᴏsᴇᴅ!' })
@@ -6167,22 +6158,22 @@ break
 case 'warn': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
-    
+
     if (!m.mentionedJid[0] && !m.quoted) return reply('ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ.')
-    
+
     const user = m.mentionedJid[0] || m.quoted.sender
     const reason = args.slice(1).join(' ') || 'ɴᴏ ʀᴇᴀsᴏɴ'
-    
+
     // Get current warnings from settings
     let groupWarns = getSetting(m.chat, "warns", {})
     if (!groupWarns[user]) groupWarns[user] = []
-    
+
     groupWarns[user].push(reason)
     const warnCount = groupWarns[user].length
-    
+
     // Save updated warnings
     setSetting(m.chat, "warns", groupWarns)
-    
+
     if (warnCount >= 3) {
         if (isBotAdmins) {
             await bad.groupParticipantsUpdate(m.chat, [user], 'remove')
@@ -6202,13 +6193,13 @@ break
 case 'resetwarn': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
-    
+
     if (!m.mentionedJid[0] && !m.quoted) return reply('ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ.')
-    
+
     const user = m.mentionedJid[0] || m.quoted.sender
-    
+
     let groupWarns = getSetting(m.chat, "warns", {})
-    
+
     if (groupWarns[user]) {
         delete groupWarns[user]
         setSetting(m.chat, "warns", groupWarns)
@@ -6223,7 +6214,7 @@ case 'addprotect': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
 
-    
+
     let targetUser
     if (m.quoted) {
         targetUser = m.quoted.sender
@@ -6232,17 +6223,17 @@ case 'addprotect': {
     } else {
         return reply(`❌ ᴘʟᴇᴀsᴇ ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ!\n\nᴜsᴇ: ${prefix}addprotect @user`)
     }
-    
+
     let protectedList = getSetting(m.chat, "protectedAdmins", [])
-    
+
     if (protectedList.includes(targetUser)) {
         return reply(`⚠️ @${targetUser.split('@')[0]} ɪs ᴀʟʀᴇᴀᴅʏ ᴘʀᴏᴛᴇᴄᴛᴇᴅ!`)
     }
-    
+
     protectedList.push(targetUser)
     setSetting(m.chat, "protectedAdmins", protectedList)
-    
-    await bad.sendMessage(m.chat, { 
+
+    await bad.sendMessage(m.chat, {
         text: `✅ *ᴘʀᴏᴛᴇᴄᴛᴇᴅ ᴀᴅᴍɪɴ ᴀᴅᴅᴇᴅ*\n\n@${targetUser.split('@')[0]} ɪs ɴᴏᴡ ᴘʀᴏᴛᴇᴄᴛᴇᴅ!\n\n• ᴄᴀɴɴᴏᴛ ʙᴇ ᴅᴇᴍᴏᴛᴇᴅ\n• ᴀɴʏᴏɴᴇ ᴡʜᴏ ᴛʀɪᴇs ᴡɪʟʟ ʙᴇ ᴋɪᴄᴋᴇᴅ`,
         mentions: [targetUser]
     })
@@ -6253,7 +6244,7 @@ case 'removeprotect': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
 
-    
+
     let targetUser
     if (m.quoted) {
         targetUser = m.quoted.sender
@@ -6262,23 +6253,23 @@ case 'removeprotect': {
     } else {
         return reply(`❌ ᴘʟᴇᴀsᴇ ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴜsᴇʀ!\n\nᴜsᴇ: ${prefix}removeprotect @user`)
     }
-    
+
     let protectedList = getSetting(m.chat, "protectedAdmins", [])
-    
+
     if (protectedList.length === 0) {
         return reply('❌ ɴᴏ ᴘʀᴏᴛᴇᴄᴛᴇᴅ ᴀᴅᴍɪɴs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.')
     }
-    
+
     const index = protectedList.indexOf(targetUser)
-    
+
     if (index === -1) {
         return reply(`❌ @${targetUser.split('@')[0]} ɪs ɴᴏᴛ ɪɴ ᴛʜᴇ ᴘʀᴏᴛᴇᴄᴛᴇᴅ ʟɪsᴛ!`)
     }
-    
+
     protectedList.splice(index, 1)
     setSetting(m.chat, "protectedAdmins", protectedList)
-    
-    await bad.sendMessage(m.chat, { 
+
+    await bad.sendMessage(m.chat, {
         text: `✅ *ᴘʀᴏᴛᴇᴄᴛɪᴏɴ ʀᴇᴍᴏᴠᴇᴅ*\n\n@${targetUser.split('@')[0]} ɪs ɴᴏ ʟᴏɴɢᴇʀ ᴘʀᴏᴛᴇᴄᴛᴇᴅ.`,
         mentions: [targetUser]
     })
@@ -6287,18 +6278,18 @@ break
 
 case 'listprotect': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
-    
+
     let protectedList = getSetting(m.chat, "protectedAdmins", [])
-    
+
     if (protectedList.length === 0) {
         return reply('📋 ɴᴏ ᴘʀᴏᴛᴇᴄᴛᴇᴅ ᴀᴅᴍɪɴs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.')
     }
-    
+
     const list = protectedList
         .map((jid, index) => `${index + 1}. @${jid.split('@')[0]}`)
         .join('\n')
-    
-    await bad.sendMessage(m.chat, { 
+
+    await bad.sendMessage(m.chat, {
         text: `🛡️ *ᴘʀᴏᴛᴇᴄᴛᴇᴅ ᴀᴅᴍɪɴs ʟɪsᴛ*\n\n${list}\n\n_ᴛʜᴇsᴇ ᴜsᴇʀs ᴄᴀɴɴᴏᴛ ʙᴇ ᴅᴇᴍᴏᴛᴇᴅ_`,
         mentions: protectedList
     })
@@ -6309,29 +6300,29 @@ case 'antihijack': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ᴀᴅᴍɪɴs ᴏɴʟʏ.')
 
-    
+
     const action = args[0]?.toLowerCase()
-    
+
     if (!action || !['on', 'off'].includes(action)) {
         const status = getSetting(m.chat, "antihijack", false) ? '🟢 ᴀᴄᴛɪᴠᴇ' : '🔴 ɪɴᴀᴄᴛɪᴠᴇ'
         return reply(`⚙️ *ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ sᴛᴀᴛᴜs*\n\nᴄᴜʀʀᴇɴᴛ: ${status}\n\nᴜsᴇ: ${prefix}antihijack on/off`)
     }
-    
+
     if (action === 'on') {
         if (getSetting(m.chat, "antihijack", false)) {
             return reply('⚠️ ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ ɪs ᴀʟʀᴇᴀᴅʏ ᴇɴᴀʙʟᴇᴅ!')
         }
-        
+
         setSetting(m.chat, "antihijack", true)
-        
+
         await reply(`✅ *ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ ᴀᴄᴛɪᴠᴇ!*\n\n🛡️ ᴀʟʟ ᴀᴅᴍɪɴs ᴘʀᴏᴛᴇᴄᴛᴇᴅ\n\n• ɴᴏ ᴀᴅᴍɪɴ ᴄᴀɴ ʙᴇ ᴅᴇᴍᴏᴛᴇᴅ\n• ᴅᴇᴍᴏᴛᴇʀ ᴡɪʟʟ ʙᴇ ᴋɪᴄᴋᴇᴅ`)
     } else {
         if (!getSetting(m.chat, "antihijack", false)) {
             return reply('⚠️ ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ ɪs ᴀʟʀᴇᴀᴅʏ ᴅɪsᴀʙʟᴇᴅ!')
         }
-        
+
         setSetting(m.chat, "antihijack", false)
-        
+
         await reply(`❌ *ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ ᴅᴇᴀᴄᴛɪᴠᴀᴛᴇᴅ*`)
     }
 }
@@ -6343,10 +6334,10 @@ break
 case "antibill": {
     if (!m.isGroup) return m.reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
     if (!isAdmins && !isCreator) return m.reply("ᴏɴʟʏ ᴀᴅᴍɪɴs ᴄᴀɴ ᴇɴᴀʙʟᴇ/ᴅɪsᴀʙʟᴇ ᴀɴᴛɪ-ʙɪʟʟ.");
-    
+
     const mode = args[1] ? args[1].toLowerCase() : null;      // Changed from args[0]
     const action = args[2] ? args[2].toLowerCase() : null;    // Changed from args[1]
-    
+
     if (!mode) return m.reply(`ᴜsᴀɢᴇ: ${prefix}antibill on/off`);
 
     if (mode === "on") {
@@ -6354,12 +6345,12 @@ case "antibill": {
         m.reply("🛡️ *ᴀɴᴛɪ-ʙɪʟʟ ᴘʀᴏᴛᴇᴄᴛɪᴏɴ ᴇɴᴀʙʟᴇᴅ*\n\n⚠️ ᴜsᴇʀs ᴡɪʟʟ ʙᴇ ᴋɪᴄᴋᴇᴅ ᴀғᴛᴇʀ 2 ᴡᴀʀɴɪɴɢs\n\n🚫 ʙɪʟʟɪɴɢ ᴍᴇssᴀɢᴇs ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ");
     } else if (mode === "off") {
         setSetting(m.chat, "antibill", false);
-        
+
         // Clear all warnings for this group
         if (global.billWarnings && global.billWarnings[m.chat]) {
             delete global.billWarnings[m.chat];
         }
-        
+
         m.reply("🚫 *ᴀɴᴛɪ-ʙɪʟʟ ᴘʀᴏᴛᴇᴄᴛɪᴏɴ ᴅɪsᴀʙʟᴇᴅ*\n\n✅ ᴀʟʟ ᴡᴀʀɴɪɴɢs ᴄʟᴇᴀʀᴇᴅ");
     } else {
         m.reply(`ᴜsᴀɢᴇ: ${prefix}antibill on/off`);
@@ -6371,38 +6362,38 @@ case 'checkadmin':
 case 'admincheck':
 case 'testadmin': {
   if (!m.isGroup) return reply('ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪs ғᴏʀ ɢʀᴏᴜᴘs ᴏɴʟʏ!')
-  
+
   try {
     const groupMeta = await bad.groupMetadata(m.chat)
     const parts = groupMeta.participants
     const admins = parts.filter(p => p.admin)
     const botJid = bad.user.id
-    
+
     // Find bot in participants
     const botInGroup = parts.find(p => p.id === botJid || areJidsSameUser(p.id, botJid))
-    
+
     // Find user in participants
     const userInGroup = parts.find(p => p.id === m.sender || areJidsSameUser(p.id, m.sender))
-    
+
     let debugInfo = `*🔍 ᴀᴅᴍɪɴ sᴛᴀᴛᴜs ᴄʜᴇᴄᴋ*\n\n`
     debugInfo += `*📱 ɢʀᴏᴜᴘ:* ${groupMeta.subject}\n\n`
-    
+
     debugInfo += `*🤖 ʙᴏᴛ sᴛᴀᴛᴜs:*\n`
     debugInfo += `• JID: \`${botJid}\`\n`
     debugInfo += `• ɪɴ ɢʀᴏᴜᴘ: ${botInGroup ? '✅' : '❌'}\n`
     debugInfo += `• ᴀᴅᴍɪɴ sᴛᴀᴛᴜs: ${botInGroup?.admin || 'ɴᴏɴᴇ'}\n`
     debugInfo += `• ɪs ᴀᴅᴍɪɴ: ${isBotAdmins ? '✅ ʏᴇs' : '❌ ɴᴏ'}\n\n`
-    
+
     debugInfo += `*👤 ʏᴏᴜʀ sᴛᴀᴛᴜs:*\n`
     debugInfo += `• JID: \`${m.sender}\`\n`
     debugInfo += `• ɪɴ ɢʀᴏᴜᴘ: ${userInGroup ? '✅' : '❌'}\n`
     debugInfo += `• ᴀᴅᴍɪɴ sᴛᴀᴛᴜs: ${userInGroup?.admin || 'ɴᴏɴᴇ'}\n`
     debugInfo += `• ɪs ᴀᴅᴍɪɴ: ${isAdmins ? '✅ ʏᴇs' : '❌ ɴᴏ'}\n\n`
-    
+
     debugInfo += `*📊 ɢʀᴏᴜᴘ sᴛᴀᴛs:*\n`
     debugInfo += `• ᴛᴏᴛᴀʟ ᴍᴇᴍʙᴇʀs: ${parts.length}\n`
     debugInfo += `• ᴛᴏᴛᴀʟ ᴀᴅᴍɪɴs: ${admins.length}\n\n`
-    
+
     debugInfo += `*👮 ᴀᴅᴍɪɴ ʟɪsᴛ:*\n`
     admins.forEach((admin, i) => {
       const num = admin.id.split('@')[0]
@@ -6411,9 +6402,9 @@ case 'testadmin': {
       const label = isBot ? '🤖' : isYou ? '👤' : '👥'
       debugInfo += `${i + 1}. ${label} ${num}\n`
     })
-    
+
     reply(debugInfo)
-    
+
   } catch (e) {
     reply(`❌ ᴇʀʀᴏʀ ᴄʜᴇᴄᴋɪɴɢ ᴀᴅᴍɪɴ sᴛᴀᴛᴜs:\n${e.message}`)
   }
@@ -6429,11 +6420,11 @@ case "ytmp4": {
     if (!text.includes('youtube.com') && !text.includes('youtu.be')) {
         return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ʏᴏᴜᴛᴜʙᴇ ʟɪɴᴋ");
     }
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-        
-        const response = await axios.post('https://youtube-video-audio-downloader.p.rapidapi.com/videos/downloads', 
+
+        const response = await axios.post('https://youtube-video-audio-downloader.p.rapidapi.com/videos/downloads',
         {
             url: text,
             quality: '720'
@@ -6445,9 +6436,9 @@ case "ytmp4": {
                 'x-rapidapi-host': 'youtube-video-audio-downloader.p.rapidapi.com'
             }
         });
-        
+
         const data = response.data;
-        
+
         if (data && data.downloadUrl) {
             await bad.sendMessage(m.chat, {
                 video: {url: data.downloadUrl},
@@ -6460,12 +6451,12 @@ case "ytmp4": {
 ╰━━━━━━━━━━━━━━━━━╯`,
                 mimetype: 'video/mp4'
             }, {quoted: m});
-            
+
             await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         } else {
             throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ʟɪɴᴋ ғᴏᴜɴᴅ');
         }
-        
+
     } catch (error) {
         console.error('YouTube Video Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6476,7 +6467,7 @@ break;
 // ═══════════════════════════════════════════════════════════
 // PLAY - YouTube Audio Search & Download
 // ══════════════════════════════════════════════════════════
-   
+
 case 'play':
 case 'song': {
   if (!text) return reply(`🎵 Provide a song name`)
@@ -6548,14 +6539,14 @@ case "tiktok":
 case "tt": {
     if (!text) return reply(example("https://vt.tiktok.com/xxxxx"));
     if (!text.includes('tiktok.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-        
+
         const response = await axios.get(`https://api.nexoracle.com/downloader/tiktok-wm?apikey=free_key@maher_apis&url=${encodeURIComponent(text)}`);
-        
+
         const data = response.data.result;
-        
+
         if (data && data.url) {
             const caption = `╭━━━〔 *ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮
 
@@ -6572,12 +6563,12 @@ case "tt": {
                 caption: caption,
                 mimetype: 'video/mp4'
             }, {quoted: m});
-            
+
             await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         } else {
             throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ғᴏᴜɴᴅ');
         }
-        
+
     } catch (error) {
         console.error('TikTok Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6591,7 +6582,7 @@ break;
 case 'apk':
 case 'apkdl': {
   if (!text) return reply(`*Example:* ${prefix + command} com.whatsapp`);
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/apk?apikey=${NEXORACLE_KEY}&q=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
@@ -6671,14 +6662,14 @@ case "ig":
 case "igdl": {
     if (!text) return reply(example("https://instagram.com/p/xxxxx"));
     if (!text.includes('instagram.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ɪɴsᴛᴀɢʀᴀᴍ ʟɪɴᴋ");
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-        
+
         const response = await axios.get(`https://api.nexoracle.com/downloader/insta?apikey=free_key@maher_apis&url=${encodeURIComponent(text)}`);
-        
+
         const data = response.data.result;
-        
+
         if (data && data.url_list && data.url_list.length > 0) {
             for (let media of data.url_list) {
                 if (media.includes('.mp4') || data.media_details?.type === 'video') {
@@ -6708,7 +6699,7 @@ case "igdl": {
         } else {
             throw new Error('ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ');
         }
-        
+
     } catch (error) {
         console.error('Instagram Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6727,10 +6718,10 @@ case "fbdl": {
     if (!text.includes('facebook.com') && !text.includes('fb.watch')) {
         return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ғᴀᴄᴇʙᴏᴏᴋ ʟɪɴᴋ");
     }
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-        
+
         const response = await axios.get('https://facebook-scraper3.p.rapidapi.com/video', {
             params: { url: text },
             headers: {
@@ -6738,9 +6729,9 @@ case "fbdl": {
                 'x-rapidapi-host': 'facebook-scraper3.p.rapidapi.com'
             }
         });
-        
+
         const data = response.data;
-        
+
         if (data && data.sd_url) {
             await bad.sendMessage(m.chat, {
                 video: {url: data.hd_url || data.sd_url},
@@ -6752,12 +6743,12 @@ case "fbdl": {
 ╰━━━━━━━━━━━━━━━━━╯`,
                 mimetype: 'video/mp4'
             }, {quoted: m});
-            
+
             await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         } else {
             throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ғᴏᴜɴᴅ');
         }
-        
+
     } catch (error) {
         console.error('Facebook Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6776,10 +6767,10 @@ case "x": {
     if (!text.includes('twitter.com') && !text.includes('x.com')) {
         return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛᴡɪᴛᴛᴇʀ/x ʟɪɴᴋ");
     }
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-        
+
         const response = await axios.get('https://twitter-video-and-image-downloader.p.rapidapi.com/api/twitter/media', {
             params: { url: text },
             headers: {
@@ -6787,9 +6778,9 @@ case "x": {
                 'x-rapidapi-host': 'twitter-video-and-image-downloader.p.rapidapi.com'
             }
         });
-        
+
         const data = response.data;
-        
+
         if (data && data.media && data.media.length > 0) {
             for (let media of data.media) {
                 if (media.type === 'video') {
@@ -6818,7 +6809,7 @@ case "x": {
         } else {
             throw new Error('ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ');
         }
-        
+
     } catch (error) {
         console.error('Twitter Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6833,13 +6824,13 @@ case "runway":
 case "aivideo":
 case "gen3": {
     if (!text) return reply(example("a cat walking on the street"));
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '🎬', key: m.key}});
-        
+
         reply("⏳ *ɢᴇɴᴇʀᴀᴛɪɴɢ ᴀɪ ᴠɪᴅᴇᴏ...*\n\nᴛʜɪs ᴍᴀʏ ᴛᴀᴋᴇ 1-2 ᴍɪɴᴜᴛᴇs. ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ...");
-        
-        const response = await axios.post('https://runwayml.p.rapidapi.com/generate', 
+
+        const response = await axios.post('https://runwayml.p.rapidapi.com/generate',
         {
             prompt: text,
             model: "gen3"
@@ -6851,9 +6842,9 @@ case "gen3": {
                 'x-rapidapi-host': 'runwayml.p.rapidapi.com'
             }
         });
-        
+
         const data = response.data;
-        
+
         if (data && data.video_url) {
             await bad.sendMessage(m.chat, {
                 video: {url: data.video_url},
@@ -6867,12 +6858,12 @@ case "gen3": {
                 mimetype: 'video/mp4',
                 gifPlayback: false
             }, {quoted: m});
-            
+
             await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         } else {
             throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ');
         }
-        
+
     } catch (error) {
         console.error('RunwayML Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -6933,38 +6924,38 @@ case 'getcontact': {
 case 'owner':
 case 'contact': {
     // Pehle yeh message bhejo
-    const msg = await bad.sendMessage(m.chat, { 
+    const msg = await bad.sendMessage(m.chat, {
         text: `✦ 📞 ᴺᵉᵉᵈ ᴴᵉˡᵖ? » ᶜᵒⁿᵗᵃᶜᵗ ᴹʸ ᴼʷⁿᵉʳs ✦`
     }, { quoted: m });
-    
+
     await sleep(1000);
-    
-    // 👑 Owner 1 - Manix 
+
+    // 👑 Owner 1 - shadow
     const vcard1 = 'BEGIN:VCARD\n' +
                   'VERSION:3.0\n' +
-                  'FN: 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏\n' +
-                  'TEL;type=CELL;type=VOICE;waid=923271054080:+923271054080\n' +
+                  'FN: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n' +
+                  'TEL;type=CELL;type=VOICE;waid=9779807044421:+9779807044421\n' +
                   'END:VCARD';
-    
+
     await bad.sendMessage(m.chat, {
         contacts: {
-            displayName: '𝙼𝙰𝙽𝙸 𝚇𝙳 ☏',
+            displayName: '𝙼𝙰𝙽𝙸 𝚇𝙼𝙳',
             contacts: [{ vcard: vcard1 }]
         }
     }, { quoted: msg });
-    
+
     await sleep(1000);
-    
+
     // 👑 Owner 2 - ZAMAN
     const vcard2 = 'BEGIN:VCARD\n' +
                   'VERSION:3.0\n' +
                   'FN: RIZWAN\n' +
-                  'TEL;type=CELL;type=VOICE;waid=923271054080:+923271054080\n' +
+                  'TEL;type=CELL;type=VOICE;waid=9779807044421:+9779807044421\n' +
                   'END:VCARD';
-    
+
     await bad.sendMessage(m.chat, {
         contacts: {
-            displayName: 'Manix',
+            displayName: 'Shadow',
             contacts: [{ vcard: vcard2 }]
         }
     }, { quoted: msg });
@@ -6975,19 +6966,19 @@ case "spotify":
 case "spotifydl": {
     if (!text) return reply(example("https://open.spotify.com/track/xxxxx"));
     if (!text.includes('spotify.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ sᴘᴏᴛɪғʏ ʟɪɴᴋ");
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '🎵', key: m.key}});
-        
+
         const response = await axios.get(`https://api.fabdl.com/spotify/get?url=${encodeURIComponent(text)}`);
-        
+
         const data = response.data.result;
-        
+
         if (data && data.id) {
             const downloadResponse = await axios.get(`https://api.fabdl.com/spotify/mp3-convert-task/${data.gid}/${data.id}`);
-            
+
             const downloadData = downloadResponse.data.result;
-            
+
             if (downloadData && downloadData.download_url) {
                 await bad.sendMessage(m.chat, {
                     audio: {url: downloadData.download_url},
@@ -7004,13 +6995,13 @@ case "spotifydl": {
                         }
                     }
                 }, {quoted: m});
-                
+
                 await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
             } else {
                 throw new Error('ɴᴏ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ ғᴏᴜɴᴅ');
             }
         }
-        
+
     } catch (error) {
         console.error('Spotify Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -7024,18 +7015,18 @@ break;
 case 'mediafire': {
   if (!text) return reply(`*Example:* ${prefix + command} <mediafire link>`);
   if (!text.includes('mediafire.com')) return reply('❌ Invalid MediaFire link!');
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/mediafire?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result) {
       const { filename, filesize, download } = data.result;
-      
+
       await reply(`📁 *MediaFire*\n\n📌 Name: ${filename}\n📦 Size: ${filesize}`);
-      
+
       await bad.sendMessage(m.chat, {
         document: { url: download },
         fileName: filename,
@@ -7057,16 +7048,16 @@ break;
 case 'pinterest':
 case 'pin': {
   if (!text) return reply(`*Example:* ${prefix + command} cat aesthetic`);
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}search/pinterest-image?apikey=${NEXORACLE_KEY}&q=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result && data.result.length > 0) {
       const randomImage = data.result[Math.floor(Math.random() * Math.min(10, data.result.length))];
-      
+
       await bad.sendMessage(m.chat, {
         image: { url: randomImage },
         caption: `✅ *Pinterest Image*`
@@ -7087,13 +7078,13 @@ break;
 case 'ytmp3':
 case 'ytaudio': {
   if (!text) return reply(`*Usage:* ${prefix}ytmp3 <youtube url>`);
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/ytmp3?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result?.download) {
       await bad.sendMessage(m.chat, {
         audio: { url: data.result.download },
@@ -7116,13 +7107,13 @@ break;
 case 'ytmp4':
 case 'ytvideo': {
   if (!text) return reply(`*Usage:* ${prefix}ytmp4 <youtube url>`);
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/ytmp4?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result?.video) {
       await bad.sendMessage(m.chat, {
         video: { url: data.result.video },
@@ -7146,13 +7137,13 @@ case 'capcut':
 case 'capcutdl': {
   if (!text) return reply(`*Example:* ${prefix + command} <capcut url>`);
   if (!text.includes('capcut.com')) return reply('❌ Invalid CapCut link!');
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/capcut?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result?.video) {
       await bad.sendMessage(m.chat, {
         video: { url: data.result.video },
@@ -7175,13 +7166,13 @@ case 'threads':
 case 'threadsdl': {
   if (!text) return reply(`*Usage:* ${prefix}threads <threads url>`);
   if (!text.includes('threads.net')) return reply('❌ Invalid Threads link!');
-  
+
   await loading();
-  
+
   try {
     const apiUrl = `${NEXORACLE_API}downloader/threads?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
     const data = await fetchJson(apiUrl);
-    
+
     if (data.status && data.result?.video) {
       await bad.sendMessage(m.chat, {
         video: { url: data.result.video },
@@ -7203,23 +7194,23 @@ break;
 case 'wallpaper':
 case 'wp': {
   if (!text) return reply(`*ᴇxᴀᴍᴘʟᴇ:* ${prefix + command} nature`)
-  
+
   await loading()
-  
+
   try {
     const data = await fetchAPI('download/wallpaper', { query: text })
-    
+
     if (!data?.status || !data?.result || data.result.length === 0) {
       return reply('❌ ɴᴏ ᴡᴀʟʟᴘᴀᴘᴇʀs ғᴏᴜɴᴅ')
     }
-    
+
     const randomWallpaper = data.result[Math.floor(Math.random() * data.result.length)]
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: randomWallpaper },
       caption: `✅ *ᴡᴀʟʟᴘᴀᴘᴇʀ*`
     }, { quoted: m })
-    
+
   } catch (err) {
     console.error('wallpaper error:', err)
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ')
@@ -7234,11 +7225,11 @@ break
 
 case 'meme': {
   await loading()
-  
+
   try {
     const res = await fetch('https://meme-api.com/gimme')
     const data = await res.json()
-    
+
     if (data.url) {
       await bad.sendMessage(m.chat, {
         image: { url: data.url },
@@ -7259,16 +7250,16 @@ case 'gali': {
     }
 
     // 👇 Target user (mention / reply / text)
-    let target = m.mentionedJid[0] 
-        ? m.mentionedJid[0] 
-        : m.quoted 
-        ? m.quoted.sender 
+    let target = m.mentionedJid[0]
+        ? m.mentionedJid[0]
+        : m.quoted
+        ? m.quoted.sender
         : null
 
     let name = q ? q.trim().toLowerCase() : ''
 
     // 👇 Blocked names
-    let blocked = ['Manix','Manix']
+    let blocked = ['shadow','SHADOW']
 
     if (blocked.includes(name)) {
         // ✅ Random blocked reply
@@ -7307,13 +7298,13 @@ break
 
 case 'joke': case 'dadkjoke': {
   await loading()
-  
+
   try {
     const res = await fetch('https://official-joke-api.appspot.com/random_joke')
     const data = await res.json()
-    
+
     if (data.setup && data.punchline) {
-      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ*\n\n${data.setup}\n\n${data.punchline} 😂\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎`)
+      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ*\n\n${data.setup}\n\n${data.punchline} 😂\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠︎︎`)
     } else {
       throw new Error('No joke found')
     }
@@ -7325,13 +7316,13 @@ break
 
 case 'quote': case 'quotes': {
   await loading()
-  
+
   try {
     const res = await fetch('https://api.quotable.io/random')
     const data = await res.json()
-    
+
     if (data.content) {
-      reply(`*◆ ɪɴsᴘɪʀᴀᴛɪᴏɴᴀʟ ǫᴜᴏᴛᴇ*\n\n"${data.content}"\n\n— ${data.author}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎`)
+      reply(`*◆ ɪɴsᴘɪʀᴀᴛɪᴏɴᴀʟ ǫᴜᴏᴛᴇ*\n\n"${data.content}"\n\n— ${data.author}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠︎︎`)
     } else {
       throw new Error('No quote found')
     }
@@ -7344,42 +7335,42 @@ break
 case "createqoute":
 case "quotemake":
 case "makeq": {
-    if (!text) return reply(example("Life is beautiful | -☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎"));
-    
+    if (!text) return reply(example("Life is beautiful | -☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠︎︎"));
+
     const input = text.split("|");
     if (input.length < 2) return reply("❌ *ᴜsᴀɢᴇ:* .quote text | author\n\n*ᴇxᴀᴍᴘʟᴇ:*\n.createquote Life is beautiful | -Anonymous");
-    
+
     const quoteText = input[0].trim();
     const author = input[1].trim();
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '📝', key: m.key}});
-        
+
         console.log('📝 Creating quote...');
         console.log('💭 Quote:', quoteText);
         console.log('✍️ Author:', author);
-        
+
         const axios = require('axios');
         const apiUrl = `https://api.nexoracle.com/image-creating/quotes-maker?apikey=free_key@maher_apis&text1=${encodeURIComponent(quoteText)}&text2=${encodeURIComponent(author)}`;
-        
+
         console.log('🔗 Fetching from:', apiUrl);
-        
+
         const response = await axios.get(apiUrl, {
             responseType: 'arraybuffer'
         });
-        
+
         const buffer = Buffer.from(response.data, 'binary');
-        
+
         console.log('✅ Quote image received, size:', buffer.length);
-        
+
         await bad.sendMessage(m.chat, {
             image: buffer,
             caption: `📝 *ǫᴜᴏᴛᴇ ᴄʀᴇᴀᴛᴇᴅ*\n\n💭 "${quoteText}"\n\n✍️ ${author}\n\n✨ ɢᴇɴᴇʀᴀᴛᴇᴅ ʙʏ ᴠᴏɪᴅxᴅ ʙᴏᴛ`
         }, {quoted: m});
-        
+
         await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         console.log('✅ Quote sent!');
-        
+
     } catch (error) {
         console.error('❌ Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -7389,11 +7380,11 @@ case "makeq": {
 break;
 case 'fact': case 'randomfact': {
   await loading()
-  
+
   try {
     const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en')
     const data = await res.json()
-    
+
     if (data.text) {
       reply(`*◆ ʀᴀɴᴅᴏᴍ ғᴀᴄᴛ*\n\n${data.text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`)
     } else {
@@ -7407,15 +7398,15 @@ break
 
 case 'trivia': {
   await loading()
-  
+
   try {
     const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple')
     const data = await res.json()
-    
+
     if (data.results && data.results[0]) {
       const q = data.results[0]
       const answers = [...q.incorrect_answers, q.correct_answer].sort(() => Math.random() - 0.5)
-      
+
       let triviaText = `*◆ ᴛʀɪᴠɪᴀ ǫᴜᴇsᴛɪᴏɴ*\n\n`
       triviaText += `📂 Category: ${q.category}\n`
       triviaText += `⚡ Difficulty: ${q.difficulty}\n\n`
@@ -7424,8 +7415,8 @@ case 'trivia': {
       answers.forEach((ans, i) => {
         triviaText += `${i + 1}. ${ans}\n`
       })
-      triviaText += `\n✅ Answer: ${q.correct_answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠`
-      
+      triviaText += `\n✅ Answer: ${q.correct_answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠`
+
       reply(triviaText)
     } else {
       throw new Error('No trivia found')
@@ -7438,13 +7429,13 @@ break
 
 case 'riddle': {
   await loading()
-  
+
   try {
     const res = await fetch('https://riddles-api.vercel.app/random')
     const data = await res.json()
-    
+
     if (data.riddle) {
-      reply(`*◆ ʀɪᴅᴅʟᴇ*\n\n❓ ${data.riddle}\n\n✅ Answer: ${data.answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+      reply(`*◆ ʀɪᴅᴅʟᴇ*\n\n❓ ${data.riddle}\n\n✅ Answer: ${data.answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
     } else {
       throw new Error('No riddle found')
     }
@@ -7456,13 +7447,13 @@ break
 
 case 'advice': {
   await loading()
-  
+
   try {
     const res = await fetch('https://api.adviceslip.com/advice')
     const data = await res.json()
-    
+
     if (data.slip && data.slip.advice) {
-      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴀᴅᴠɪᴄᴇ*\n\n💡 ${data.slip.advice}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴀᴅᴠɪᴄᴇ*\n\n💡 ${data.slip.advice}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
     } else {
       throw new Error('No advice found')
     }
@@ -7475,7 +7466,7 @@ break
 
 case '8ball': {
   if (!text) return reply('Ask a yes/no question!\n\nExample: .8ball Will I be rich?')
-  
+
   const answers = [
     "Yes, definitely! ✅",
     "It is certain ✅",
@@ -7494,21 +7485,21 @@ case '8ball': {
     "Outlook not so good ❌",
     "Very doubtful ❌"
   ]
-  
+
   const randomAnswer = answers[Math.floor(Math.random() * answers.length)]
-  reply(`*◆ ᴍᴀɢɪᴄ 8-ʙᴀʟʟ*\n\n❓ Question: ${text}\n\n🔮 Answer: ${randomAnswer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+  reply(`*◆ ᴍᴀɢɪᴄ 8-ʙᴀʟʟ*\n\n❓ Question: ${text}\n\n🔮 Answer: ${randomAnswer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
 }
 break
 
 case 'coinflip': case 'flip': {
   const result = Math.random() < 0.5 ? 'Heads 🪙' : 'Tails 🪙'
-  reply(`*◆ ᴄᴏɪɴ ғʟɪᴘ*\n\n🎲 Result: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+  reply(`*◆ ᴄᴏɪɴ ғʟɪᴘ*\n\n🎲 Result: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
 }
 break
 
 case 'dice': case 'roll': {
   const result = Math.floor(Math.random() * 6) + 1
-  reply(`*◆ ᴅɪᴄᴇ ʀᴏʟʟ*\n\n🎲 You rolled: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+  reply(`*◆ ᴅɪᴄᴇ ʀᴏʟʟ*\n\n🎲 You rolled: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
 }
 break
 
@@ -7521,18 +7512,18 @@ case 'channelreact': {
 ┃ ${prefix}${command} <ʟɪɴᴋ> <ᴇᴍᴏᴊɪ1,ᴇᴍᴏᴊɪ2>
 ┃
 ┃ 💡 *Exᴀᴍᴘʟᴇ:*
-┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f 😭,🔥
+┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V 😭,🔥
 ┃
 ┃ ⚠️ *Mᴀx 4 ᴇᴍᴏᴊɪs ᴀʟʟᴏᴡᴇᴅ*
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
-    
+
     await bad.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
-    
+
     try {
         const messageText = (text || '').trim();
         const argsList = messageText.split(/\s+/).filter(Boolean);
-        
+
         const postLink = argsList[0];
         const reactsRaw = argsList.slice(1).join(' ');
 
@@ -7565,7 +7556,7 @@ case 'channelreact': {
         const backendUrl = 'https://back.asitha.top/api'
 
         // 2. Get Temp API Key
-        const { data: tempKeyData } = await axios.post(`${backendUrl}/user/get-temp-token`, 
+        const { data: tempKeyData } = await axios.post(`${backendUrl}/user/get-temp-token`,
             { recaptcha_token: captchaData.token },
             { headers: { Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' } }
         )
@@ -7575,7 +7566,7 @@ case 'channelreact': {
         }
 
         // 3. Send Reaction
-        const reactRes = await axios.post(`${backendUrl}/channel/react-to-post?apiKey=${tempKeyData.token}`, 
+        const reactRes = await axios.post(`${backendUrl}/channel/react-to-post?apiKey=${tempKeyData.token}`,
             { post_link: postLink, reacts: emojis.join(',') },
             { headers: { Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' } }
         )
@@ -7605,10 +7596,10 @@ break
 case 'sora':
 case 'soraai': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}sora <prompt>\n\nᴇxᴀᴍᴘʟᴇ: ${prefix}sora cat walking in space\n\n📐 ᴀsᴘᴇᴄᴛ ʀᴀᴛɪᴏs:\n• Add "vertical" or "9:16" for vertical\n• Add "square" or "1:1" for square\n• Default is 16:9 (landscape)`)
-  
+
   let prompt = text.trim()
   let aspect = '16:9'
-  
+
   // Auto detect aspect ratio from prompt
   if (/9:16|vertical/i.test(prompt)) {
     aspect = '9:16'
@@ -7617,29 +7608,29 @@ case 'soraai': {
     aspect = '1:1'
     prompt = prompt.replace(/1:1|square/gi, '').trim()
   }
-  
+
   const loadingMsg = await reply(`*⏳ ɢᴇɴᴇʀᴀᴛɪɴɢ sᴏʀᴀ ᴠɪᴅᴇᴏ...*\n\n📝 ᴘʀᴏᴍᴘᴛ: "${prompt}"\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n\n_This may take 1-5 minutes..._`)
-  
+
   try {
     // Method 1: Direct API (simpler, faster)
     const encodedPrompt = encodeURIComponent(prompt)
     const apiUrl = `https://omegatech-api.dixonomega.tech/api/ai/sora?prompt=${encodedPrompt}`
-    
+
     const response = await fetch(apiUrl)
     const data = await response.json()
-    
+
     if (data.success && data.result) {
       // Send the video
       await bad.sendMessage(m.chat, {
         video: { url: data.result },
-        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`,
+        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vaf5pIEHFxOsA3Sr4r3o\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
         gifPlayback: false
       }, { quoted: m })
-      
+
     } else {
       throw new Error(data.message || 'Failed to generate video')
     }
-    
+
   } catch (err) {
     console.error('Sora AI error:', err)
     reply(`❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴠɪᴅᴇᴏ.\n\n${err.message}\n\n💡 ᴛɪᴘ: ᴛʀʏ ᴀ sɪᴍᴘʟᴇʀ ᴘʀᴏᴍᴘᴛ ᴏʀ ᴡᴀɪᴛ ᴀ ғᴇᴡ ᴍɪɴᴜᴛᴇs.`)
@@ -7654,10 +7645,10 @@ break
 case 'sora2':
 case 'sorav2': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}sora2 <prompt>\n\nᴇxᴀᴍᴘʟᴇ: ${prefix}sora2 cat walking in space`)
-  
+
   let prompt = text.trim()
   let aspect = '16:9'
-  
+
   // Auto detect aspect ratio
   if (/9:16|vertical/i.test(prompt)) {
     aspect = '9:16'
@@ -7666,13 +7657,13 @@ case 'sorav2': {
     aspect = '1:1'
     prompt = prompt.replace(/1:1|square/gi, '').trim()
   }
-  
+
   await loading()
-  
+
   try {
     // === STEP 1: START GENERATION ===
     const startUrl = 'https://omegatech-api.dixonomega.tech/api/ai/sora2-create'
-    
+
     const startResponse = await fetch(startUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -7681,54 +7672,54 @@ case 'sorav2': {
         aspectRatio: aspect
       })
     })
-    
+
     const startData = await startResponse.json()
-    
+
     if (!startData.success || !startData.videoId) {
       throw new Error(startData.message || 'Failed to start generation')
     }
-    
+
     const videoId = startData.videoId
-    
+
     await reply(`*✅ ǫᴜᴇᴜᴇᴅ!*\n\nᴠɪᴅᴇᴏ ɪᴅ: \`${videoId}\`\n\n⏳ ᴘᴏʟʟɪɴɢ sᴛᴀᴛᴜs ᴇᴠᴇʀʏ 10s...\n\n_This may take 1-5 minutes_`)
-    
+
     // === STEP 2: POLL STATUS ===
     let videoUrl = null
     const maxAttempts = 40 // 40 × 10s = 400s (~6-7 mins)
-    
+
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10 seconds
-      
+
       const statusUrl = `https://omegatech-api.dixonomega.tech/api/ai/sora2-status?videoId=${videoId}`
       const statusResponse = await fetch(statusUrl)
       const statusData = await statusResponse.json()
-      
+
       if (statusData.status === 'completed' && statusData.videoUrl) {
         videoUrl = statusData.videoUrl
         break
       }
-      
+
       if (statusData.status === 'failed') {
         throw new Error('Video generation failed: ' + (statusData.message || 'Unknown reason'))
       }
-      
+
       // Show progress update
       if (statusData.progress && i % 3 === 0) { // Update every 30s
         await reply(`*⏳ ɪɴ ᴘʀᴏɢʀᴇss...* ${statusData.progress}%`)
       }
     }
-    
+
     if (!videoUrl) {
       throw new Error('Timeout: Video generation took too long (>6 mins)')
     }
-    
+
     // === STEP 3: SEND VIDEO ===
     await bad.sendMessage(m.chat, {
       video: { url: videoUrl },
-      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`,
+      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
       gifPlayback: false
     }, { quoted: m })
-    
+
   } catch (err) {
     console.error('Sora AI V2 error:', err)
     reply(`❌ ᴇʀʀᴏʀ: ${err.message}\n\n💡 ᴛʀʏ ${prefix}sora instead`)
@@ -7757,7 +7748,7 @@ ${prefix}veo3 make this image move (reply to image)`)
     let prompt = text
     let ratio = '16:9'
     let imageUrl = ''
-    
+
     // Parse ratio
     if (text.includes('--ratio')) {
       const parts = text.split('--ratio')
@@ -7767,7 +7758,7 @@ ${prefix}veo3 make this image move (reply to image)`)
         ratio = ratioMatch[1]
       }
     }
-    
+
     // Handle image input
     if (m.quoted) {
       const quotedType = m.quoted.mtype
@@ -7778,7 +7769,7 @@ ${prefix}veo3 make this image move (reply to image)`)
           const form = new FormData()
           form.append('reqtype', 'fileupload')
           form.append('fileToUpload', media, 'image.jpg')
-          
+
           const uploadResponse = await axios.post('https://catbox.moe/user/api.php', form, {
             headers: form.getHeaders()
           })
@@ -7790,14 +7781,14 @@ ${prefix}veo3 make this image move (reply to image)`)
         }
       }
     }
-    
+
     // Build API URL
     let apiUrl = `https://omegatech-api.dixonomega.tech/api/ai/Veo3?prompt=${encodeURIComponent(prompt)}&ratio=${encodeURIComponent(ratio)}`
-    
+
     if (imageUrl) {
       apiUrl += `&imageUrl=${encodeURIComponent(imageUrl)}`
     }
-    
+
     reply(`*╭━━〔 🎬 ᴠᴇᴏ 3 〕━━┈⊷*
 ┃
 ┃ 📝 ᴘʀᴏᴍᴘᴛ: ${prompt}
@@ -7807,53 +7798,53 @@ ${imageUrl ? `┃ 🖼️ ɪᴍᴀɢᴇ: ᴀᴛᴛᴀᴄʜᴇᴅ\n` : ''}┃
 ┃ ᴛʜɪs ᴍᴀʏ ᴛᴀᴋᴇ 2-5 ᴍɪɴᴜᴛᴇs
 ┃
 *╰━━━━━━━━━━━━━━━┈⊷*`)
-    
+
     // Initial request
     console.log('Veo3 Initial URL:', apiUrl)
     const initialResponse = await axios.get(apiUrl, { timeout: 30000 })
     console.log('Veo3 Initial Response:', JSON.stringify(initialResponse.data))
-    
+
     if (!initialResponse.data || !initialResponse.data.result) {
       return reply('❌ ɪɴᴠᴀʟɪᴅ ʀᴇsᴘᴏɴsᴇ ғʀᴏᴍ ᴀᴘɪ')
     }
-    
+
     const { id, status: initialStatus } = initialResponse.data.result
-    
+
     if (!id) {
       return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴛᴀʀᴛ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛɪᴏɴ')
     }
-    
+
     reply(`✅ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛɪᴏɴ sᴛᴀʀᴛᴇᴅ!
 🆔 ᴊᴏʙ ɪᴅ: \`${id}\`
 📊 sᴛᴀᴛᴜs: ${initialStatus}
 
 ⏳ ᴘᴏʟʟɪɴɢ ғᴏʀ ʀᴇsᴜʟᴛs...`)
-    
+
     // Polling loop
     let attempts = 0
     const maxAttempts = 60 // 5 minutes (60 * 5 seconds)
     let videoUrl = null
     let currentStatus = initialStatus
-    
+
     while (attempts < maxAttempts) {
       await sleep(5000) // Wait 5 seconds between checks
       attempts++
-      
+
       try {
         const pollUrl = `https://omegatech-api.dixonomega.tech/api/ai/Veo3?id=${id}`
         console.log(`Veo3 Poll ${attempts}:`, pollUrl)
-        
+
         const statusResponse = await axios.get(pollUrl, { timeout: 15000 })
         console.log(`Veo3 Poll ${attempts} Response:`, JSON.stringify(statusResponse.data))
-        
+
         if (!statusResponse.data || !statusResponse.data.result) {
           console.error('Invalid poll response')
           continue
         }
-        
+
         const result = statusResponse.data.result
         currentStatus = result.status
-        
+
         // Update user every 30 seconds (every 6 attempts)
         if (attempts % 6 === 0) {
           const elapsed = Math.floor(attempts * 5 / 60)
@@ -7862,14 +7853,14 @@ ${imageUrl ? `┃ 🖼️ ɪᴍᴀɢᴇ: ᴀᴛᴛᴀᴄʜᴇᴅ\n` : ''}┃
 ⏱️ ᴇʟᴀᴘsᴇᴅ: ${elapsed}m ${seconds}s
 📊 sᴛᴀᴛᴜs: ${currentStatus}`)
         }
-        
+
         // Check if completed
         if (result.status === 'completed' && result.output) {
           videoUrl = result.output
           console.log('Veo3 Completed! Video URL:', videoUrl)
           break
         }
-        
+
         // Check if failed
         if (result.status === 'failed' || result.status === 'error') {
           return reply(`❌ *ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛɪᴏɴ ғᴀɪʟᴇᴅ*
@@ -7879,13 +7870,13 @@ ${imageUrl ? `┃ 🖼️ ɪᴍᴀɢᴇ: ᴀᴛᴛᴀᴄʜᴇᴅ\n` : ''}┃
 
 ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ᴡɪᴛʜ ᴀ ᴅɪғғᴇʀᴇɴᴛ ᴘʀᴏᴍᴘᴛ.`)
         }
-        
+
       } catch (pollError) {
         console.error(`Poll attempt ${attempts} error:`, pollError.message)
         // Continue trying
       }
     }
-    
+
     // Check if timed out
     if (!videoUrl) {
       return reply(`⏱️ *ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛɪᴏɴ ᴛɪᴍᴇᴏᴜᴛ*
@@ -7896,21 +7887,21 @@ ${imageUrl ? `┃ 🖼️ ɪᴍᴀɢᴇ: ᴀᴛᴛᴀᴄʜᴇᴅ\n` : ''}┃
 
 ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ ᴏʀ ᴄᴏɴᴛᴀᴄᴛ sᴜᴘᴘᴏʀᴛ.`)
     }
-    
+
     // Download and send video
     reply('📥 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴠɪᴅᴇᴏ...')
-    
+
     console.log('Downloading video from:', videoUrl)
-    const videoResponse = await axios.get(videoUrl, { 
+    const videoResponse = await axios.get(videoUrl, {
       responseType: 'arraybuffer',
       timeout: 120000, // 2 minute timeout for download
       maxContentLength: 50 * 1024 * 1024, // 50MB max
       maxBodyLength: 50 * 1024 * 1024
     })
-    
+
     const videoBuffer = Buffer.from(videoResponse.data)
     console.log('Video downloaded, size:', videoBuffer.length, 'bytes')
-    
+
     await bad.sendMessage(from, {
       video: videoBuffer,
       caption: `*╭━━〔 🎬 ᴠᴇᴏ 3 - ᴄᴏᴍᴘʟᴇᴛᴇᴅ 〕━━┈⊷*
@@ -7926,9 +7917,9 @@ ${imageUrl ? `┃ 🖼️ ɪᴍᴀɢᴇ: ᴀᴛᴛᴀᴄʜᴇᴅ\n` : ''}┃
 *╰━━━━━━━━━━━━━━━┈⊷*`,
       mimetype: 'video/mp4'
     }, { quoted: m })
-    
+
     console.log('Veo3 video sent successfully!')
-    
+
   } catch (error) {
     console.error('Veo3 error:', error)
     reply(`❌ *ᴇʀʀᴏʀ*
@@ -7942,10 +7933,10 @@ break
 
 case 'maid-pic': {
   await loading()
-  
+
   try {
     const imageUrl = `https://Omegatech-api.dixonomega.tech/api/maid`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: imageUrl },
       caption: `*◆ ᴍᴀɪᴅ*\n\n> ʀᴀɴᴅᴏᴍ ᴍᴀɪᴅ ᴀɴɪᴍᴇ ɪᴍᴀɢᴇ 👗`
@@ -7959,10 +7950,10 @@ break
 
 case 'milf': {
   await loading()
-  
+
   try {
     const imageUrl = `https://Omegatech-api.dixonomega.tech/api/milf`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: imageUrl },
       caption: `*◆ ᴍɪʟғ*\n\n> ʀᴀɴᴅᴏᴍ ᴍᴀᴛᴜʀᴇ ɪᴍᴀɢᴇ 👩`
@@ -7976,10 +7967,10 @@ break
 
 case 'neko2': {
   await loading()
-  
+
   try {
     const imageUrl = `https://Omegatech-api.dixonomega.tech/api/neko`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: imageUrl },
       caption: `*◆ ɴᴇᴋᴏ*\n\n> ʀᴀɴᴅᴏᴍ ɴᴇᴋᴏ ᴀɴɪᴍᴇ ɪᴍᴀɢᴇ 🐱`
@@ -7994,13 +7985,13 @@ break
 case 'telegramstalk':
 case 'tgstalk': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}telegram <username>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}telegram telegram`)
-  
+
   await loading()
-  
+
   try {
     const res = await axios.get(`https://Omegatech-api.dixonomega.tech/api/tgstalk?username=${encodeURIComponent(text)}`)
     const data = res.data
-    
+
     if (data.status && data.result) {
       let tgInfo = `*◆ ᴛᴇʟᴇɢʀᴀᴍ sᴛᴀʟᴋ*\n\n`
       tgInfo += `*ᴜsᴇʀɴᴀᴍᴇ:* @${data.result.username}\n`
@@ -8008,7 +7999,7 @@ case 'tgstalk': {
       tgInfo += `*ʙɪᴏ:* ${data.result.bio || 'N/A'}\n`
       tgInfo += `*ғᴏʟʟᴏᴡᴇʀs:* ${data.result.followers || 'N/A'}\n`
       tgInfo += `*ʟɪɴᴋ:* https://t.me/${text}`
-      
+
       if (data.result.photo) {
         await bad.sendMessage(m.chat, {
           image: { url: data.result.photo },
@@ -8146,10 +8137,10 @@ case 'hack': {
   if (!m.mentionedJid && !m.quoted) {
     return reply('ᴍᴇɴᴛɪᴏɴ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ sᴏᴍᴇᴏɴᴇ ᴛᴏ ʜᴀᴄᴋ ᴛʜᴇᴍ!')
   }
-  
+
   const target = m.mentionedJid[0] || m.quoted.sender
   const targetName = target.split('@')[0]
-  
+
   const stages = [
     '🔍 ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ʜᴀᴄᴋ...',
     '🌐 ᴄᴏɴɴᴇᴄᴛɪɴɢ ᴛᴏ sᴇʀᴠᴇʀ...',
@@ -8160,12 +8151,12 @@ case 'hack': {
     '🔐 ᴅᴇᴄʀʏᴘᴛɪɴɢ ᴅᴀᴛᴀ...',
     '💻 ᴀɴᴀʟʏᴢɪɴɢ sʏsᴛᴇᴍ...'
   ]
-  
+
   const cities = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Accra', 'Nairobi', 'Cairo', 'Johannesburg', 'Kinshasa']
   const emails = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com']
   const devices = ['iPhone 14 Pro', 'Samsung Galaxy S23', 'Google Pixel 7', 'OnePlus 11', 'Xiaomi 13']
   const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera']
-  
+
   const randomPhone = '+234' + Math.floor(Math.random() * 9000000000 + 1000000000)
   const randomEmail = `${targetName}@${pickRandom(emails)}`
   const randomPassword = Math.random().toString(36).slice(2, 12)
@@ -8173,7 +8164,7 @@ case 'hack': {
   const randomDevice = pickRandom(devices)
   const randomBrowser = pickRandom(browsers)
   const randomIP = `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
-  
+
   const finalMessage = `
 ╭━━〔 ☠️ ʜᴀᴄᴋ ᴄᴏᴍᴘʟᴇᴛᴇ ☠️ 〕━━┈⊷
 ┃
@@ -8202,11 +8193,11 @@ case 'hack': {
 *⚠️ ᴊᴜsᴛ ᴋɪᴅᴅɪɴɢ! 😂*
 *ᴛʜɪs ɪs ᴀ ᴘʀᴀɴᴋ ғᴏʀ ᴇɴᴛᴇʀᴛᴀɪɴᴍᴇɴᴛ ᴏɴʟʏ*
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`
 
   try {
     let msg = await reply(stages[0])
-    
+
     for (let i = 1; i < stages.length; i++) {
       await sleep(2000)
       try {
@@ -8218,10 +8209,10 @@ case 'hack': {
         await reply(stages[i])
       }
     }
-    
+
     await sleep(2000)
     await reply(finalMessage)
-    
+
   } catch (error) {
     console.error('ʜᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ ᴇʀʀᴏʀ:', error)
     reply('ғᴀɪʟᴇᴅ ᴛᴏ ᴇxᴇᴄᴜᴛᴇ ʜᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ.')
@@ -8262,10 +8253,10 @@ break
 
 case 'flirt': {
 
-let target = m.mentionedJid[0] 
-      ? m.mentionedJid[0] 
-      : m.quoted 
-      ? m.quoted.sender 
+let target = m.mentionedJid[0]
+      ? m.mentionedJid[0]
+      : m.quoted
+      ? m.quoted.sender
       : m.sender
 
 const lines = [
@@ -8340,10 +8331,10 @@ case 'tareef':
 case 'respect':
 case 'goodword': {
 
-let target = m.mentionedJid[0] 
-      ? m.mentionedJid[0] 
-      : m.quoted 
-      ? m.quoted.sender 
+let target = m.mentionedJid[0]
+      ? m.mentionedJid[0]
+      : m.quoted
+      ? m.quoted.sender
       : m.sender
 
 const compliments = [
@@ -8492,7 +8483,7 @@ let insult = insults[Math.floor(Math.random() * insults.length)]
 
 insult = insult.replace("@user", `@${target.split("@")[0]}`)
 
-await bad.sendMessage(m.chat, { 
+await bad.sendMessage(m.chat, {
 text: insult,
 mentions: [target]
 }, { quoted: m })
@@ -8507,7 +8498,7 @@ break
 
 case 'math': {
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴀ ᴍᴀᴛʜ ᴘʀᴏʙʟᴇᴍ!\nᴇxᴀᴍᴘʟᴇ: .math 5 + 3 * 2')
-  
+
   try {
     const result = eval(text.replace(/[^0-9+\-*/().]/g, ''))
     reply(`🧮 *ᴄᴀʟᴄᴜʟᴀᴛᴏʀ*\n\n${text} = ${result}`)
@@ -8525,10 +8516,10 @@ case 'trivia': {
     { q: "ᴡʜᴏ ᴘᴀɪɴᴛᴇᴅ ᴛʜᴇ ᴍᴏɴᴀ ʟɪsᴀ?", a: "ʟᴇᴏɴᴀʀᴅᴏ ᴅᴀ ᴠɪɴᴄɪ" },
     { q: "ᴡʜᴀᴛ ɪs ᴛʜᴇ ʟᴀʀɢᴇsᴛ ᴘʟᴀɴᴇᴛ?", a: "ᴊᴜᴘɪᴛᴇʀ" }
   ]
-  
+
   const trivia = pickRandom(questions)
   reply(`❓ *ᴛʀɪᴠɪᴀ ǫᴜᴇsᴛɪᴏɴ*\n\n${trivia.q}\n\n_ʀᴇᴘʟʏ ᴡɪᴛʜ ʏᴏᴜʀ ᴀɴsᴡᴇʀ!_`)
-  
+
   // Store answer for checking (in real implementation, you'd use a proper storage system)
   global.triviaAnswer = trivia.a.toLowerCase()
 }
@@ -8538,11 +8529,11 @@ case 'rps': {
   if (!text || !['rock', 'paper', 'scissors'].includes(text.toLowerCase())) {
     return reply('ᴄʜᴏᴏsᴇ: ʀᴏᴄᴋ, ᴘᴀᴘᴇʀ, ᴏʀ sᴄɪssᴏʀs\nᴇxᴀᴍᴘʟᴇ: .rps rock')
   }
-  
+
   const choices = ['rock', 'paper', 'scissors']
   const botChoice = pickRandom(choices)
   const userChoice = text.toLowerCase()
-  
+
   let result = ''
   if (botChoice === userChoice) {
     result = "ɪᴛ's ᴀ ᴛɪᴇ! 🤝"
@@ -8555,7 +8546,7 @@ case 'rps': {
   } else {
     result = "ʏᴏᴜ ʟᴏsᴇ! 😢"
   }
-  
+
   reply(`✊✋✌️ *ʀᴏᴄᴋ ᴘᴀᴘᴇʀ sᴄɪssᴏʀs*\n\nʏᴏᴜ: ${userChoice}\nʙᴏᴛ: ${botChoice}\n\n${result}`)
 }
 break
@@ -8565,12 +8556,12 @@ case 'slot': {
   const slot1 = pickRandom(symbols)
   const slot2 = pickRandom(symbols)
   const slot3 = pickRandom(symbols)
-  
+
   let result = '🎰 *sʟᴏᴛ ᴍᴀᴄʜɪɴᴇ*\n\n'
   result += `╔═══════╗\n`
   result += `║ ${slot1} ${slot2} ${slot3} ║\n`
   result += `╚═══════╝\n\n`
-  
+
   if (slot1 === slot2 && slot2 === slot3) {
     result += '🎉 ᴊᴀᴄᴋᴘᴏᴛ! ʏᴏᴜ ᴡɪɴ!'
   } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
@@ -8578,7 +8569,7 @@ case 'slot': {
   } else {
     result += '❌ ɴᴏ ᴍᴀᴛᴄʜ. ᴛʀʏ ᴀɢᴀɪɴ!'
   }
-  
+
   reply(result)
 }
 break
@@ -8587,7 +8578,7 @@ case 'guess': {
   if (!global.guessNumber) {
     global.guessNumber = {}
   }
-  
+
   if (!global.guessNumber[m.sender]) {
     global.guessNumber[m.sender] = Math.floor(Math.random() * 100) + 1
     reply('🎯 *ɢᴜᴇss ᴛʜᴇ ɴᴜᴍʙᴇʀ*\n\nɪ\'ᴍ ᴛʜɪɴᴋɪɴɢ ᴏғ ᴀ ɴᴜᴍʙᴇʀ ʙᴇᴛᴡᴇᴇɴ 1 ᴀɴᴅ 100.\nʀᴇᴘʟʏ ᴡɪᴛʜ ʏᴏᴜʀ ɢᴜᴇss!')
@@ -8596,7 +8587,7 @@ case 'guess': {
   } else {
     const guess = parseInt(text)
     const answer = global.guessNumber[m.sender]
-    
+
     if (guess === answer) {
       delete global.guessNumber[m.sender]
       reply(`🎉 ᴄᴏʀʀᴇᴄᴛ! ᴛʜᴇ ɴᴜᴍʙᴇʀ ᴡᴀs ${answer}!`)
@@ -8611,11 +8602,11 @@ break
 
 case 'waifu': case 'neko': case 'megumin': case 'shinobu': {
   await loading()
-  
+
   try {
     const res = await fetch(`https://api.waifu.pics/sfw/${command}`)
     const data = await res.json()
-    
+
     if (data.url) {
       await bad.sendMessage(m.chat, {
         image: { url: data.url },
@@ -8634,12 +8625,12 @@ break
 case 'naruto': case 'sasuke': case 'itachi': case 'kakashi': case 'madara':
 case 'sakura': case 'nezuko': case 'miku': case 'mikasa': case 'elaina': {
   await loading()
-  
+
   try {
     // Using Nekos.best API - more reliable
     const res = await fetch('https://nekos.best/api/v2/neko')
     const data = await res.json()
-    
+
     if (data.results && data.results[0]) {
       await bad.sendMessage(m.chat, {
         image: { url: data.results[0].url },
@@ -8662,12 +8653,12 @@ case 'kagura': case 'kaori': case 'keneki': case 'kotori': case 'kurumi':
 case 'loli': case 'onepiece': case 'rize': case 'sagiri': case 'tsunade':
 case 'yotsuba': case 'yuki1': case 'yumeko': {
   await loading()
-  
+
   try {
     // Using waifu.im API - high quality anime images
     const res = await fetch('https://api.waifu.im/search/?included_tags=waifu&is_nsfw=false')
     const data = await res.json()
-    
+
     if (data.images && data.images[0]) {
       await bad.sendMessage(m.chat, {
         image: { url: data.images[0].url },
@@ -8685,11 +8676,11 @@ break
 
 case 'husbu': case 'minato': {
   await loading()
-  
+
   try {
     const res = await fetch('https://api.waifu.im/search/?included_tags=husbando&is_nsfw=false')
     const data = await res.json()
-    
+
     if (data.images && data.images[0]) {
       await bad.sendMessage(m.chat, {
         image: { url: data.images[0].url },
@@ -8706,11 +8697,11 @@ break
 
 case 'nekonime': case 'art': {
   await loading()
-  
+
   try {
     const res = await fetch('https://nekos.best/api/v2/neko')
     const data = await res.json()
-    
+
     if (data.results && data.results[0]) {
       await bad.sendMessage(m.chat, {
         image: { url: data.results[0].url },
@@ -8731,15 +8722,15 @@ case 'blackpink':
 case 'randblackpink': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ʙʟᴀᴄᴋᴘɪɴᴋ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Blackpink kpop girl group members, professional photo, high quality, 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ʙʟᴀᴄᴋᴘɪɴᴋ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Blackpink Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8751,15 +8742,15 @@ case 'jennie':
 case 'jennie1': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ᴊᴇɴɴɪᴇ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Jennie Kim Blackpink, professional photo, kpop idol, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ᴊᴇɴɴɪᴇ - ʙʟᴀᴄᴋᴘɪɴᴋ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Jennie Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8770,15 +8761,15 @@ break;
 case 'jisoo': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ᴊɪsᴏᴏ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Jisoo Blackpink, professional photo, kpop idol, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ᴊɪsᴏᴏ - ʙʟᴀᴄᴋᴘɪɴᴋ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Jisoo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8790,15 +8781,15 @@ case 'rosee':
 case 'rose': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ʀᴏsᴇ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Rose Blackpink, professional photo, kpop idol, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ʀᴏsᴇ - ʙʟᴀᴄᴋᴘɪɴᴋ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Rose Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8809,15 +8800,15 @@ break;
 case 'ryujin': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ʀʏᴜᴊɪɴ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Ryujin ITZY kpop idol, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ʀʏᴜᴊɪɴ - ɪᴛᴢʏ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Ryujin Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8828,15 +8819,15 @@ break;
 case 'bts': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ʙᴛs ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('BTS kpop boy group, professional photo, high quality, 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ʙᴛs*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('BTS Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8847,15 +8838,15 @@ break;
 case 'exo': {
     try {
         await reply('🎤 ғᴇᴛᴄʜɪɴɢ ᴇxᴏ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('EXO kpop boy group, professional photo, high quality, 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎤 *ᴇxᴏ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('EXO Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8871,15 +8862,15 @@ case 'cecan':
 case 'cewek': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Indonesian girl, natural beauty, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ʀᴀɴᴅᴏᴍ ɢɪʀʟ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Cecan Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8891,15 +8882,15 @@ case 'china':
 case 'chinese': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴄʜɪɴᴇsᴇ ɢɪʀʟ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Chinese girl, traditional or modern style, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴄʜɪɴᴇsᴇ ɢɪʀʟ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('China Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8910,15 +8901,15 @@ break;
 case 'hijab': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ʜɪᴊᴀʙ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Muslim woman wearing hijab, modest fashion, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ʜɪᴊᴀʙ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Hijab Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8930,15 +8921,15 @@ case 'indonesia':
 case 'indonesian': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ɪɴᴅᴏɴᴇsɪᴀɴ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Indonesian woman, natural beauty, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ɪɴᴅᴏɴᴇsɪᴀɴ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Indonesia Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8950,15 +8941,15 @@ case 'japanese':
 case 'japan': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴊᴀᴘᴀɴᴇsᴇ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Japanese woman, traditional or modern style, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴊᴀᴘᴀɴᴇsᴇ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Japanese Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8970,15 +8961,15 @@ case 'korean':
 case 'korea': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴋᴏʀᴇᴀɴ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Korean woman, K-beauty style, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴋᴏʀᴇᴀɴ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Korean Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -8990,15 +8981,15 @@ case 'malaysia':
 case 'malaysian': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴍᴀʟᴀʏsɪᴀɴ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Malaysian woman, natural beauty, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴍᴀʟᴀʏsɪᴀɴ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Malaysia Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -9010,15 +9001,15 @@ case 'thailand':
 case 'thai': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴛʜᴀɪ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Thai woman, traditional or modern style, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴛʜᴀɪ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Thailand Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -9030,15 +9021,15 @@ case 'vietnam':
 case 'vietnamese': {
     try {
         await reply('🌸 ғᴇᴛᴄʜɪɴɢ ᴠɪᴇᴛɴᴀᴍᴇsᴇ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent('Beautiful Vietnamese woman, ao dai or modern style, professional photo, high quality');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ᴠɪᴇᴛɴᴀᴍᴇsᴇ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Vietnam Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴍᴀɢᴇ.');
@@ -9054,15 +9045,15 @@ case 'cyber':
 case 'cyberpunk': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴄʏʙᴇʀᴘᴜɴᴋ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Cyberpunk city wallpaper, neon lights, futuristic, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴄʏʙᴇʀᴘᴜɴᴋ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Cyber Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9073,15 +9064,15 @@ break;
 case 'cybergirl': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴄʏʙᴇʀ ɢɪʀʟ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Cyberpunk girl wallpaper, neon aesthetic, futuristic fashion, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴄʏʙᴇʀ ɢɪʀʟ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Cybergirl Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9093,15 +9084,15 @@ case 'hacker':
 case 'hackerwall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ʜᴀᴄᴋᴇʀ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Hacker wallpaper, matrix code, dark theme, terminal, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ʜᴀᴄᴋᴇʀ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Hacker Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9113,15 +9104,15 @@ case 'technology':
 case 'tech': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴛᴇᴄʜɴᴏʟᴏɢʏ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Technology wallpaper, futuristic tech, circuits, innovation, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴛᴇᴄʜɴᴏʟᴏɢʏ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Technology Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9133,15 +9124,15 @@ case 'mountain':
 case 'mountains': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴍᴏᴜɴᴛᴀɪɴ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Beautiful mountain landscape wallpaper, scenic nature, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴍᴏᴜɴᴛᴀɪɴ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Mountain Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9153,15 +9144,15 @@ case 'space':
 case 'spacewall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ sᴘᴀᴄᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Space wallpaper, galaxy, nebula, stars, planets, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *sᴘᴀᴄᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Space Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9173,15 +9164,15 @@ case 'islamic':
 case 'islamicwall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ɪsʟᴀᴍɪᴄ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Islamic wallpaper, mosque, Islamic art patterns, calligraphy, peaceful, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ɪsʟᴀᴍɪᴄ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Islamic Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9193,15 +9184,15 @@ case 'quran':
 case 'quranwall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ǫᴜʀᴀɴ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Quran wallpaper, Islamic calligraphy, holy book, peaceful, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ǫᴜʀᴀɴ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Quran Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9213,15 +9204,15 @@ case 'freefire':
 case 'ff': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ғʀᴇᴇ ғɪʀᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Free Fire game wallpaper, battle royale, gaming, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ғʀᴇᴇ ғɪʀᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('FreeFire Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9233,15 +9224,15 @@ case 'gamewallpaper':
 case 'gamewall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ɢᴀᴍɪɴɢ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Gaming wallpaper, epic game scene, action, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ɢᴀᴍɪɴɢ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('GameWallpaper Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9253,15 +9244,15 @@ case 'pubg':
 case 'pubgwall': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴘᴜʙɢ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('PUBG game wallpaper, battle royale, playerunknown battlegrounds, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴘᴜʙɢ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('PUBG Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9273,15 +9264,15 @@ case 'wallhp':
 case 'phonewallpaper': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴘʜᴏɴᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Beautiful phone wallpaper, aesthetic, colorful, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1080&height=1920&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴘʜᴏɴᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('WallHP Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9293,15 +9284,15 @@ case 'wallml':
 case 'mobilelegends': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴍᴏʙɪʟᴇ ʟᴇɢᴇɴᴅs ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Mobile Legends game wallpaper, MOBA heroes, epic battle, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴍᴏʙɪʟᴇ ʟᴇɢᴇɴᴅs ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('WallML Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9313,15 +9304,15 @@ case 'wallmlnime':
 case 'mlnime': {
     try {
         await reply('🎨 ғᴇᴛᴄʜɪɴɢ ᴍʟ ᴀɴɪᴍᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ...');
-        
+
         const prompt = encodeURIComponent('Mobile Legends anime style wallpaper, anime heroes, epic, high quality 4k');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1920&height=1080&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ᴍʟ ᴀɴɪᴍᴇ ᴡᴀʟʟᴘᴀᴘᴇʀ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('WallMLNime Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴀʟʟᴘᴀᴘᴇʀ.');
@@ -9335,13 +9326,13 @@ break;
 case 'anime':
 case 'animeinfo': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}anime <anime name>\n\nᴇxᴀᴍᴘʟᴇ: ${prefix}anime naruto`)
-  
+
   await loading()
-  
+
   try {
     const res = await fetch(`https://api.princetechn.com/api/anime?title=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (data.title) {
       let animeInfo = `*◆ ᴀɴɪᴍᴇ ɪɴғᴏ*\n\n`
       animeInfo += `*ᴛɪᴛʟᴇ:* ${data.title}\n`
@@ -9351,7 +9342,7 @@ case 'animeinfo': {
       animeInfo += `*sᴛᴀᴛᴜs:* ${data.status}\n`
       animeInfo += `*sʏɴᴏᴘsɪs:* ${data.synopsis}\n\n`
       animeInfo += `> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑶𝒇𝒇𝒊𝒄𝒊𝒂𝒍 ☠︎︎`
-      
+
       if (data.image) {
         await bad.sendMessage(m.chat, {
           image: { url: data.image },
@@ -9373,11 +9364,11 @@ break
 case 'animesearch': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
   if (!text) return reply(`ᴡʜɪᴄʜ ᴀɴɪᴍᴇ ᴀʀᴇ ʏᴏᴜ ʟᴏᴏᴋɪɴ ғᴏʀ?`)
-  
+
   const malScraper = require('mal-scraper')
   const anime = await malScraper.getInfoFromName(text).catch(() => null)
   if (!anime) return reply(`ᴄᴏᴜʟᴅ ɴᴏᴛ ғɪɴᴅ`)
-  
+
   let animetxt = `
 🎀 *ᴛɪᴛʟᴇ: ${anime.title}*
 🎋 *ᴛʏᴘᴇ: ${anime.type}*
@@ -9393,9 +9384,9 @@ case 'animesearch': {
 ✮ *ᴛʀᴀɪʟᴇʀ: ${anime.trailer}*
 🌐 *ᴜʀʟ: ${anime.url}*
 ❄ *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${anime.synopsis}*`
-  
+
   await bad.sendMessage(m.chat,{
-    image:{url:anime.picture}, 
+    image:{url:anime.picture},
     caption:animetxt
   },{quoted:m})
 }
@@ -9423,12 +9414,12 @@ case 'animeglomp':
 case 'animesmug':
 case 'animeblush': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const action = command.replace('anime', '')
   try {
     waifudd = await axios.get(`https://waifu.pics/api/sfw/${action}`)
-    await bad.sendMessage(m.chat, { 
-      image: { url:waifudd.data.url} , 
+    await bad.sendMessage(m.chat, {
+      image: { url:waifudd.data.url} ,
       caption: 'sᴜᴄᴄᴇss ✅'
     }, { quoted:m })
   } catch (err) {
@@ -9442,20 +9433,20 @@ break
 
 case 'sticker': {
   if (!m.quoted) return reply(`ʀᴇᴘʟʏ ɪᴍᴀɢᴇ ᴏʀ ᴠɪᴅᴇᴏ ᴡɪᴛʜ ᴄᴏᴍᴍᴀɴᴅ ${prefix + command}`)
-  
+
   if (/image/.test(mime)) {
     let media = await quoted.download()
-    let encmedia = await bad.sendImageAsSticker(from, media, m, { 
-      packname: global.packname, 
-      author: global.author 
+    let encmedia = await bad.sendImageAsSticker(from, media, m, {
+      packname: global.packname,
+      author: global.author
     })
     await fs.unlinkSync(encmedia)
   } else if (/video/.test(mime)) {
     if ((quoted.msg || quoted).seconds > 11) return reply('ᴍᴀx 10s')
     let media = await quoted.download()
-    let encmedia = await bad.sendVideoAsSticker(from, media, m, { 
-      packname: global.packname, 
-      author: global.author 
+    let encmedia = await bad.sendVideoAsSticker(from, media, m, {
+      packname: global.packname,
+      author: global.author
     })
     await fs.unlinkSync(encmedia)
   } else {
@@ -9470,27 +9461,27 @@ case 'steal': {
     if (!m.quoted.mimetype || !/webp/.test(m.quoted.mimetype)) {
         return reply('❌ ᴛʜᴀᴛ\'s ɴᴏᴛ ᴀ sᴛɪᴄᴋᴇʀ!');
     }
-    
+
     try {
         await loading();
-        
+
         // Get custom name or use default
         let packname = text || ' sᴛɪᴄᴋᴇʀs';
-        let author = '༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎';
-        
+        let author = '༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ༒︎';
+
         // Download the sticker
         let media = await bad.downloadMediaMessage(m.quoted);
-        
+
         // Add EXIF data
         let stickerWithExif = await addExif(media, packname, author);
-        
+
         // Send back with new metadata
         await bad.sendMessage(m.chat, {
             sticker: stickerWithExif
         }, { quoted: m });
-        
+
         reply(`✅ sᴛɪᴄᴋᴇʀ sᴛᴏʟᴇɴ!\n📦 ᴘᴀᴄᴋ: ${packname}\n✍️ ᴀᴜᴛʜᴏʀ: ${author}`);
-        
+
     } catch (error) {
         console.error('sᴛᴇᴀʟ sᴛɪᴄᴋᴇʀ ᴇʀʀᴏʀ:', error);
         reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴛᴇᴀʟ sᴛɪᴄᴋᴇʀ');
@@ -9504,36 +9495,36 @@ case 'wm':
 case 'swm':
 case 'takefull': {
     const quoted = m.quoted ? m.quoted : m;
-    
+
     if (!quoted || !quoted.message || !quoted.message.stickerMessage) {
         return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀ sᴛɪᴄᴋᴇʀ!\n\n*ᴜsᴀɢᴇ:*\n.wm pack|author\n.wm ЅΙᒪᐯΞᎡ|ᴛᴇᴄʜ');
     }
-    
+
     try {
         // Split text by | or use defaults
         let packname, author;
-        
+
         if (text && text.includes('|')) {
             const split = text.split('|');
-            packname = split[0].trim() || '⏤͟͞❮❮ ♧✰༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
-            author = split[1].trim() || '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
+            packname = split[0].trim() || '⏤͟͞❮❮ ♧✰༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
+            author = split[1].trim() || '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
         } else {
             packname = text || '⏤͟͞❮❮ ♧✰༒︎ 𝑺𝑯𝑨𝑫𝑶𝑾 ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
-            author = '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
+            author = '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
         }
-        
+
         await reply('✨ ᴄʀᴇᴀᴛɪɴɢ sᴛɪᴄᴋᴇʀ...');
-        
+
         const media = await quoted.download();
-        
+
         await bad.sendMessage(m.chat, {
             sticker: media,
             packname: packname,
             author: author
         }, { quoted: m });
-        
+
         await reply(`✅ *sᴛɪᴄᴋᴇʀ ᴄʀᴇᴀᴛᴇᴅ!*\n\n📦 ᴘᴀᴄᴋ: ${packname}\n👤 ᴀᴜᴛʜᴏʀ: ${author}`);
-        
+
     } catch (error) {
         console.error('WM Sticker Error:', error);
         await reply(`❌ ғᴀɪʟᴇᴅ: ${error.message}`);
@@ -9544,7 +9535,7 @@ break;
 case 'toimg': {
   if (!m.quoted) return reply(`ʀᴇᴘʟʏ ᴛᴏ ᴀɴʏ sᴛɪᴄᴋᴇʀ.`)
   let mime = m.quoted.mtype
-  
+
   if (mime =="imageMessage" || mime =="stickerMessage") {
     let media = await bad.downloadAndSaveMediaMessage(m.quoted)
     let name = getRandom('.png')
@@ -9560,19 +9551,19 @@ break
 
 case 'qc': {
   if (!text) return reply('ᴜsᴇ ғᴏʀᴍᴀᴛ: *.qc ʏᴏᴜʀ ǫᴜᴏᴛᴇ*')
-  
+
   const name = m.pushName || 'ᴜsᴇʀ'
   const quote = text.trim()
-  
+
   let profilePic
   try {
     profilePic = await bad.profilePictureUrl(m.sender, 'image')
   } catch {
     profilePic = 'Telegrammmm'
   }
-  
+
   const url = `https://www.laurine.site/api/generator/qc?text=${encodeURIComponent(quote)}&name=${encodeURIComponent(name)}&photo=${encodeURIComponent(profilePic)}`
-  
+
   try {
     await bad.sendImageAsSticker(m.chat, url, m, {
       packname: global.packname,
@@ -9587,40 +9578,40 @@ break
 case 'fakereact':
 case 'freact': {
   if (!isCreator && !isPremium) return reply('ᴘʀᴇᴍɪᴜᴍ ᴏʀ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   if (!text.includes('|')) {
     return reply(`*◆ ғᴀᴋᴇ ʀᴇᴀᴄᴛ*
 
 ᴜsᴀɢᴇ: ${prefix + command} <ᴄʜᴀɴɴᴇʟ-ʟɪɴᴋ>|<ᴇᴍᴏᴊɪ>
 
 ᴇxᴀᴍᴘʟᴇ:
-${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |😂😍🔥
+${prefix + command} and https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V |😂😍🔥
 
 ɴᴏᴛᴇ: ʏᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴜʟᴛɪᴘʟᴇ ᴇᴍᴏᴊɪs!`)
   }
-  
+
   const [postLink, reacts] = text.split('|').map(v => v.trim())
-  
+
   if (!postLink.includes('whatsapp.com/channel/')) {
     return reply('❌ ɪɴᴠᴀʟɪᴅ ᴄʜᴀɴɴᴇʟ ʟɪɴᴋ!')
   }
-  
+
   await loading()
-  
+
   try {
     // Fixed API URL
     const url = `https://chreact.princetechn.com/api?post_link=${encodeURIComponent(postLink)}&reacts=${encodeURIComponent(reacts)}`
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0'
       }
     })
-    
+
     const text = await response.text()
     let data
-    
+
     try {
       data = JSON.parse(text)
     } catch {
@@ -9632,11 +9623,11 @@ ${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |�
 😊 ʀᴇᴀᴄᴛɪᴏɴs: ${reacts}
 ✨ sᴛᴀᴛᴜs: sᴜᴄᴄᴇss
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
       }
       throw new Error('ɪɴᴠᴀʟɪᴅ ᴀᴘɪ ʀᴇsᴘᴏɴsᴇ')
     }
-    
+
     if (data.success || response.ok) {
       reply(`✅ *ғᴀᴋᴇ ʀᴇᴀᴄᴛɪᴏɴs sᴇɴᴛ!*
 
@@ -9644,7 +9635,7 @@ ${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |�
 😊 ʀᴇᴀᴄᴛɪᴏɴs: ${reacts}
 ✨ sᴛᴀᴛᴜs: sᴜᴄᴄᴇss
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
     } else {
       reply(`❌ *ғᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ʀᴇᴀᴄᴛɪᴏɴs*
 
@@ -9655,7 +9646,7 @@ ${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |�
 • ᴜsᴇ ᴠᴀʟɪᴅ ᴇᴍᴏᴊɪs
 • ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ (ᴀᴘɪ ᴍɪɢʜᴛ ʙᴇ ᴅᴏᴡɴ)`)
     }
-    
+
   } catch (error) {
     console.error('ғᴀᴋᴇ ʀᴇᴀᴄᴛ ᴇʀʀᴏʀ:', error)
     reply(`⚠️ *sᴇʀᴠɪᴄᴇ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ*
@@ -9670,14 +9661,14 @@ case 'emojimix': {
   if (!text || !text.includes('+')) {
     return reply('ᴜsᴇ ғᴏʀᴍᴀᴛ: .emojimix 😀+😎')
   }
-  
+
   const [emoji1, emoji2] = text.split('+').map(e => e.trim())
   const url = `https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&contentfilter=high&media_filter=png_transparent&component=proactive&collection=emoji_kitchen_v5&q=${encodeURIComponent(emoji1)}_${encodeURIComponent(emoji2)}`
-  
+
   try {
     const res = await fetch(url)
     const json = await res.json()
-    
+
     if (json.results && json.results[0]) {
       await bad.sendImageAsSticker(m.chat, json.results[0].url, m, {
         packname: global.packname,
@@ -9696,16 +9687,16 @@ case 'smeme': {
   if (!m.quoted || !/image/.test(mime)) {
     return reply('ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ ᴡɪᴛʜ ᴛᴇxᴛ!\nᴇxᴀᴍᴘʟᴇ: .smeme ᴛᴏᴘ ᴛᴇxᴛ|ʙᴏᴛᴛᴏᴍ ᴛᴇxᴛ')
   }
-  
+
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ!\nᴇxᴀᴍᴘʟᴇ: .smeme ᴛᴏᴘ|ʙᴏᴛᴛᴏᴍ')
-  
+
   const [top, bottom] = text.split('|')
   const media = await quoted.download()
   const uploadImage = require('./allfunc/Data6')
   const imageUrl = await uploadImage(media)
-  
+
   const memeUrl = `https://api.memegen.link/images/custom/${encodeURIComponent(top || '_')}/${encodeURIComponent(bottom || '_')}.png?background=${imageUrl}`
-  
+
   await bad.sendImageAsSticker(m.chat, memeUrl, m, {
     packname: global.packname,
     author: global.author
@@ -9721,9 +9712,9 @@ case 'happy': case 'dance': case 'cringe': case 'cuddle': case 'highfive':
 case 'shinobu': case 'handhold': {
   axios.get(`https://api.waifu.pics/sfw/${command}`)
     .then(({data}) => {
-      bad.sendImageAsSticker(from, data.url, m, { 
-        packname: global.packname, 
-        author: global.author 
+      bad.sendImageAsSticker(from, data.url, m, {
+        packname: global.packname,
+        author: global.author
       })
     })
 }
@@ -9741,28 +9732,28 @@ break
 case 'currency':
 case 'convert': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴄᴜʀʀᴇɴᴄʏ ᴄᴏɴᴠᴇʀsɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} 100 USD to EUR`);
-    
+
     try {
         await reply('💱 ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴄᴜʀʀᴇɴᴄʏ...');
-        
+
         // Parse input: "100 USD to EUR"
         const match = text.match(/(\d+\.?\d*)\s*([A-Z]{3})\s*(?:to|in|into)?\s*([A-Z]{3})/i);
         if (!match) return reply('❌ ɪɴᴠᴀʟɪᴅ ғᴏʀᴍᴀᴛ! ᴜsᴇ: 100 USD to EUR');
-        
+
         const [_, amount, from, to] = match;
-        
+
         const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${from.toUpperCase()}`);
         const data = await response.json();
-        
+
         if (!data.rates[to.toUpperCase()]) {
             return reply('❌ ɪɴᴠᴀʟɪᴅ ᴄᴜʀʀᴇɴᴄʏ ᴄᴏᴅᴇ!');
         }
-        
+
         const rate = data.rates[to.toUpperCase()];
         const result = (parseFloat(amount) * rate).toFixed(2);
-        
+
         await reply(`💱 *ᴄᴜʀʀᴇɴᴄʏ ᴄᴏɴᴠᴇʀsɪᴏɴ*\n\n${amount} ${from.toUpperCase()} = ${result} ${to.toUpperCase()}\n\n📊 ʀᴀᴛᴇ: 1 ${from.toUpperCase()} = ${rate.toFixed(4)} ${to.toUpperCase()}`);
-        
+
     } catch (error) {
         console.error('Currency Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄᴏɴᴠᴇʀᴛ ᴄᴜʀʀᴇɴᴄʏ.');
@@ -9774,16 +9765,16 @@ case 'translate': {
     if (!text && !quoted) {
         return reply(`🌐 *Translate Usage*\n\n• ${prefix}translate hello -> fr\n• ${prefix}translate es how are you\n• Reply to message + ${prefix}translate en`);
     }
-    
+
     try {
         let targetLang = 'en';
         let sourceText = '';
-        
+
         // Agar quoted message hai to usko translate karo
         if (quoted && quoted.text) {
             sourceText = quoted.text;
             targetLang = text || 'en';
-        } 
+        }
         // Agar direct text hai
         else if (text) {
             // Format: text -> fr
@@ -9791,7 +9782,7 @@ case 'translate': {
             if (arrowMatch) {
                 sourceText = arrowMatch[1].trim();
                 targetLang = arrowMatch[2].toLowerCase();
-            } 
+            }
             // Format: fr hello world
             else {
                 const words = text.split(' ');
@@ -9805,35 +9796,35 @@ case 'translate': {
                 }
             }
         }
-        
+
         if (!sourceText) {
             return reply(`🌐 *Translate Usage*\n\n• ${prefix}translate hello -> fr\n• ${prefix}translate es how are you\n• Reply to message + ${prefix}translate en`);
         }
-        
+
         if (sourceText.length > 2000) {
             return reply('❌ Text too long. Please keep under 2000 characters.');
         }
-        
+
         await reply('⏳ Translating...');
-        
+
         // Google Translate API
         const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(sourceText)}`;
         const response = await fetch(translateUrl);
         const data = await response.json();
-        
+
         let translated = '';
         if (data && data[0]) {
             translated = data[0].map(item => item[0]).join('');
         }
-        
+
         if (!translated) {
             return reply('❌ Translation failed. Try again.');
         }
-        
+
         const result = `🌐 *Translation*\n\n📝 Original: ${sourceText}\n\n✅ Translated (${targetLang}): ${translated}`;
-        
+
         reply(result);
-        
+
     } catch (error) {
         console.error('Translate Error:', error);
         reply(`❌ Translation error: ${error.message}`);
@@ -9844,13 +9835,13 @@ break;
 case 'calc':
 case 'calculate': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴍᴀᴛʜ ᴇxᴘʀᴇssɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} 25 * 4 + 10`);
-    
+
     try {
         // Safe calculation using Function constructor with limited scope
         const result = Function('"use strict"; return (' + text.replace(/[^0-9+\-*/.() ]/g, '') + ')')();
-        
+
         await reply(`🧮 *ᴄᴀʟᴄᴜʟᴀᴛᴏʀ*\n\n📝 ᴇxᴘʀᴇssɪᴏɴ: ${text}\n✨ ʀᴇsᴜʟᴛ: ${result}`);
-        
+
     } catch (error) {
         console.error('Calc Error:', error);
         await reply('❌ ɪɴᴠᴀʟɪᴅ ᴍᴀᴛʜ ᴇxᴘʀᴇssɪᴏɴ!');
@@ -9860,18 +9851,18 @@ break;
 
 case 'tts': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} Hello world`);
-    
+
     try {
         await reply('🔊 ɢᴇɴᴇʀᴀᴛɪɴɢ sᴘᴇᴇᴄʜ...');
-        
+
         const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encodeURIComponent(text)}`;
-        
+
         await bad.sendMessage(from, {
             audio: { url: ttsUrl },
             mimetype: 'audio/mpeg',
             ptt: true
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('TTS Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ sᴘᴇᴇᴄʜ.');
@@ -9882,15 +9873,15 @@ break;
 case 'tinyurl':
 case 'shorturl': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴜʀʟ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} https://google.com`);
-    
+
     try {
         await reply('🔗 sʜᴏʀᴛᴇɴɪɴɢ ᴜʀʟ...');
-        
+
         const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(text)}`);
         const shortUrl = await response.text();
-        
+
         await reply(`🔗 *ᴜʀʟ sʜᴏʀᴛᴇɴᴇʀ*\n\n📝 ᴏʀɪɢɪɴᴀʟ: ${text}\n✨ sʜᴏʀᴛ: ${shortUrl}`);
-        
+
     } catch (error) {
         console.error('URL Shortener Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sʜᴏʀᴛᴇɴ ᴜʀʟ.');
@@ -9901,20 +9892,20 @@ break;
 case 'tovn': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/audio|video/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀᴜᴅɪᴏ/ᴠɪᴅᴇᴏ!');
-    
+
     try {
         await reply('🎵 ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴛᴏ ᴠᴏɪᴄᴇ ɴᴏᴛᴇ...');
-        
+
         const media = await quoted.download();
-        
+
         await bad.sendMessage(from, {
             audio: media,
             mimetype: 'audio/mpeg',
             ptt: true
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('ToVN Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄᴏɴᴠᴇʀᴛ.');
@@ -9924,10 +9915,10 @@ break;
 
 case 'readmore': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} text1|text2`);
-    
+
     const [text1, text2] = text.split('|');
     if (!text2) return reply('❌ ᴜsᴇ: text1|text2');
-    
+
     await reply(`${text1}${'\u200E'.repeat(4001)}${text2}`);
 }
 break;
@@ -9940,15 +9931,15 @@ case 'removebg':
 case 'nobg': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply('🎨 ʀᴇᴍᴏᴠɪɴɢ ʙᴀᴄᴋɢʀᴏᴜɴᴅ...');
-        
+
         const media = await quoted.download();
         const base64 = media.toString('base64');
-        
+
         const response = await fetch('https://api.remove.bg/v1.0/removebg', {
             method: 'POST',
             headers: {
@@ -9960,14 +9951,14 @@ case 'nobg': {
                 size: 'auto'
             })
         });
-        
+
         const result = await response.arrayBuffer();
-        
+
         await bad.sendMessage(from, {
             image: Buffer.from(result),
             caption: '✨ *ʙᴀᴄᴋɢʀᴏᴜɴᴅ ʀᴇᴍᴏᴠᴇᴅ*'
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('RemoveBG Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ʀᴇᴍᴏᴠᴇ ʙᴀᴄᴋɢʀᴏᴜɴᴅ. ɴᴏᴛᴇ: ʀᴇǫᴜɪʀᴇs ᴀᴘɪ ᴋᴇʏ.');
@@ -9981,43 +9972,43 @@ case 'upscale':
 case 'hdr': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply('✨ ᴇɴʜᴀɴᴄɪɴɢ ɪᴍᴀɢᴇ...');
-        
+
         const media = await quoted.download();
         const fetch = require('node-fetch');
         const FormData = require('form-data');
-        
+
         // Upload to telegraph first
         const form = new FormData();
         form.append('file', media, 'image.jpg');
-        
+
         const upload = await fetch('https://telegra.ph/upload', {
             method: 'POST',
             body: form
         });
-        
+
         const uploadData = await upload.json();
         const imageUrl = 'https://telegra.ph' + uploadData[0].src;
-        
+
         // Use Pollinations image-to-image enhancement
         const enhancePrompt = encodeURIComponent('high quality, 4k resolution, sharp details, enhanced, professional photography, ultra HD, crystal clear');
         const pollinationsUrl = `https://image.pollinations.ai/prompt/${enhancePrompt}?width=2048&height=2048&seed=${Date.now()}&nologo=true&enhance=true&model=flux`;
-        
+
         const enhancedResponse = await fetch(pollinationsUrl);
         const enhancedBuffer = await enhancedResponse.buffer();
-        
+
         await bad.sendMessage(m.chat, {
             image: enhancedBuffer,
             caption: '✨ *ɪᴍᴀɢᴇ ᴇɴʜᴀɴᴄᴇᴅ*\n\n📊 ʀᴇsᴏʟᴜᴛɪᴏɴ: 2048x2048\n🎨 ǫᴜᴀʟɪᴛʏ: ᴜʟᴛʀᴀ ʜᴅ\n⚡ ᴘʀᴏᴄᴇssᴇᴅ ʙʏ: ᴘᴏʟʟɪɴᴀᴛɪᴏɴs ᴀɪ'
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Enhance Error:', error);
-        
+
         // Fallback: send as document
         try {
             const media = await quoted.download();
@@ -10039,19 +10030,19 @@ case 'recolor':
 case 'blur': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply(`🎨 ᴀᴘᴘʟʏɪɴɢ ${command} ᴇғғᴇᴄᴛ...`);
-        
+
         const media = await quoted.download();
-        
+
         await bad.sendMessage(from, {
             image: media,
             caption: `✨ *${command.toUpperCase()} ᴇғғᴇᴄᴛ ᴀᴘᴘʟɪᴇᴅ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error(`${command} Error:`, error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴀᴘᴘʟʏ ᴇғғᴇᴄᴛ.');
@@ -10063,23 +10054,23 @@ case 'toanime':
 case 'cartoon': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply('🎨 ᴄᴏɴᴠᴇʀᴛɪɴɢ ᴛᴏ ᴀɴɪᴍᴇ...');
-        
+
         const media = await quoted.download();
-        
+
         // Using Pollinations for anime style conversion
         const prompt = encodeURIComponent('anime style art, cartoon illustration');
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: '✨ *ᴀɴɪᴍᴇ sᴛʏʟᴇ ᴄᴏɴᴠᴇʀsɪᴏɴ*'
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('ToAnime Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄᴏɴᴠᴇʀᴛ.');
@@ -10089,17 +10080,17 @@ break;
 
 case 'carbon': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴄᴏᴅᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} console.log("hello")`);
-    
+
     try {
         await reply('💻 ɢᴇɴᴇʀᴀᴛɪɴɢ ᴄᴀʀʙᴏɴ...');
-        
+
         const carbon = `https://carbon.now.sh/?bg=rgba(74,144,226,1)&t=seti&wt=none&l=auto&width=680&ds=true&dsyoff=20px&dsblur=68px&wc=true&wa=true&pv=56px&ph=56px&ln=false&fl=1&fm=Hack&fs=14px&lh=133%25&si=false&es=2x&wm=false&code=${encodeURIComponent(text)}`;
-        
+
         await bad.sendMessage(from, {
             image: { url: carbon },
             caption: '💻 *ᴄᴀʀʙᴏɴ ᴄᴏᴅᴇ*'
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Carbon Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ.');
@@ -10111,23 +10102,23 @@ case 'jail':
 case 'gun': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply(`🎭 ᴀᴘᴘʟʏɪɴɢ ${command} ᴇғғᴇᴄᴛ...`);
-        
+
         const media = await quoted.download();
         const base64 = `data:image/jpeg;base64,${media.toString('base64')}`;
-        
+
         // Using SomeRandomAPI
         const apiUrl = `https://some-random-api.com/canvas/${command}?avatar=${encodeURIComponent(base64)}`;
-        
+
         await bad.sendMessage(from, {
             image: { url: apiUrl },
             caption: `🎭 *${command.toUpperCase()} ᴇғғᴇᴄᴛ*`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error(`${command} Error:`, error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴀᴘᴘʟʏ ᴇғғᴇᴄᴛ.');
@@ -10142,17 +10133,17 @@ break;
 case 'qr':
 case 'qrcode': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ/ᴜʀʟ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} Hello World`);
-    
+
     try {
         await reply('📱 ɢᴇɴᴇʀᴀᴛɪɴɢ ǫʀ ᴄᴏᴅᴇ...');
-        
+
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(text)}`;
-        
+
         await bad.sendMessage(from, {
             image: { url: qrUrl },
             caption: `📱 *ǫʀ ᴄᴏᴅᴇ ɢᴇɴᴇʀᴀᴛᴇᴅ*\n\n📝 ᴅᴀᴛᴀ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('QR Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ǫʀ ᴄᴏᴅᴇ.');
@@ -10163,28 +10154,28 @@ break;
 case 'readqr': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
-    
+
     if (!/image/.test(mime)) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ǫʀ ᴄᴏᴅᴇ ɪᴍᴀɢᴇ!');
-    
+
     try {
         await reply('📱 ʀᴇᴀᴅɪɴɢ ǫʀ ᴄᴏᴅᴇ...');
-        
+
         const media = await quoted.download();
         const base64 = media.toString('base64');
-        
+
         const response = await fetch(`https://api.qrserver.com/v1/read-qr-code/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `fileToUpload=data:image/png;base64,${base64}`
         });
-        
+
         const data = await response.json();
         const result = data[0]?.symbol[0]?.data;
-        
+
         if (!result) return reply('❌ ɴᴏ ǫʀ ᴄᴏᴅᴇ ғᴏᴜɴᴅ!');
-        
+
         await reply(`📱 *ǫʀ ᴄᴏᴅᴇ ʀᴇsᴜʟᴛ*\n\n${result}`);
-        
+
     } catch (error) {
         console.error('ReadQR Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ʀᴇᴀᴅ ǫʀ ᴄᴏᴅᴇ.');
@@ -10195,18 +10186,18 @@ break;
 case 'book':
 case 'bookcover': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ʙᴏᴏᴋ ᴛɪᴛʟᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} My Story`);
-    
+
     try {
         await reply('📚 ɢᴇɴᴇʀᴀᴛɪɴɢ ʙᴏᴏᴋ ᴄᴏᴠᴇʀ...');
-        
+
         const prompt = encodeURIComponent(`Book cover design with title "${text}", professional publishing quality, attractive design`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=1200&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `📚 *ʙᴏᴏᴋ ᴄᴏᴠᴇʀ*\n\n📝 ᴛɪᴛʟᴇ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Book Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʙᴏᴏᴋ ᴄᴏᴠᴇʀ.');
@@ -10217,10 +10208,10 @@ break;
 case 'obfuscate':
 case 'obf': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴊᴀᴠᴀsᴄʀɪᴘᴛ ᴄᴏᴅᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} console.log("test")`);
-    
+
     try {
         await reply('🔒 ᴏʙғᴜsᴄᴀᴛɪɴɢ ᴄᴏᴅᴇ...');
-        
+
         const response = await fetch('https://obfuscator.io/obfuscate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -10232,11 +10223,11 @@ case 'obf': {
                 }
             })
         });
-        
+
         const data = await response.json();
-        
+
         await reply(`🔒 *ᴏʙғᴜsᴄᴀᴛᴇᴅ ᴄᴏᴅᴇ*\n\n\`\`\`${data.obfuscatedCode}\`\`\``);
-        
+
     } catch (error) {
         console.error('Obfuscate Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴏʙғᴜsᴄᴀᴛᴇ ᴄᴏᴅᴇ.');
@@ -10250,17 +10241,17 @@ break;
 
 case 'lyrics': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ sᴏɴɢ ɴᴀᴍᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} Imagine Dragons Believer`);
-    
+
     try {
         await reply('🎵 sᴇᴀʀᴄʜɪɴɢ ʟʏʀɪᴄs...');
-        
+
         const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(text.split(' ')[0])}/${encodeURIComponent(text.split(' ').slice(1).join(' '))}`);
         const data = await response.json();
-        
+
         if (!data.lyrics) return reply('❌ ʟʏʀɪᴄs ɴᴏᴛ ғᴏᴜɴᴅ!');
-        
+
         await reply(`🎵 *ʟʏʀɪᴄs*\n\n${data.lyrics.substring(0, 2000)}${data.lyrics.length > 2000 ? '...' : ''}`);
-        
+
     } catch (error) {
         console.error('Lyrics Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ʟʏʀɪᴄs.');
@@ -10271,15 +10262,15 @@ break;
 case 'imdb':
 case 'movie': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} Inception`);
-    
+
     try {
         await reply('🎬 sᴇᴀʀᴄʜɪɴɢ ᴍᴏᴠɪᴇ...');
-        
+
         const response = await fetch(`https://www.omdbapi.com/?apikey=c7d9eed3&t=${encodeURIComponent(text)}`);
         const data = await response.json();
-        
+
         if (data.Response === 'False') return reply('❌ ᴍᴏᴠɪᴇ ɴᴏᴛ ғᴏᴜɴᴅ!');
-        
+
         const info = `🎬 *ᴍᴏᴠɪᴇ ɪɴғᴏ*\n\n` +
                     `📝 ᴛɪᴛʟᴇ: ${data.Title}\n` +
                     `📅 ʏᴇᴀʀ: ${data.Year}\n` +
@@ -10288,7 +10279,7 @@ case 'movie': {
                     `🎬 ᴅɪʀᴇᴄᴛᴏʀ: ${data.Director}\n` +
                     `🎭 ᴀᴄᴛᴏʀs: ${data.Actors}\n` +
                     `📖 ᴘʟᴏᴛ: ${data.Plot}`;
-        
+
         if (data.Poster && data.Poster !== 'N/A') {
             await bad.sendMessage(from, {
                 image: { url: data.Poster },
@@ -10297,7 +10288,7 @@ case 'movie': {
         } else {
             await reply(info);
         }
-        
+
     } catch (error) {
         console.error('IMDB Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴍᴏᴠɪᴇ ɪɴғᴏ.');
@@ -10308,26 +10299,26 @@ break;
 case 'ytsearch':
 case 'yts': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ sᴇᴀʀᴄʜ ǫᴜᴇʀʏ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} JavaScript tutorial`);
-    
+
     try {
         await reply('🔍 sᴇᴀʀᴄʜɪɴɢ ʏᴏᴜᴛᴜʙᴇ...');
-        
+
         const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(text)}`);
         const html = await response.text();
-        
+
         // Simple regex to extract video info
         const videoMatch = html.match(/"videoId":"([^"]+)","thumbnail":{"thumbnails":\[{"url":"([^"]+)".+?"title":{"runs":\[{"text":"([^"]+)"/);
-        
+
         if (!videoMatch) return reply('❌ ɴᴏ ʀᴇsᴜʟᴛs ғᴏᴜɴᴅ!');
-        
+
         const [, videoId, thumbnail, title] = videoMatch;
         const videoUrl = `https://youtube.com/watch?v=${videoId}`;
-        
+
         await bad.sendMessage(from, {
             image: { url: thumbnail },
             caption: `🎥 *ʏᴏᴜᴛᴜʙᴇ sᴇᴀʀᴄʜ*\n\n📝 ${title}\n🔗 ${videoUrl}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('YTSearch Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇᴀʀᴄʜ ʏᴏᴜᴛᴜʙᴇ.');
@@ -10337,14 +10328,14 @@ break;
 
 case 'google': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ sᴇᴀʀᴄʜ ǫᴜᴇʀʏ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} What is AI?`);
-    
+
     try {
         await reply('🔍 sᴇᴀʀᴄʜɪɴɢ ɢᴏᴏɢʟᴇ...');
-        
+
         const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(text)}`;
-        
+
         await reply(`🔍 *ɢᴏᴏɢʟᴇ sᴇᴀʀᴄʜ*\n\n📝 ǫᴜᴇʀʏ: ${text}\n🔗 ${searchUrl}`);
-        
+
     } catch (error) {
         console.error('Google Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇᴀʀᴄʜ.');
@@ -10356,15 +10347,15 @@ case 'weather':
 case 'weather2':
 case 'weatherinfo': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴄɪᴛʏ ɴᴀᴍᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} London`);
-    
+
     try {
         await reply('🌤️ ғᴇᴛᴄʜɪɴɢ ᴡᴇᴀᴛʜᴇʀ...');
-        
+
         const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(text)}&units=metric&appid=d97e458517de3eac6d3c50abcdcbe0e7`);
         const data = await response.json();
-        
+
         if (data.cod !== 200) return reply('❌ ᴄɪᴛʏ ɴᴏᴛ ғᴏᴜɴᴅ!');
-        
+
         const weather = `🌤️ *ᴡᴇᴀᴛʜᴇʀ ɪɴғᴏ*\n\n` +
                        `📍 ʟᴏᴄᴀᴛɪᴏɴ: ${data.name}, ${data.sys.country}\n` +
                        `🌡️ ᴛᴇᴍᴘᴇʀᴀᴛᴜʀᴇ: ${data.main.temp}°C\n` +
@@ -10372,9 +10363,9 @@ case 'weatherinfo': {
                        `☁️ ᴄᴏɴᴅɪᴛɪᴏɴ: ${data.weather[0].description}\n` +
                        `💧 ʜᴜᴍɪᴅɪᴛʏ: ${data.main.humidity}%\n` +
                        `💨 ᴡɪɴᴅ sᴘᴇᴇᴅ: ${data.wind.speed} m/s`;
-        
+
         await reply(weather);
-        
+
     } catch (error) {
         console.error('Weather Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴡᴇᴀᴛʜᴇʀ. ɴᴏᴛᴇ: ʀᴇǫᴜɪʀᴇs ᴀᴘɪ ᴋᴇʏ ғʀᴏᴍ ᴏᴘᴇɴᴡᴇᴀᴛʜᴇʀᴍᴀᴘ.ᴏʀɢ');
@@ -10384,28 +10375,28 @@ break;
 
 case 'define': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴡᴏʀᴅ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} serendipity`);
-    
+
     try {
         await reply('📖 sᴇᴀʀᴄʜɪɴɢ ᴅᴇғɪɴɪᴛɪᴏɴ...');
-        
+
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text)}`);
         const data = await response.json();
-        
+
         if (!Array.isArray(data)) return reply('❌ ᴅᴇғɪɴɪᴛɪᴏɴ ɴᴏᴛ ғᴏᴜɴᴅ!');
-        
+
         const word = data[0];
         const meaning = word.meanings[0];
         const definition = meaning.definitions[0];
-        
+
         const result = `📖 *ᴅɪᴄᴛɪᴏɴᴀʀʏ*\n\n` +
                       `📝 ᴡᴏʀᴅ: ${word.word}\n` +
                       `🔤 ᴘʜᴏɴᴇᴛɪᴄ: ${word.phonetic || 'N/A'}\n` +
                       `📚 ᴘᴀʀᴛ ᴏғ sᴘᴇᴇᴄʜ: ${meaning.partOfSpeech}\n` +
                       `💡 ᴅᴇғɪɴɪᴛɪᴏɴ: ${definition.definition}\n` +
                       (definition.example ? `📌 ᴇxᴀᴍᴘʟᴇ: ${definition.example}` : '');
-        
+
         await reply(result);
-        
+
     } catch (error) {
         console.error('Define Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ᴅᴇғɪɴɪᴛɪᴏɴ.');
@@ -10435,31 +10426,31 @@ break
 case 'tourl': {
   let q = m.quoted ? m.quoted : m
   if (!q || !q.download) return reply(`Reply to an image or video with command ${prefix + command}`)
-  
+
   let mime = q.mimetype || ''
   if (!/image\/(png|jpe?g|gif)|video\/mp4/.test(mime)) {
     return reply('Only images or mp4 videos are supported!')
   }
-  
+
   let media
   try {
     media = await q.download()
   } catch (error) {
     return reply('Failed to download media!')
   }
-  
+
   const uploadImage = require('./allfunc/Data6')
   const uploadFile = require('./allfunc/Data7')
-  
+
   let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime)
   let link
-  
+
   try {
     link = await (isTele ? uploadImage : uploadFile)(media)
   } catch (error) {
     return reply('Failed to upload media!')
   }
-  
+
   bad.sendMessage(m.chat, {
     text: `╭━━〔 URL CONVERTER 〕━━⬣
 ┃
@@ -10474,7 +10465,7 @@ break
 
 case 'ccgen': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   if (!text) return reply(`*💳 ᴄʀᴇᴅɪᴛ ᴄᴀʀᴅ ɢᴇɴᴇʀᴀᴛᴏʀ*
 
 ⚠️ ғᴏʀ ᴇᴅᴜᴄᴀᴛɪᴏɴᴀʟ ᴘᴜʀᴘᴏsᴇs ᴏɴʟʏ!
@@ -10495,25 +10486,25 @@ ${prefix}ccgen MasterCard 5`)
     const args = text.split(' ')
     const type = args[0] || 'MasterCard'
     const amount = args[1] || '5'
-    
+
     if (parseInt(amount) > 10) return reply('❌ ᴍᴀxɪᴍᴜᴍ 10 ᴄᴀʀᴅs ᴀᴛ ᴏɴᴄᴇ')
-    
+
     const response = await axios.get(`https://apis.davidcyriltech.my.id/tools/ccgen?type=${type}&amount=${amount}`)
     const cards = response.data.result
-    
+
     if (!cards || cards.length === 0) return reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴄᴀʀᴅs')
-    
+
     let cardList = `*╭━━〔 💳 ${type.toUpperCase()} 〕━━┈⊷*\n┃\n`
-    
+
     cards.forEach((card, i) => {
       cardList += `┃ ${i + 1}. \`${card.number}\`\n`
       cardList += `┃    ᴇxᴘ: ${card.expiry} | ᴄᴠᴠ: ${card.cvv}\n┃\n`
     })
-    
+
     cardList += `┃ ⚠️ ᴛᴇsᴛ ᴄᴀʀᴅs ᴏɴʟʏ\n┃ 🚫 ɴᴏᴛ ғᴏʀ ғʀᴀᴜᴅ\n*╰━━━━━━━━━━━━━━━┈⊷*`
-    
+
     reply(cardList)
-    
+
   } catch (error) {
     console.error('CCGen error:', error)
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴄᴀʀᴅs')
@@ -10530,15 +10521,15 @@ break
 case 'tictactoe':
 case 'ttt': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
-  
+
   if (!global.tictactoeGames) global.tictactoeGames = new Map()
-  
+
   const gameId = from
-  
+
   if (global.tictactoeGames.has(gameId)) {
     return reply('⚠️ ᴀ ɢᴀᴍᴇ ɪs ᴀʟʀᴇᴀᴅʏ ɪɴ ᴘʀᴏɢʀᴇss ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ!')
   }
-  
+
   if (!m.mentionedJid[0]) {
     return reply(`*╭━━〔 ❌⭕ ᴛɪᴄ ᴛᴀᴄ ᴛᴏᴇ 〕━━┈⊷*
 ┃
@@ -10550,14 +10541,14 @@ case 'ttt': {
 ┃
 *╰━━━━━━━━━━━━━━━┈⊷*`)
   }
-  
+
   const player1 = m.sender
   const player2 = m.mentionedJid[0]
-  
+
   if (player1 === player2) {
     return reply('❌ ʏᴏᴜ ᴄᴀɴɴᴏᴛ ᴘʟᴀʏ ᴀɢᴀɪɴsᴛ ʏᴏᴜʀsᴇʟғ!')
   }
-  
+
   const game = {
     board: [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
     players: [player1, player2],
@@ -10565,9 +10556,9 @@ case 'ttt': {
     symbols: ['❌', '⭕'],
     started: Date.now()
   }
-  
+
   global.tictactoeGames.set(gameId, game)
-  
+
   const boardDisplay = `
 ┏━━━┳━━━┳━━━┓
 ┃ 1 ┃ 2 ┃ 3 ┃
@@ -10576,7 +10567,7 @@ case 'ttt': {
 ┣━━━╋━━━╋━━━┫
 ┃ 7 ┃ 8 ┃ 9 ┃
 ┗━━━┻━━━┻━━━┛`
-  
+
   reply(`*╭━━〔 ❌⭕ ᴛɪᴄ ᴛᴀᴄ ᴛᴏᴇ 〕━━┈⊷*
 ┃
 ┃ 🎮 ɢᴀᴍᴇ sᴛᴀʀᴛᴇᴅ!
@@ -10598,22 +10589,22 @@ break
 case 'surrender':
 case 'giveup': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
-  
+
   if (!global.tictactoeGames) global.tictactoeGames = new Map()
-  
+
   const gameId = from
   const game = global.tictactoeGames.get(gameId)
-  
+
   if (!game) return reply('❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ɢᴀᴍᴇ!')
-  
+
   if (!game.players.includes(m.sender)) {
     return reply('❌ ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴ ᴛʜɪs ɢᴀᴍᴇ!')
   }
-  
+
   const winner = game.players.find(p => p !== m.sender)
-  
+
   global.tictactoeGames.delete(gameId)
-  
+
   await bad.sendMessage(from, {
     image: { url: 'https://i.postimg.cc/qvrFRzxG/thumb.png' },
     caption: `*╭━━〔 🏳️ sᴜʀʀᴇɴᴅᴇʀ 〕━━┈⊷*
@@ -10632,20 +10623,20 @@ break
 if (m.isGroup && global.tictactoeGames && global.tictactoeGames.has(from) && !isCmd) {
   const game = global.tictactoeGames.get(from)
   const move = parseInt(body)
-  
+
   if (move >= 1 && move <= 9) {
     const currentPlayer = game.players[game.currentPlayer]
-    
+
     if (m.sender !== currentPlayer) {
       // Don't reply, just ignore
     } else {
       const index = move - 1
-      
+
       if (game.board[index] !== ' ') {
         reply('❌ ᴛʜᴀᴛ sᴘᴏᴛ ɪs ᴀʟʀᴇᴀᴅʏ ᴛᴀᴋᴇɴ!')
       } else {
         game.board[index] = game.symbols[game.currentPlayer]
-        
+
         const boardDisplay = `
 ┏━━━┳━━━┳━━━┓
 ┃ ${game.board[0]} ┃ ${game.board[1]} ┃ ${game.board[2]} ┃
@@ -10654,7 +10645,7 @@ if (m.isGroup && global.tictactoeGames && global.tictactoeGames.has(from) && !is
 ┣━━━╋━━━╋━━━┫
 ┃ ${game.board[6]} ┃ ${game.board[7]} ┃ ${game.board[8]} ┃
 ┗━━━┻━━━┻━━━┛`
-        
+
         const checkWin = (board, symbol) => {
           const wins = [
             [0,1,2], [3,4,5], [6,7,8],
@@ -10663,12 +10654,12 @@ if (m.isGroup && global.tictactoeGames && global.tictactoeGames.has(from) && !is
           ]
           return wins.some(combo => combo.every(i => board[i] === symbol))
         }
-        
+
         const isFull = game.board.every(cell => cell !== ' ')
-        
+
         if (checkWin(game.board, game.symbols[game.currentPlayer])) {
           global.tictactoeGames.delete(from)
-          
+
           await bad.sendMessage(from, {
             image: { url: 'https://i.postimg.cc/jjdkHm9n/scar1.png' },
             caption: `*╭━━〔 🏆 ᴠɪᴄᴛᴏʀʏ! 〕━━┈⊷*
@@ -10682,7 +10673,7 @@ ${boardDisplay}
           }, { quoted: m })
         } else if (isFull) {
           global.tictactoeGames.delete(from)
-          
+
           await bad.sendMessage(from, {
             image: { url: 'https://i.postimg.cc/NMn8rzqh/image1.png' },
             caption: `*╭━━〔 🤝 ᴅʀᴀᴡ 〕━━┈⊷*
@@ -10696,7 +10687,7 @@ ${boardDisplay}
         } else {
           game.currentPlayer = game.currentPlayer === 0 ? 1 : 0
           const nextPlayer = game.players[game.currentPlayer]
-          
+
           reply(`*╭━━〔 ❌⭕ ᴛɪᴄ ᴛᴀᴄ ᴛᴏᴇ 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -10717,18 +10708,18 @@ ${boardDisplay}
 case 'wcg':
 case 'wordchain': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
-  
+
   if (!global.wordChainGames) global.wordChainGames = new Map()
-  
+
   const gameId = from
-  
+
   if (global.wordChainGames.has(gameId)) {
     return reply('⚠️ ᴀ ᴡᴏʀᴅ ᴄʜᴀɪɴ ɢᴀᴍᴇ ɪs ᴀʟʀᴇᴀᴅʏ ᴀᴄᴛɪᴠᴇ!')
   }
-  
+
   const startWords = ['apple', 'elephant', 'tiger', 'robot', 'ocean', 'ninja', 'dragon', 'laptop']
   const startWord = pickRandom(startWords)
-  
+
   const game = {
     lastWord: startWord,
     usedWords: [startWord],
@@ -10736,9 +10727,9 @@ case 'wordchain': {
     started: Date.now(),
     lastPlayer: 'bot'
   }
-  
+
   global.wordChainGames.set(gameId, game)
-  
+
   reply(`*╭━━〔 🔗 ᴡᴏʀᴅ ᴄʜᴀɪɴ ɢᴀᴍᴇ 〕━━┈⊷*
 ┃
 ┃ 🎮 ɢᴀᴍᴇ sᴛᴀʀᴛᴇᴅ!
@@ -10761,21 +10752,21 @@ break
 case 'endwcg': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴏɴʟʏ.')
   if (!isCreator) return reply('ᴍᴀʜ ᴄᴜᴛᴇ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   if (!global.wordChainGames) global.wordChainGames = new Map()
-  
+
   const game = global.wordChainGames.get(from)
   if (!game) return reply('❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴡᴏʀᴅ ᴄʜᴀɪɴ ɢᴀᴍᴇ!')
-  
+
   const players = Object.entries(game.players).sort((a, b) => b[1] - a[1])
-  
+
   let leaderboard = ''
   players.forEach(([player, score], i) => {
     leaderboard += `┃ ${i + 1}. @${normalizeJid(player)} - ${score} ᴡᴏʀᴅs\n`
   })
-  
+
   global.wordChainGames.delete(from)
-  
+
   await bad.sendMessage(from, {
     image: { url: 'https://i.postimg.cc/NMn8rzqh/image1.png' },
     caption: `*╭━━〔 🏁 ɢᴀᴍᴇ ᴇɴᴅᴇᴅ 〕━━┈⊷*
@@ -10794,11 +10785,11 @@ break
 if (m.isGroup && global.wordChainGames && global.wordChainGames.has(from) && !isCmd) {
   const game = global.wordChainGames.get(from)
   const word = body.toLowerCase().trim()
-  
+
   if (word.length >= 3 && /^[a-z]+$/.test(word)) {
     const lastLetter = game.lastWord.slice(-1)
     const firstLetter = word.charAt(0)
-    
+
     if (firstLetter !== lastLetter) {
       // Ignore, don't spam
     } else if (game.usedWords.includes(word)) {
@@ -10809,12 +10800,12 @@ if (m.isGroup && global.wordChainGames && global.wordChainGames.has(from) && !is
       game.lastWord = word
       game.usedWords.push(word)
       game.lastPlayer = m.sender
-      
+
       if (!game.players[m.sender]) game.players[m.sender] = 0
       game.players[m.sender]++
-      
+
       const nextLetter = word.slice(-1).toUpperCase()
-      
+
       reply(`✅ *${word.toUpperCase()}* ᴀᴄᴄᴇᴘᴛᴇᴅ!
 
 📊 @${normalizeJid(m.sender)}: ${game.players[m.sender]} ᴡᴏʀᴅs
@@ -10852,13 +10843,13 @@ case 'thumbsup': {
     'star': '⭐',
     'thumbsup': '👍'
   }
-  
+
   const emoji = emojiMap[command]
-  
+
   if (!m.quoted) {
     return reply(`ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ ᴛᴏ ʀᴇᴀᴄᴛ ᴡɪᴛʜ ${emoji}`)
   }
-  
+
   try {
     // Send the reaction
     await bad.sendMessage(m.chat, {
@@ -10867,13 +10858,13 @@ case 'thumbsup': {
         key: m.quoted.key
       }
     })
-    
+
     // Don't send success message, just react silently
     // Or send a quick confirmation that auto-deletes
     const confirmMsg = await bad.sendMessage(m.chat, {
       text: `${emoji} ʀᴇᴀᴄᴛᴇᴅ!`
     }, { quoted: m })
-    
+
     // Delete confirmation after 2 seconds
     setTimeout(async () => {
       try {
@@ -10884,7 +10875,7 @@ case 'thumbsup': {
         console.error('Failed to delete confirmation:', e)
       }
     }, 2000)
-    
+
   } catch (error) {
     console.error('ʀᴇᴀᴄᴛɪᴏɴ ᴇʀʀᴏʀ:', error)
     reply(`❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ʀᴇᴀᴄᴛɪᴏɴ ${emoji}\n\nᴇʀʀᴏʀ: ${error.message}`)
@@ -10894,7 +10885,7 @@ break
 case "tweet":
 case "xtweet":
 case "tweetgen": {
-    
+
     const availableProfiles = [
         "andrew-tate", "barack-obama", "babar-azam", "billie-eilish",
         "bill-gates", "chadwick-boseman", "chris-hemsworth", "cristiano-ronaldo",
@@ -10904,52 +10895,52 @@ case "tweetgen": {
         "rihana", "taylor-swift", "tom-cruise", "tom-holland",
         "virat-kohli", "zendaya"
     ];
-    
+
     if (!text) {
         const profileList = availableProfiles.map((name, index) => `${index + 1}. ${name}`).join('\n');
         return reply(`🐦 *ᴛᴡᴇᴇᴛ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n*ᴜsᴀɢᴇ:*\n.tweet <username> | <text>\n\n*ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʀᴏғɪʟᴇs (26):*\n${profileList}\n\n*ᴇxᴀᴍᴘʟᴇ:*\n.tweet cristiano-ronaldo | Hello fans!`);
     }
-    
+
     const input = text.split("|");
     if (input.length < 2) {
         return reply(`❌ *ɪɴᴠᴀʟɪᴅ ғᴏʀᴍᴀᴛ*\n\n*ᴜsᴀɢᴇ:*\n.tweet <username> | <text>\n\n*ᴇxᴀᴍᴘʟᴇ:*\n.tweet elon-musk | Tesla! 🚀`);
     }
-    
+
     const username = input[0].trim().toLowerCase().replace(/\s+/g, "-");
     const tweetText = input.slice(1).join("|").trim();
-    
+
     if (!availableProfiles.includes(username)) {
         const profileList = availableProfiles.map((name, index) => `${index + 1}. ${name}`).join('\n');
         return reply(`❌ *ᴘʀᴏғɪʟᴇ ɴᴏᴛ ғᴏᴜɴᴅ*\n\n"${username}" ɪs ɴᴏᴛ ᴀᴠᴀɪʟᴀʙʟᴇ.\n\n*ᴘʟᴇᴀsᴇ ᴜsᴇ:*\n${profileList}`);
     }
-    
+
     try {
         await bad.sendMessage(m.chat, {react: {text: '🐦', key: m.key}});
-        
+
         console.log('📱 Generating tweet for:', username);
         console.log('💬 Tweet text:', tweetText);
-        
+
         const axios = require('axios');
         const apiUrl = `https://api.nexoracle.com/xtweets/${encodeURIComponent(username)}?apikey=free_key@maher_apis&text=${encodeURIComponent(tweetText)}`;
-        
+
         console.log('🔗 Fetching from:', apiUrl);
-        
+
         const response = await axios.get(apiUrl, {
             responseType: 'arraybuffer'
         });
-        
+
         const buffer = Buffer.from(response.data, 'binary');
-        
+
         console.log('✅ Tweet image received, size:', buffer.length);
-        
+
         await bad.sendMessage(m.chat, {
             image: buffer,
             caption: `🐦 *ᴛᴡᴇᴇᴛ ɢᴇɴᴇʀᴀᴛᴇᴅ*\n\n👤 *ᴜsᴇʀ:* @${username}\n💬 *ᴛᴇxᴛ:* ${tweetText}\n\n✨ ɢᴇɴᴇʀᴀᴛᴇᴅ ʙʏ ᴠᴏɪᴅxᴅ ʙᴏᴛ`
         }, {quoted: m});
-        
+
         await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
         console.log('✅ Tweet sent!');
-        
+
     } catch (error) {
         console.error('❌ Error:', error.message);
         await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
@@ -10960,7 +10951,7 @@ break;
 case 'weather': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
   if (!text) return reply('ᴡʜᴀᴛ ʟᴏᴄᴀᴛɪᴏɴ?')
-  
+
   let wdata = await axios.get(
     `https://api.openweathermap.org/data/2.5/weather?q=${text}&units=metric&appid=060a6bcfa19809c2cd4d97a212b19273&language=en`
   )
@@ -10976,28 +10967,28 @@ case 'weather': {
   textw += `*ʟᴀᴛɪᴛᴜᴅᴇ:-* ${wdata.data.coord.lat}\n`
   textw += `*ʟᴏɴɢɪᴛᴜᴅᴇ:-* ${wdata.data.coord.lon}\n`
   textw += `*ᴄᴏᴜɴᴛʀʏ:-* ${wdata.data.sys.country}\n`
-  
+
   bad.sendMessage(m.chat, { text: textw }, { quoted: m })
 }
 break
 case 'readqr': {
   if (!quoted) return reply(`Reply to a QR code image with ${prefix}readqr`)
   if (!/image/.test(mime)) return reply('Reply to a QR code image!')
-  
+
   await loading()
-  
+
   try {
     let media = await quoted.download()
     let uploadImage = require('./allfunc/Data6')
     let imageUrl = await uploadImage(media)
-    
+
     const res = await fetch(`https://api.princetechn.com/readqr?url=${encodeURIComponent(imageUrl)}`)
     const data = await res.json()
-    
+
     if (!data.success) return reply('❌ ᴄᴏᴜʟᴅɴ\'ᴛ ʀᴇᴀᴅ ǫʀ ᴄᴏᴅᴇ')
-    
+
     reply(`✅ *ǫʀ ᴄᴏᴅᴇ ʀᴇᴀᴅ sᴜᴄᴄᴇssғᴜʟʟʏ*\n\n📝 *ᴄᴏɴᴛᴇɴᴛ:*\n${data.text}`)
-    
+
   } catch (err) {
     console.error('readqr error:', err)
     reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ʀᴇᴀᴅ ǫʀ ᴄᴏᴅᴇ')
@@ -11008,19 +10999,19 @@ break
 
 case 'afk': {
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴀ ʀᴇᴀsᴏɴ ғᴏʀ ɢᴏɪɴɢ ᴀғᴋ!')
-  
+
   afkUsers[m.sender] = {
     reason: text,
     time: moment().tz('Africa/Lagos').format('HH:mm:ss')
   }
-  
+
   reply(`🔕 ʏᴏᴜ'ʀᴇ ɴᴏᴡ ᴀғᴋ\nʀᴇᴀsᴏɴ: ${text}`)
 }
 break
 case 'debug':
 case 'checkstatus': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
-  
+
   const debugInfo = `
 *🔍 ᴅᴇʙᴜɢ ɪɴғᴏʀᴍᴀᴛɪᴏɴ*
 
@@ -11054,28 +11045,28 @@ ${m.isGroup ? `*ɢʀᴏᴜᴘ ɪɴғᴏ:*
 • ᴄʜᴀᴛʙᴏᴛ: ${global.chatbot?.has(from) ? '✅' : '❌'}
 • ᴀɴᴛɪʙᴏᴛ: ${global.antibot?.has(from) ? '✅' : '❌'}` : '*ɴᴏᴛ ɪɴ ɢʀᴏᴜᴘ*'}
 `
-  
+
   reply(debugInfo)
 }
 break
 
 case 'reminder': {
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴛɪᴍᴇ ᴀɴᴅ ᴍᴇssᴀɢᴇ!\nᴇxᴀᴍᴘʟᴇ: .reminder 10m|ᴄʜᴇᴄᴋ ᴏᴠᴇɴ')
-  
+
   const [time, message] = text.split('|')
   if (!time || !message) return reply('ɪɴᴠᴀʟɪᴅ ғᴏʀᴍᴀᴛ! ᴜsᴇ: .reminder 10m|ᴍᴇssᴀɢᴇ')
-  
+
   const unit = time.slice(-1)
   const value = parseInt(time.slice(0, -1))
-  
+
   let ms = 0
   if (unit === 's') ms = value * 1000
   else if (unit === 'm') ms = value * 60 * 1000
   else if (unit === 'h') ms = value * 60 * 60 * 1000
   else return reply('ᴜsᴇ s(sᴇᴄᴏɴᴅs), m(ᴍɪɴᴜᴛᴇs), ᴏʀ h(ʜᴏᴜʀs)!')
-  
+
   reply(`⏰ ʀᴇᴍɪɴᴅᴇʀ sᴇᴛ ғᴏʀ ${time}!\nᴍᴇssᴀɢᴇ: ${message}`)
-  
+
   setTimeout(() => {
     bad.sendMessage(m.chat, {
       text: `⏰ *ʀᴇᴍɪɴᴅᴇʀ!*\n\n${message}`
@@ -11086,9 +11077,9 @@ break
 
 case 'setmood': {
   const moods = ['😊 ʜᴀᴘᴘʏ', '😔 sᴀᴅ', '😎 ᴄᴏᴏʟ', '😴 ᴛɪʀᴇᴅ', '😡 ᴀɴɢʀʏ', '🤔 ᴛʜɪɴᴋɪɴɢ', '😍 ʟᴏᴠɪɴɢ', '🤪 ᴄʀᴀᴢʏ']
-  
+
   if (!text) return reply(`sᴇʟᴇᴄᴛ ᴀ ᴍᴏᴏᴅ:\n${moods.join('\n')}`)
-  
+
   userMoods[m.sender] = text
   reply(`ʏᴏᴜʀ ᴍᴏᴏᴅ ʜᴀs ʙᴇᴇɴ sᴇᴛ ᴛᴏ: ${text} ✅`)
 }
@@ -11107,8 +11098,8 @@ break
 // VOICE EFFECTS
 // ═══════════════════════════════════════════════════════════
 
-case 'bass': case 'blown': case 'deep': case 'earrape': case 'fast': 
-case 'fat': case 'nightcore': case 'reverse': case 'robot': case 'slow': 
+case 'bass': case 'blown': case 'deep': case 'earrape': case 'fast':
+case 'fat': case 'nightcore': case 'reverse': case 'robot': case 'slow':
 case 'smooth': case 'squirrel': {
   try {
     let set
@@ -11124,7 +11115,7 @@ case 'smooth': case 'squirrel': {
     else if (/slow/.test(command)) set = '-filter:a "atempo=0.7,asetrate=44100"'
     else if (/smooth/.test(command)) set = '-filter:v "minterpolate=\'mi_mode=mci:mc_mode=aobmc:vsbmc=1:fps=120\'"'
     else if (/squirrel/.test(command)) set = '-filter:a "atempo=0.5,asetrate=65100"'
-    
+
     if (set) {
       if (/audio/.test(mime)) {
         let media = await bad.downloadAndSaveMediaMessage(quoted)
@@ -11136,7 +11127,7 @@ case 'smooth': case 'squirrel': {
             console.error(`ғғᴍᴘᴇɢ ᴇʀʀᴏʀ: ${err}`)
             return reply(err)
           }
-          
+
           let buff = fs.readFileSync(ran)
           bad.sendMessage(m.chat, { audio: buff, mimetype: 'audio/mpeg' }, { quoted: m })
           fs.unlinkSync(ran)
@@ -11155,23 +11146,23 @@ break
 case 'checkbot': {
   if (!m.isGroup) return reply('Group only')
   if (!isCreator) return reply('❌ Owner only')
-  
+
   try {
     const metadata = await bad.groupMetadata(from)
     const botNum = bad.user.id.split('@')[0].split(':')[0]
-    
+
     let debugMsg = `*🔍 BOT ADMIN DEBUG*\n\n`
     debugMsg += `Bot Full JID: ${bad.user.id}\n`
     debugMsg += `Bot Number: ${botNum}\n\n`
     debugMsg += `*ALL GROUP MEMBERS:*\n`
-    
+
     metadata.participants.forEach((p, i) => {
       const num = p.id.split('@')[0].split(':')[0]
       const admin = p.admin || 'member'
       const isBot = num === botNum ? '🤖' : ''
       debugMsg += `${i + 1}. ${num} - ${admin} ${isBot}\n`
     })
-    
+
     reply(debugMsg)
   } catch (err) {
     reply(`Error: ${err.message}`)
@@ -11191,18 +11182,18 @@ case 'txt2img':
 case 'text2img':
 case 'aitext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴀɪᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('✍️ ɢᴇɴᴇʀᴀᴛɪɴɢ ᴛᴇxᴛ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent(`Beautiful typography of the text "${text}" with artistic design, high quality, 4k`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ᴛᴇxᴛ ɪᴍᴀɢᴇ ɢᴇɴᴇʀᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Text Image Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11218,18 +11209,18 @@ case 'logo':
 case 'logo2':
 case 'makelogo2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🌟 ᴄʀᴇᴀᴛɪɴɢ ʟᴏɢᴏ...');
-        
+
         const prompt = encodeURIComponent(`Professional modern logo design with text "${text}", creative, sleek, minimalist style, high quality`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ʟᴏɢᴏ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Logo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11240,18 +11231,18 @@ break;
 case 'gaming':
 case 'gaminglogo': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢᴀᴍɪɴɢ ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎮 ᴄʀᴇᴀᴛɪɴɢ ɢᴀᴍɪɴɢ ʟᴏɢᴏ...');
-        
+
         const prompt = encodeURIComponent(`Gaming esports logo with text "${text}", aggressive style, neon colors, professional gaming logo, high quality`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎮 *ɢᴀᴍɪɴɢ ʟᴏɢᴏ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ɴᴀᴍᴇ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Gaming Logo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11264,10 +11255,10 @@ case 'gfx1': case 'gfx2': case 'gfx3': case 'gfx4':
 case 'gfx5': case 'gfx6': case 'gfx7': case 'gfx8':
 case 'gfx9': case 'gfx10': case 'gfx11': case 'gfx12': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢꜰx ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎨 ᴄʀᴇᴀᴛɪɴɢ ɢꜰx ʟᴏɢᴏ...');
-        
+
         const styles = {
             'gfx1': 'cyberpunk neon style',
             'gfx2': 'metallic chrome style',
@@ -11282,16 +11273,16 @@ case 'gfx9': case 'gfx10': case 'gfx11': case 'gfx12': {
             'gfx11': 'anime manga style',
             'gfx12': 'retro vintage style'
         };
-        
+
         const style = styles[command] || 'modern professional style';
         const prompt = encodeURIComponent(`Professional GFX logo with text "${text}", ${style}, high quality, 4k`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ɢꜰx ʟᴏɢᴏ ${command.toUpperCase()} ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}\n🎨 sᴛʏʟᴇ: ${style}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('GFX Logo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11301,18 +11292,18 @@ break;
 
 case 'brat': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʙʀᴀᴛ ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('💚 ᴄʀᴇᴀᴛɪɴɢ ʙʀᴀᴛ ʟᴏɢᴏ...');
-        
+
         const prompt = encodeURIComponent(`Brat album cover style with text "${text}", lime green background, lowercase font, charli xcx brat aesthetic`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `💚 *ʙʀᴀᴛ ʟᴏɢᴏ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Brat Logo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11322,18 +11313,18 @@ break;
 
 case 'furbrat': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ғᴜʀʙʀᴀᴛ ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🐾 ᴄʀᴇᴀᴛɪɴɢ ғᴜʀʙʀᴀᴛ ʟᴏɢᴏ...');
-        
+
         const prompt = encodeURIComponent(`Brat style logo with furry aesthetic, text "${text}", cute furry character, lime green background, kawaii style`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🐾 *ꜰᴜʀʙʀᴀᴛ ʟᴏɢᴏ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Furbrat Logo Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ ʟᴏɢᴏ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11348,18 +11339,18 @@ break;
 case 'neon':
 case 'neontext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɴᴇᴏɴ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('💡 ᴄʀᴇᴀᴛɪɴɢ ɴᴇᴏɴ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Neon glowing text "${text}", vibrant neon lights, cyberpunk style, dark background, realistic neon effect`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `💡 *ɴᴇᴏɴ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Neon Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11370,18 +11361,18 @@ break;
 case 'glitch':
 case 'glitchtext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢʟɪᴛᴄʜ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('⚡ ᴄʀᴇᴀᴛɪɴɢ ɢʟɪᴛᴄʜ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Glitch effect text "${text}", digital glitch art, RGB shift, cyberpunk aesthetic, distorted effect`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `⚡ *ɢʟɪᴛᴄʜ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Glitch Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11392,18 +11383,18 @@ break;
 case '3dtext':
 case 'text3d': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ 3ᴅ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎯 ᴄʀᴇᴀᴛɪɴɢ 3ᴅ ᴛᴇxᴛ...');
-        
-        const prompt = encodeURIComponent(`3D text "${text}", realistic 3D rendering, depth and Manixs, modern typography, high quality`);
+
+        const prompt = encodeURIComponent(`3D text "${text}", realistic 3D rendering, depth and shadows, modern typography, high quality`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎯 *3ᴅ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('3D Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11413,18 +11404,18 @@ break;
 
 case 'chrome': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴄʜʀᴏᴍᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('💿 ᴄʀᴇᴀᴛɪɴɢ ᴄʜʀᴏᴍᴇ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Chrome metallic text "${text}", shiny chrome effect, reflective surface, futuristic style`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `💿 *ᴄʜʀᴏᴍᴇ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Chrome Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11434,18 +11425,18 @@ break;
 
 case 'metal': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴍᴇᴛᴀʟ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🔩 ᴄʀᴇᴀᴛɪɴɢ ᴍᴇᴛᴀʟ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Metal text "${text}", iron and steel texture, industrial style, metallic effect, realistic`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🔩 *ᴍᴇᴛᴀʟ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Metal Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11456,18 +11447,18 @@ break;
 case 'luxurygold':
 case 'goldtext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢᴏʟᴅ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('✨ ᴄʀᴇᴀᴛɪɴɢ ɢᴏʟᴅ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Luxury gold text "${text}", shiny gold metallic effect, elegant and premium, realistic gold texture`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ɢᴏʟᴅ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Gold Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11478,18 +11469,18 @@ break;
 case 'rainbow':
 case 'rainbowtext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʀᴀɪɴʙᴏᴡ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🌈 ᴄʀᴇᴀᴛɪɴɢ ʀᴀɪɴʙᴏᴡ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Rainbow colored text "${text}", vibrant rainbow gradient, colorful spectrum, bright colors`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌈 *ʀᴀɪɴʙᴏᴡ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Rainbow Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11500,18 +11491,18 @@ break;
 case 'gradient':
 case 'gradienttext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢʀᴀᴅɪᴇɴᴛ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎨 ᴄʀᴇᴀᴛɪɴɢ ɢʀᴀᴅɪᴇɴᴛ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Gradient text "${text}", smooth color gradient, modern design, aesthetic gradient colors`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ɢʀᴀᴅɪᴇɴᴛ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Gradient Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11522,18 +11513,18 @@ break;
 case 'fire':
 case 'firetext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ꜰɪʀᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🔥 ᴄʀᴇᴀᴛɪɴɢ ꜰɪʀᴇ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Fire text "${text}", burning flames effect, realistic fire, hot flames, orange and red`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🔥 *ꜰɪʀᴇ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Fire Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11544,18 +11535,18 @@ break;
 case 'lightning':
 case 'thunder': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʟɪɢʜᴛɴɪɴɢ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('⚡ ᴄʀᴇᴀᴛɪɴɢ ʟɪɢʜᴛɴɪɴɢ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Lightning text "${text}", electric lightning bolts, thunder effect, blue electric energy`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `⚡ *ʟɪɢʜᴛɴɪɴɢ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Lightning Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11564,30 +11555,82 @@ case 'thunder': {
 break;
 
   case 'pair': {
-    await reply(
-      `🔗 *WhatsApp Web Pairing*\n\n` +
-      `Open the QR pairing dashboard and scan it from WhatsApp → Settings → Linked Devices.\n\n` +
-      `🌐 Dashboard: https://manix-md.onrender.com`,
-      { quoted: m }
-    );
-  }
-  break;
-    
+    try {
+        // ✅ Check free RAM only
+        const freeStorage = os.freemem() / (1024 * 1024); // in MB
+        if (freeStorage < 300) {
+            return reply('⚠️ Slot is full, please try again later.');
+        }
+
+        // ✅ Argument check
+        if (!q) return reply(`Example:\n ${prefix + command} 92300......`);
+
+        // ✅ Extract number
+        const rawNumber = q.replace(/[^0-9]/g, ''); // digits only
+        const Xreturn = rawNumber + "@s.whatsapp.net";
+
+        // ✅ Validate WhatsApp registration
+        const contactInfo = await bad.onWhatsApp(Xreturn);
+        if (!contactInfo || contactInfo.length === 0) {
+            return reply("❌ The number is not registered on WhatsApp.");
+        }
+
+        // ✅ Country code and prefix restrictions
+        const countryCode = rawNumber.slice(0, 3);
+        const prefixxx = rawNumber.slice(0, 1);
+        const firstTwoDigits = rawNumber.slice(0, 2);
+
+        const isValidWhatsAppNumber = (number) => {
+            return number.length >= 10 && number.length <= 15 && !isNaN(number);
+        };
+
+        if (countryCode === "252" || prefixxx === "0" || firstTwoDigits === "89" || countryCode.startsWith("85")) {
+            return reply("🚫 Sorry, numbers with code 252, prefix 0, starting with 89, or +85 are not supported.");
+        }
+
+        if (!isValidWhatsAppNumber(rawNumber)) {
+            return reply("❌ Invalid WhatsApp number. Please enter a valid number.");
+        }
+
+        // ✅ Proceed with pairing
+        const startpairing = require('./pair.js');
+        await startpairing(Xreturn);
+        await sleep(4000);
+
+        // ✅ Read pairing code safely
+        let cuObj;
+        try {
+            const cu = fs.readFileSync('./manixmdtimewisher/pairing/pairing.json', 'utf-8');
+            cuObj = JSON.parse(cu);
+        } catch (e) {
+            return reply("⚠️ Pairing failed. Please try again.");
+        }
+
+        // ✅ Send code
+        await m.reply(`${cuObj.code}`);
+
+    } catch (err) {
+        console.error("Error in pair:", err);
+        m.reply("❌ An unexpected error occurred while processing your request.");
+    }
+}
+break;
+
 case 'water':
 case 'watertext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴡᴀᴛᴇʀ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('💧 ᴄʀᴇᴀᴛɪɴɢ ᴡᴀᴛᴇʀ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Water text "${text}", water splash effect, liquid water, blue transparent water`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `💧 *ᴡᴀᴛᴇʀ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Water Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11598,18 +11641,18 @@ break;
 case 'ice':
 case 'frozen': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɪᴄᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('❄️ ᴄʀᴇᴀᴛɪɴɢ ɪᴄᴇ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Ice frozen text "${text}", ice crystal effect, frozen texture, cold blue ice`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `❄️ *ɪᴄᴇ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Ice Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11620,18 +11663,18 @@ break;
 case 'galaxy':
 case 'space': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢᴀʟᴀxʏ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🌌 ᴄʀᴇᴀᴛɪɴɢ ɢᴀʟᴀxʏ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Galaxy space text "${text}", cosmic nebula, stars and galaxies, purple and blue space`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌌 *ɢᴀʟᴀxʏ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Galaxy Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11642,18 +11685,18 @@ break;
 case 'anime':
 case 'animetext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴀɴɪᴍᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎌 ᴄʀᴇᴀᴛɪɴɢ ᴀɴɪᴍᴇ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Anime style text "${text}", Japanese anime aesthetic, manga style, kawaii design`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎌 *ᴀɴɪᴍᴇ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Anime Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11664,18 +11707,18 @@ break;
 case 'graffiti':
 case 'graffititext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢʀᴀꜰꜰɪᴛɪ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🎨 ᴄʀᴇᴀᴛɪɴɢ ɢʀᴀꜰꜰɪᴛɪ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Graffiti street art text "${text}", urban graffiti style, spray paint, colorful street art`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🎨 *ɢʀᴀꜰꜰɪᴛɪ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Graffiti Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11686,18 +11729,18 @@ break;
 case 'floral':
 case 'flowers': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ꜰʟᴏʀᴀʟ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('🌸 ᴄʀᴇᴀᴛɪɴɢ ꜰʟᴏʀᴀʟ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Floral text "${text}", beautiful flowers, botanical design, spring flowers, elegant`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `🌸 *ꜰʟᴏʀᴀʟ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Floral Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11708,18 +11751,18 @@ break;
 case 'retro':
 case 'retrotext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʀᴇᴛʀᴏ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('📺 ᴄʀᴇᴀᴛɪɴɢ ʀᴇᴛʀᴏ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Retro vintage text "${text}", 80s style, retro wave, synthwave aesthetic, nostalgic`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `📺 *ʀᴇᴛʀᴏ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Retro Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11730,18 +11773,18 @@ break;
 case 'horror':
 case 'scary': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʜᴏʀʀᴏʀ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
-    
+
     try {
         await reply('👻 ᴄʀᴇᴀᴛɪɴɢ ʜᴏʀʀᴏʀ ᴛᴇxᴛ...');
-        
+
         const prompt = encodeURIComponent(`Horror scary text "${text}", creepy horror style, dark and spooky, haunting effect`);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `👻 *ʜᴏʀʀᴏʀ ᴛᴇxᴛ ᴄʀᴇᴀᴛᴇᴅ*\n\n📝 ᴛᴇxᴛ: ${text}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Horror Text Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴄʀᴇᴀᴛᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11749,7 +11792,7 @@ case 'scary': {
 }
 break;
 
-//warmgpt 
+//warmgpt
 case 'warmgpt':
 case 'warm':
 case 'worm': {
@@ -11796,7 +11839,7 @@ case 'worm': {
 
         const answer = data.choices[0].message.content;
 
-        await reply(`╔═══════💀 ᴡᴀʀᴍɢᴘᴛ • ɴᴏ ᴍᴇʀᴄʏ 💀═══════╗\n\n${answer}\n\n╚═══════🔥 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠• ᴘᴜʀᴇ ғɪʀᴇ 🔥═══════╝`);
+        await reply(`╔═══════💀 ᴡᴀʀᴍɢᴘᴛ • ɴᴏ ᴍᴇʀᴄʏ 💀═══════╗\n\n${answer}\n\n╚═══════🔥 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠• ᴘᴜʀᴇ ғɪʀᴇ 🔥═══════╝`);
 
     } catch (error) {
         console.error('WarmGPT Error:', error);
@@ -11814,11 +11857,11 @@ case 'deepseek':
 case 'mistral':
 case 'groq': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ǫᴜᴇsᴛɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ᴡʜᴀᴛ ɪs ᴀɪ?`);
-    
+
     try {
         // ✅ NO loading message - direct API call
-        const GROQ_API_KEY = 'YOUR_GROQ_API_KEY';
-        
+        const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -11841,19 +11884,19 @@ case 'groq': {
                 max_tokens: 1024
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             console.error('Error:', data);
             return reply(`❌ API Error: ${data.error?.message || 'Something went wrong'}`);
         }
-        
+
         const result = data.choices[0].message.content;
-        
+
         // ✅ Direct reply without loading message
         await reply(`🤖 *AI Response:*\n\n${result}`);
-        
+
     } catch (error) {
         console.error('Error:', error);
         await reply(`❌ Error: ${error.message}`);
@@ -11870,18 +11913,18 @@ case 'sdxl':
 case 'pollinations':
 case 'playground': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀɴ ɪᴍᴀɢᴇ ᴅᴇsᴄʀɪᴘᴛɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ᴀ ᴄᴀᴛ ɪɴ sᴘᴀᴄᴇ`);
-    
+
     try {
         await reply('🎨 ɢᴇɴᴇʀᴀᴛɪɴɢ ɪᴍᴀɢᴇ...');
-        
+
         const prompt = encodeURIComponent(text);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&model=flux&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ɪᴍᴀɢᴇ ɢᴇɴᴇʀᴀᴛᴇᴅ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n🤖 ᴍᴏᴅᴇʟ: ғʟᴜx-ᴘʀᴏ`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Image Generation Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɪᴍᴀɢᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11891,19 +11934,19 @@ break;
 
 case 'pixart': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀɴ ɪᴍᴀɢᴇ ᴅᴇsᴄʀɪᴘᴛɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ᴀ ʙᴇᴀᴜᴛɪғᴜʟ ᴀɴɪᴍᴇ ɢɪʀʟ`);
-    
+
     try {
         await reply('🎨 ɢᴇɴᴇʀᴀᴛɪɴɢ ᴘɪxᴀʀᴛ ɪᴍᴀɢᴇ...');
-        
+
         // Using Pollinations AI with PixArt-Alpha model
         const prompt = encodeURIComponent(text);
         const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=1024&height=1024&model=pixart&nologo=true&enhance=true`;
-        
+
         await bad.sendMessage(from, {
             image: { url: imageUrl },
             caption: `✨ *ᴘɪxᴀʀᴛ ɪᴍᴀɢᴇ ɢᴇɴᴇʀᴀᴛᴇᴅ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n🤖 ᴍᴏᴅᴇʟ: ᴘɪxᴀʀᴛ-ᴀʟᴘʜᴀ`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('PixArt Generation Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɪᴍᴀɢᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11917,10 +11960,10 @@ break;
 
 case 'aidetect': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ ᴛᴏ ᴄʜᴇᴄᴋ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ᴛᴇxᴛ`);
-    
+
     try {
         await reply('🔍 ᴀɴᴀʟʏᴢɪɴɢ ᴛᴇxᴛ...');
-        
+
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -11942,12 +11985,12 @@ case 'aidetect': {
                 temperature: 0.3
             })
         });
-        
+
         const data = await response.json();
         const analysis = data.choices[0].message.content;
-        
+
         await reply(`🔍 *ᴀɪ ᴅᴇᴛᴇᴄᴛɪᴏɴ ʀᴇsᴜʟᴛ*\n\n${analysis}`);
-        
+
     } catch (error) {
         console.error('AI Detection Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴀɴᴀʟʏᴢᴇ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.');
@@ -11958,15 +12001,15 @@ break;
 case 'animagen':
 case 'animagine': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}animagen <prompt>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}animagen anime girl blue hair`)
-  
+
   await loading()
-  
+
   try {
     const apiUrl = `https://api.ryzendesu.vip/api/ai/animagine?prompt=${encodeURIComponent(text)}`
-    
+
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*◆ ᴀɴɪᴍᴀɢɪɴᴇ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
+      caption: `*◆ ᴀɴɪᴍᴀɢɪɴᴇ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`
     }, { quoted: m })
   } catch (err) {
     console.error('Animagine error:', err)
@@ -11983,24 +12026,24 @@ case 'img':
 case 'image':
 case 'searchimage': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}image <query>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}image sunset`)
-  
+
   await loading()
-  
+
   try {
     const res = await fetch(`https://api.agatz.xyz/api/gimage?message=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (!data.data || data.data.length === 0) {
       return reply(`❌ ɴᴏ ɪᴍᴀɢᴇs ғᴏᴜɴᴅ ғᴏʀ "${text}"`)
     }
-    
+
     for (let i = 0; i < Math.min(data.data.length, 5); i++) {
       try {
         await bad.sendMessage(m.chat, {
           image: { url: data.data[i] },
           caption: `🖼️ *${text}* (${i + 1}/5)`
         }, { quoted: m })
-        
+
         if (i < 4) await new Promise(resolve => setTimeout(resolve, 1000))
       } catch (e) {
         console.error(`Failed to send image #${i + 1}:`, e.message)
@@ -12016,22 +12059,22 @@ break
 
 case 'bing': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}bing <query>`)
-  
+
   await loading()
-  
+
   try {
     const res = await fetch(`https://api-toxxic.zone.id/api/search/bing?query=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (!data.status || !data.result) {
       return reply('❌ ɴᴏ ʀᴇsᴜʟᴛs ғᴏᴜɴᴅ.')
     }
-    
+
     let result = `*◆ ʙɪɴɢ sᴇᴀʀᴄʜ*\n\n`
     data.result.slice(0, 5).forEach((item, i) => {
       result += `${i + 1}. *${item.title}*\n${item.snippet}\n🔗 ${item.url}\n\n`
     })
-    
+
     reply(result)
   } catch (err) {
     console.error('Bing search error:', err)
@@ -12044,16 +12087,16 @@ break
 case 'chatbot': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
   if (!isCreator) return reply('my owner only')
-  
+
   const action = args[0]?.toLowerCase()
-  
+
   if (!action || !['on', 'off'].includes(action)) {
     const status = global.chatbot && global.chatbot.has(from) ? '🔴 ᴇɴᴀʙʟᴇᴅ' : '🟢 ᴅɪsᴀʙʟᴇᴅ'
     return reply(`*ᴄʜᴀᴛʙᴏᴛ sᴛᴀᴛᴜs*\n\nᴄᴜʀʀᴇɴᴛ: ${status}\n\nᴜsᴇ: ${prefix}chatbot on/off`)
   }
-  
+
   if (!global.chatbot) global.chatbot = new Set()
-  
+
   if (action === 'on') {
     global.chatbot.add(from)
     reply('✅ *ᴄʜᴀᴛʙᴏᴛ ᴇɴᴀʙʟᴇᴅ!*\n\nɪ ᴡɪʟʟ ʀᴇsᴘᴏɴᴅ ᴛᴏ ᴀʟʟ ᴍᴇssᴀɢᴇs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.')
@@ -12065,10 +12108,10 @@ case 'chatbot': {
 break
 case 'clearchatbot': {
   if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
-  
+
   const sender = m.sender
   const key = `${from}_${sender}`
-  
+
   if (global.chatbotData && global.chatbotData.has(key)) {
     global.chatbotData.delete(key)
     reply('✅ *ᴄᴏɴᴠᴇʀsᴀᴛɪᴏɴ ʜɪsᴛᴏʀʏ ᴄʟᴇᴀʀᴇᴅ!*\n\naww starting fresh? okay cutie! 🥰💕')
@@ -12084,17 +12127,17 @@ break
 
 case 'haiper': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}haiper <prompt>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}haiper sunset over ocean`)
-  
+
   await loading()
-  
+
   try {
     const res = await fetch(`https://api.ryzendesu.vip/api/video/haiper?prompt=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (data.video_url) {
       await bad.sendMessage(m.chat, {
         video: { url: data.video_url },
-        caption: `*◆ ʜᴀɪᴘᴇʀ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
+        caption: `*◆ ʜᴀɪᴘᴇʀ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`
       }, { quoted: m })
     } else {
       throw new Error('No video generated')
@@ -12109,13 +12152,13 @@ break
 case 'lumalabs':
 case 'dream': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}lumalabs <prompt>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}lumalabs flying through clouds`)
-  
+
   await loading()
-  
+
   try {
     const res = await fetch(`https://api.ryzendesu.vip/api/video/lumalabs?prompt=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (data.video_url) {
       await bad.sendMessage(m.chat, {
         video: { url: data.video_url },
@@ -12137,23 +12180,23 @@ case 'animateimage': {
   if (!quoted || !/image/.test(mime)) {
     return reply(`*ᴜsᴀɢᴇ:* Reply to an image with ${prefix}img2video <prompt>`)
   }
-  
+
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴀ ᴘʀᴏᴍᴘᴛ ғᴏʀ ᴀɴɪᴍᴀᴛɪᴏɴ!')
-  
+
   await loading()
-  
+
   try {
     const media = await quoted.download()
     const uploadImage = require('./allfunc/Data6')
     const imageUrl = await uploadImage(media)
-    
+
     const res = await fetch(`https://api.ryzendesu.vip/api/video/img2video?image=${encodeURIComponent(imageUrl)}&prompt=${encodeURIComponent(text)}`)
     const data = await res.json()
-    
+
     if (data.video_url) {
       await bad.sendMessage(m.chat, {
         video: { url: data.video_url },
-        caption: `*◆ ɪᴍᴀɢᴇ ᴛᴏ ᴠɪᴅᴇᴏ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
+        caption: `*◆ ɪᴍᴀɢᴇ ᴛᴏ ᴠɪᴅᴇᴏ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`
       }, { quoted: m })
     } else {
       throw new Error('No video generated')
@@ -12173,17 +12216,17 @@ case 'show':
 case 'Magic':
 case 'STG': {
   if (!m.quoted) return reply('ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠɪᴇᴡ-ᴏɴᴄᴇ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴠᴏɪᴄᴇ ɴᴏᴛᴇ!')
-  
+
   try {
     const mediaBuffer = await bad.downloadMediaMessage(m.quoted)
-    
+
     if (!mediaBuffer) {
       return reply('ғᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ᴍᴇᴅɪᴀ. ᴛʀʏ ᴀɢᴀɪɴ!')
     }
-    
+
     const mediaType = m.quoted.mtype
     const footer = "☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠"
-    
+
     if (mediaType === 'imageMessage') {
       await bad.sendMessage(m.chat, {
         image: mediaBuffer,
@@ -12215,7 +12258,7 @@ case 'vv': {
   if (!m.quoted) {
     return reply(`*ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ ᴡɪᴛʜ ᴛʜᴇ ᴄᴀᴘᴛɪᴏɴ ${prefix + command}*`)
   }
-  
+
   let mime = (m.quoted.msg || m.quoted).mimetype || ''
   try {
     if (/image/.test(mime)) {
@@ -12224,14 +12267,14 @@ case 'vv': {
         image: media,
         caption: "✅ ᴠɪᴇᴡ ᴏɴᴄᴇ ɪᴍᴀɢᴇ sᴇɴᴛ ᴛᴏ ʏᴏᴜʀ ᴅᴍ",
       }, { quoted: m })
-      
+
     } else if (/video/.test(mime)) {
       let media = await m.quoted.download()
       await bad.sendMessage(m.sender, {
         video: media,
         caption: "✅ ᴠɪᴇᴡ ᴏɴᴄᴇ ᴠɪᴅᴇᴏ sᴇɴᴛ ᴛᴏ ʏᴏᴜʀ ᴅᴍ",
       }, { quoted: m })
-      
+
     } else if (/audio/.test(mime)) {
       let media = await m.quoted.download()
       await bad.sendMessage(m.sender, {
@@ -12239,7 +12282,7 @@ case 'vv': {
         mimetype: 'audio/mpeg',
         ptt: true
       }, { quoted: m })
-      
+
     } else {
       reply(`❌ ᴜɴsᴜᴘᴘᴏʀᴛᴇᴅ ᴍᴇᴅɪᴀ ᴛʏᴘᴇ!\nʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ ᴡɪᴛʜ *${prefix + command}*`)
     }
@@ -12275,7 +12318,7 @@ case 'checkidch':
 case 'idch': {
   if (!q) return reply(`ᴇxᴀᴍᴘʟᴇ : ${prefix + command} ᴄʜᴀɴɴᴇʟ ʟɪɴᴋ`)
   if (!q.includes("https://whatsapp.com/channel/")) return reply("ɪɴᴠᴀʟɪᴅ ᴄʜᴀɴɴᴇʟ ʟɪɴᴋ")
-  
+
   let result = q.split('https://whatsapp.com/channel/')[1]
   let res = await bad.newsletterMetadata("invite", result)
   let drenoxpotato = `
@@ -12284,7 +12327,7 @@ case 'idch': {
 𖥂 *ғᴏʟʟᴏᴡᴇʀs ᴄᴏᴜɴᴛ :* ${res.subscribers}
 𖥂 *sᴛᴀᴛᴜs :* ${res.state}
 𖥂 *ᴠᴇʀɪғɪᴇᴅ :* ${res.verification == "VERIFIED" ? "ᴠᴇʀɪғɪᴇᴅ" : "ɴᴏ"}`
-  
+
   return reply(drenoxpotato)
 }
 break
@@ -12302,13 +12345,13 @@ ${prefix + command} <ᴄʜᴀɴɴᴇʟ-ʟɪɴᴋ> <ᴇᴍᴏᴊɪ>
 ${prefix + command} https://whatsapp.com/channel/xxxxxxxx 🤨
 
 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-🙃 '☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
+🙃 '☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
   }
-  
+
   if (!args[0].startsWith("https://whatsapp.com/channel/")) {
     return reply("ɪɴᴠᴀʟɪᴅ ᴄʜᴀɴɴᴇʟ ʟɪɴᴋ.")
   }
-  
+
   let reactionEmoji
   if (args[1]) {
     reactionEmoji = args[1].trim()
@@ -12320,31 +12363,31 @@ ${prefix + command} https://whatsapp.com/channel/xxxxxxxx 🤨
     const randomEmojis = ['👍', '❤️', '🔥', '🎉', '👀', '🤯', '💯']
     reactionEmoji = randomEmojis[Math.floor(Math.random() * randomEmojis.length)]
   }
-  
+
   try {
     const link = args[0]
     const channelId = link.split('/')[4]
-    
+
     const channelInfo = await bad.newsletterMetadata("invite", channelId)
     if (!channelInfo || !channelInfo.id) {
       return reply("❌ ᴄᴏᴜʟᴅ ɴᴏᴛ ʀᴇᴛʀɪᴇᴠᴇ ᴄʜᴀɴɴᴇʟ ɪɴғᴏʀᴍᴀᴛɪᴏɴ. ᴛʜᴇ ʟɪɴᴋ ᴍɪɢʜᴛ ʙᴇ ɪɴᴠᴀʟɪᴅ.")
     }
-    
+
     const messageId = link.split('/')[5] || null
     if (!messageId) {
       return reply("❌ ᴛʜᴇ ʟɪɴᴋ sʜᴏᴜʟᴅ ᴘᴏɪɴᴛ ᴛᴏ ᴀ sᴘᴇᴄɪғɪᴄ ᴄʜᴀɴɴᴇʟ ᴍᴇssᴀɢᴇ.\nᴍᴀᴋᴇ sᴜʀᴇ ʏᴏᴜ'ʀᴇ ᴜsɪɴɢ ᴀ ᴍᴇssᴀɢᴇ ʟɪɴᴋ, ɴᴏᴛ ᴊᴜsᴛ ᴀ ᴄʜᴀɴɴᴇʟ ʟɪɴᴋ.")
     }
-    
+
     await bad.newsletterReactMessage(channelInfo.id, messageId, reactionEmoji)
-    
+
     return reply(`✅ ʀᴇᴀᴄᴛɪᴏɴ sᴇɴᴛ sᴜᴄᴄᴇssғᴜʟʟʏ!\n\n` +
                 `🔹 ᴄʜᴀɴɴᴇʟ: ${channelInfo.name || 'ᴜɴᴋɴᴏᴡɴ'}\n` +
                 `🔹 ʀᴇᴀᴄᴛɪᴏɴ: ${reactionEmoji}\n` +
                 `🔹 ᴍᴇssᴀɢᴇ ɪᴅ: ${messageId}`)
-    
+
   } catch (error) {
     console.error('ʀᴇᴀᴄᴛɪᴏɴ ᴇʀʀᴏʀ:', error)
-    
+
     let errorMessage = "❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ʀᴇᴀᴄᴛɪᴏɴ."
     if (error.message.includes("not found")) {
       errorMessage += "\nᴛʜᴇ ᴍᴇssᴀɢᴇ ᴏʀ ᴄʜᴀɴɴᴇʟ ᴍɪɢʜᴛ ɴᴏᴛ ᴇxɪsᴛ ᴏʀ ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴀᴄᴄᴇss."
@@ -12353,7 +12396,7 @@ ${prefix + command} https://whatsapp.com/channel/xxxxxxxx 🤨
     } else {
       errorMessage += `\nᴇʀʀᴏʀ: ${error.message}`
     }
-    
+
     return reply(errorMessage)
   }
 }
@@ -12363,24 +12406,24 @@ break
 case 'wiki':
 case 'wikipedia': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ sᴇᴀʀᴄʜ ᴛᴇʀᴍ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} Albert Einstein`);
-    
+
     try {
         await reply('📚 sᴇᴀʀᴄʜɪɴɢ ᴡɪᴋɪᴘᴇᴅɪᴀ...');
-        
+
         const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(text)}`);
         const data = await response.json();
-        
+
         if (data.type === 'disambiguation') {
             return reply('❌ ᴛᴏᴏ ᴍᴀɴʏ ʀᴇsᴜʟᴛs! ʙᴇ ᴍᴏʀᴇ sᴘᴇᴄɪғɪᴄ.');
         }
-        
+
         if (!data.extract) return reply('❌ ɴᴏ ʀᴇsᴜʟᴛs ғᴏᴜɴᴅ!');
-        
+
         const info = `📚 *ᴡɪᴋɪᴘᴇᴅɪᴀ*\n\n` +
                     `📝 ${data.title}\n\n` +
                     `${data.extract}\n\n` +
                     `🔗 ${data.content_urls.desktop.page}`;
-        
+
         if (data.thumbnail) {
             await bad.sendMessage(from, {
                 image: { url: data.thumbnail.source },
@@ -12389,7 +12432,7 @@ case 'wikipedia': {
         } else {
             await reply(info);
         }
-        
+
     } catch (error) {
         console.error('Wiki Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴇᴀʀᴄʜ ᴡɪᴋɪᴘᴇᴅɪᴀ.');
@@ -12400,25 +12443,25 @@ break;
 case 'news': {
     try {
         await reply('📰 ғᴇᴛᴄʜɪɴɢ ʟᴀᴛᴇsᴛ ɴᴇᴡs...');
-        
+
         const category = text || 'general';
         const response = await fetch(`https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=e53dace5235742d6b6889de64cfbf949`);
         const data = await response.json();
-        
+
         if (data.status !== 'ok' || !data.articles.length) {
             return reply('❌ ɴᴏ ɴᴇᴡs ғᴏᴜɴᴅ!');
         }
-        
+
         let news = '📰 *ʟᴀᴛᴇsᴛ ɴᴇᴡs*\n\n';
-        
+
         data.articles.slice(0, 5).forEach((article, index) => {
             news += `${index + 1}. *${article.title}*\n`;
             news += `📝 ${article.description || 'No description'}\n`;
             news += `🔗 ${article.url}\n\n`;
         });
-        
+
         await reply(news);
-        
+
     } catch (error) {
         console.error('News Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɴᴇᴡs. ɴᴏᴛᴇ: ʀᴇǫᴜɪʀᴇs ᴀᴘɪ ᴋᴇʏ ғʀᴏᴍ ɴᴇᴡsᴀᴘɪ.ᴏʀɢ');
@@ -12429,14 +12472,14 @@ break;
 case 'telegram':
 case 'tg': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴛᴇʟᴇɢʀᴀᴍ ᴜʀʟ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} https://t.me/channel`);
-    
+
     try {
         await reply('📱 ᴘʀᴏᴄᴇssɪɴɢ ᴛᴇʟᴇɢʀᴀᴍ ʟɪɴᴋ...');
-        
+
         const telegramUrl = text.includes('t.me') ? text : `https://t.me/${text}`;
-        
+
         await reply(`📱 *ᴛᴇʟᴇɢʀᴀᴍ ʟɪɴᴋ*\n\n🔗 ${telegramUrl}\n\n_ᴏᴘᴇɴ ɪɴ ᴛᴇʟᴇɢʀᴀᴍ ᴀᴘᴘ_`);
-        
+
     } catch (error) {
         console.error('Telegram Error:', error);
         await reply('❌ ɪɴᴠᴀʟɪᴅ ᴛᴇʟᴇɢʀᴀᴍ ʟɪɴᴋ.');
@@ -12451,18 +12494,18 @@ break;
 case 'ssweb':
 case 'ss': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴜʀʟ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} https://google.com`);
-    
+
     try {
         await reply('📸 ᴛᴀᴋɪɴɢ sᴄʀᴇᴇɴsʜᴏᴛ...');
-        
+
         const url = text.startsWith('http') ? text : `https://${text}`;
         const ssUrl = `https://image.thum.io/get/width/1920/crop/768/fullpage/${encodeURIComponent(url)}`;
-        
+
         await bad.sendMessage(from, {
             image: { url: ssUrl },
             caption: `📸 *ᴡᴇʙsɪᴛᴇ sᴄʀᴇᴇɴsʜᴏᴛ*\n\n🔗 ${url}`
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Screenshot Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴛᴀᴋᴇ sᴄʀᴇᴇɴsʜᴏᴛ.');
@@ -12473,13 +12516,13 @@ break;
 case 'myip': {
     try {
         await reply('🌐 ғᴇᴛᴄʜɪɴɢ ɪᴘ ɪɴғᴏ...');
-        
+
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();
-        
+
         const ipInfo = await fetch(`https://ipapi.co/${data.ip}/json/`);
         const info = await ipInfo.json();
-        
+
         const result = `🌐 *ɪᴘ ɪɴғᴏʀᴍᴀᴛɪᴏɴ*\n\n` +
                       `📍 ɪᴘ: ${info.ip}\n` +
                       `🌍 ᴄᴏᴜɴᴛʀʏ: ${info.country_name}\n` +
@@ -12487,9 +12530,9 @@ case 'myip': {
                       `🗺️ ʀᴇɢɪᴏɴ: ${info.region}\n` +
                       `📮 ᴘᴏsᴛᴀʟ: ${info.postal}\n` +
                       `🌐 ɪsᴘ: ${info.org}`;
-        
+
         await reply(result);
-        
+
     } catch (error) {
         console.error('MyIP Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ɪᴘ ɪɴғᴏ.');
@@ -12499,35 +12542,35 @@ break;
 
 case 'recipe': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴅɪsʜ ɴᴀᴍᴇ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} pasta`);
-    
+
     try {
         await reply('🍳 sᴇᴀʀᴄʜɪɴɢ ʀᴇᴄɪᴘᴇ...');
-        
+
         const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(text)}`);
         const data = await response.json();
-        
+
         if (!data.meals) return reply('❌ ʀᴇᴄɪᴘᴇ ɴᴏᴛ ғᴏᴜɴᴅ!');
-        
+
         const meal = data.meals[0];
-        
+
         let ingredients = '\n📝 *ɪɴɢʀᴇᴅɪᴇɴᴛs:*\n';
         for (let i = 1; i <= 20; i++) {
             if (meal[`strIngredient${i}`]) {
                 ingredients += `• ${meal[`strIngredient${i}`]} - ${meal[`strMeasure${i}`]}\n`;
             }
         }
-        
+
         const recipe = `🍳 *ʀᴇᴄɪᴘᴇ*\n\n` +
                       `📝 ${meal.strMeal}\n` +
                       `🌍 ${meal.strArea} | 🍽️ ${meal.strCategory}\n` +
                       `${ingredients}\n` +
                       `👨‍🍳 *ɪɴsᴛʀᴜᴄᴛɪᴏɴs:*\n${meal.strInstructions.substring(0, 500)}...`;
-        
+
         await bad.sendMessage(from, {
             image: { url: meal.strMealThumb },
             caption: recipe
         }, { quoted: m });
-        
+
     } catch (error) {
         console.error('Recipe Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ʀᴇᴄɪᴘᴇ.');
@@ -12538,7 +12581,7 @@ break;
 case 'sciencefact': {
     try {
         await reply('🔬 ғᴇᴛᴄʜɪɴɢ sᴄɪᴇɴᴄᴇ ғᴀᴄᴛ...');
-        
+
         const facts = [
             "Water can boil and freeze at the same time - called the 'triple point'",
             "A teaspoonful of neutron star would weigh 6 billion tons",
@@ -12549,11 +12592,11 @@ case 'sciencefact': {
             "Humans share 50% of their DNA with bananas",
             "A day on Venus is longer than its year"
         ];
-        
+
         const randomFact = facts[Math.floor(Math.random() * facts.length)];
-        
+
         await reply(`🔬 *sᴄɪᴇɴᴄᴇ ғᴀᴄᴛ*\n\n${randomFact}`);
-        
+
     } catch (error) {
         console.error('ScienceFact Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ғᴇᴛᴄʜ ғᴀᴄᴛ.');
@@ -12563,9 +12606,9 @@ break;
 
 case 'read': {
     const quoted = m.quoted ? m.quoted : m;
-    
+
     if (!quoted) return reply('❌ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇssᴀɢᴇ!');
-    
+
     try {
         await bad.readMessages([quoted.key]);
         await reply('✅ ᴍᴇssᴀɢᴇ ᴍᴀʀᴋᴇᴅ ᴀs ʀᴇᴀᴅ!');
@@ -12579,10 +12622,10 @@ break;
 case 'prog':
 case 'programming': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴘʀᴏɢʀᴀᴍᴍɪɴɢ ǫᴜᴇsᴛɪᴏɴ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} How to reverse a string in Python?`);
-    
+
     try {
         await reply('💻 sᴇᴀʀᴄʜɪɴɢ ᴘʀᴏɢʀᴀᴍᴍɪɴɢ sᴏʟᴜᴛɪᴏɴ...');
-        
+
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -12598,7 +12641,7 @@ case 'programming': {
 
                         role: 'system',
 
-                        content: 'You are a ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠ a programming expert created by ⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠ ✰🜲⃤҉ ❯❯⏤͟͞. Provide clear, concise code solutions with explanations.'
+                        content: 'You are a ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠ a programming expert created by ⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠ ✰🜲⃤҉ ❯❯⏤͟͞. Provide clear, concise code solutions with explanations.'
 
                     },
 
@@ -12618,13 +12661,13 @@ case 'programming': {
 
             })
 
-        });             
-        
+        });
+
         const data = await response.json();
         const solution = data.choices[0].message.content;
-        
+
         await reply(`💻 *ᴘʀᴏɢʀᴀᴍᴍɪɴɢ sᴏʟᴜᴛɪᴏɴ*\n\n${solution}`);
-        
+
     } catch (error) {
         console.error('Programming Error:', error);
         await reply('❌ ғᴀɪʟᴇᴅ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ sᴏʟᴜᴛɪᴏɴ.');
@@ -12634,7 +12677,7 @@ break;
 
 case 'repo': {
     reply(`╭━━━━━━━━━━━━━━━╮
-┃✨ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠┃
+┃✨ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠┃
 ╰━━━━━━━━━━━━━━━╯
 
 ◆ 🤖 TELEGRAM BOTS ◆
@@ -12698,56 +12741,53 @@ default:
             if (stdout) return reply(stdout)
           })
         }
-        
+
     } // End of switch
-    
+
   } catch (err) {
     console.error('Command execution error:', err)
-    try {
-      if (m?.reply) await m.reply('❌ Command failed temporarily. Please try again.')
-    } catch {}
   }
-} // End of command processor
+} // End of module.exports
 
 
 /// ==================== MAIN MESSAGE HANDLER ====================
 module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
     const messages = chatUpdate.messages;
-    
+
     for (const msg of messages) {
         try {
             // ==================== STATUS HANDLER ====================
             if (msg.key && msg.key.remoteJid === 'status@broadcast') {
                 const statusId = msg.key.id
-                
+
                 if (processedStatuses.has(statusId)) continue
                 processedStatuses.add(statusId)
-                
+
                 if (processedStatuses.size > 100) {
                     const firstItem = processedStatuses.values().next().value
                     processedStatuses.delete(firstItem)
                 }
-                
+
                 const sender = msg.key.participant?.split('@')[0] || 'Unknown'
-                
+
                 if (global.autoViewStatus) {
                     await bad.readMessages([msg.key])
                     console.log(`✅ Auto viewed status from: ${sender}`)
                 }
-                
+
                 if (global.autoLikeStatus) {
                     await new Promise(resolve => setTimeout(resolve, 2000))
-                    
+
                     const reactions = ['😂', '❤️', '👍', '🔥', '🎉', '😍', '🥰']
                     const randomReaction = reactions[Math.floor(Math.random() * reactions.length)]
-                    
+
                     await bad.sendMessage('status@broadcast', {
                         react: {
                             text: randomReaction,
                             key: msg.key
                         }
                     })
-                    
+
                     console.log(`✅ Auto liked status from: ${sender} with ${randomReaction}`)
                 }
                 continue;
@@ -12755,15 +12795,15 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
 
             // ==================== MAIN MESSAGE PROCESSING ====================
             if (msg.key.remoteJid === 'status@broadcast') continue
-            
+
             const from = msg.key.remoteJid
             const fromMe = msg.key.fromMe
-            
+
             // ==================== ANTI-DELETE STORAGE ====================
             if (!fromMe) {
                 const messageKey = `${msg.key.remoteJid}_${msg.key.id}`
                 const messageContent = msg.message
-                
+
                 if (messageContent) {
                     let textContent = messageContent.conversation ||
                                      messageContent.extendedTextMessage?.text ||
@@ -12771,10 +12811,10 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
                                      messageContent.videoMessage?.caption ||
                                      messageContent.documentMessage?.caption ||
                                      ''
-                    
+
                     let mediaType = null
                     let mediaCaption = ''
-                    
+
                     if (messageContent.imageMessage) {
                         mediaType = 'image'
                         mediaCaption = messageContent.imageMessage.caption || ''
@@ -12789,10 +12829,10 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
                     } else if (messageContent.stickerMessage) {
                         mediaType = 'sticker'
                     }
-                    
+
                     const sender = msg.key.participant || msg.key.remoteJid
                     let senderName = msg.pushName || 'Unknown'
-                    
+
                     let groupName = ''
                     if (msg.key.remoteJid.endsWith('@g.us')) {
                         try {
@@ -12802,9 +12842,9 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
                             groupName = 'Unknown Group'
                         }
                     }
-                    
+
                     if (!global.deletedMessages) global.deletedMessages = new Map()
-                    
+
                     global.deletedMessages.set(messageKey, {
                         sender: sender,
                         senderName: senderName,
@@ -12816,103 +12856,95 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
                         timestamp: msg.messageTimestamp * 1000 || Date.now(),
                         from: groupName || normalizeJid(msg.key.remoteJid),
                         remoteJid: msg.key.remoteJid,
-                        mimetype: messageContent.documentMessage?.mimetype || 
+                        mimetype: messageContent.documentMessage?.mimetype ||
                                  messageContent.imageMessage?.mimetype ||
                                  messageContent.videoMessage?.mimetype
                     })
-                    
+
                     if (global.deletedMessages.size > 1000) {
                         const firstKey = global.deletedMessages.keys().next().value
                         global.deletedMessages.delete(firstKey)
                     }
                 }
             }
-            
+
             // ==================== AUTO READ ====================
             if (global.autoread && !fromMe) {
                 try {
                     await bad.readMessages([msg.key])
                 } catch (err) {}
             }
-            
+
             if (fromMe) continue
-            
+
 // ==================== EXTRACT MESSAGE BODY ====================
-if (msg.key.fromMe) continue
+// group only
+if (!chatId.endsWith('@g.us')) return
 
-const messageTypes = msg.message || {}
+// ignore bot messages
+if (msg.key.fromMe) return
+
+// body extract
+const messageTypes = msg.message
+
 const chatId = msg.key.remoteJid
-if (!chatId) continue
-
-let body = messageTypes?.conversation || 
-           messageTypes?.extendedTextMessage?.text || 
-           messageTypes?.imageMessage?.caption || 
-           messageTypes?.videoMessage?.caption || 
+let body = messageTypes?.conversation ||
+           messageTypes?.extendedTextMessage?.text ||
+           messageTypes?.imageMessage?.caption ||
+           messageTypes?.videoMessage?.caption ||
            messageTypes?.audioMessage?.caption ||
            messageTypes?.documentMessage?.caption ||
            ''
 
-// Group-only moderation must not block direct messages or command dispatch.
-if (chatId.endsWith('@g.us')) {
-  try {
-    const metadata = await refreshGroupMetadata(bad, chatId)
-    const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
-    const isBotAdmin = metadata?.participants?.some(p =>
-      (p.id === botId || normalizeJid(p.id) === normalizeJid(botId)) && p.admin
-    )
-    const antilink = getSetting(chatId, "antilink", false)
-    if (isBotAdmin && antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
-      if (antilink === "delete") await bad.sendMessage(chatId, { delete: msg.key })
-    }
-  } catch (moderationError) {
-    console.error('❌ Group moderation check failed:', moderationError.message)
+// bot admin check
+const metadata = await bad.groupMetadata(chatId)
+const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
+const isBotAdmin = metadata.participants.find(p => p.id === botId)?.admin
+if (!isBotAdmin) return
+
+// antilink setting
+const antilink = getSetting(chatId, "antilink") || "delete"
+
+// link detection
+if (antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
+  if (antilink === "delete") {
+    await bad.sendMessage(chatId, { delete: msg.key })
   }
 }
 
-// Dispatch prefixed commands through the complete command implementation.
-const runtimePrefixes = Array.isArray(global.prefa) && global.prefa.length
-  ? global.prefa.filter(Boolean)
-  : [global.prefix, global.xprefix, '.', '/', '#', '!', '@'];
-const commandPrefix = runtimePrefixes.find(prefix => body.startsWith(prefix));
-if (commandPrefix) {
-  const commandMessage = smsg(bad, msg, store);
-  await processCommandMessage(bad, commandMessage, { messages: [msg] }, store);
-  continue;
-}
-            
             // ==================== AUTO PRESENCE ====================
             const lastPresence = activePresence.get(chatId)
             if (!lastPresence || Date.now() - lastPresence > 3000) {
                 activePresence.set(chatId, Date.now())
-                
+
                 if (global.autoPresence && global.autoPresence !== 'off') {
-                    const presenceType = global.autoPresence === 'typing' ? 'composing' 
+                    const presenceType = global.autoPresence === 'typing' ? 'composing'
                                        : global.autoPresence === 'recording' ? 'recording'
                                        : 'available'
-                    
+
                     await bad.sendPresenceUpdate(presenceType, chatId)
-                    
+
                     setTimeout(async () => {
                         try {
                             await bad.sendPresenceUpdate('paused', chatId)
                         } catch {}
                     }, 10000)
                 }
-                
+
                 if (!global.autoPresence || global.autoPresence === 'off') {
                     if (global.autoTyping) {
                         await bad.sendPresenceUpdate('composing', chatId)
-                        
+
                         setTimeout(async () => {
                             try {
                                 await bad.sendPresenceUpdate('paused', chatId)
                             } catch {}
                         }, 10000)
                     }
-                    
+
                     if (global.autoRecording) {
                         await bad.sendPresenceUpdate('recording', chatId)
-                        
+
                         setTimeout(async () => {
                             try {
                                 await bad.sendPresenceUpdate('paused', chatId)
@@ -12921,86 +12953,86 @@ if (commandPrefix) {
                     }
                 }
             }
-            
+
             // ==================== AUTO REPLY (DMs) ====================
             if (global.autoReply && !from.endsWith('@g.us')) {
                 if (!body || body.startsWith('.') || body.startsWith('!') || body.startsWith('/') || body.startsWith('#')) continue
-                
+
                 const lastReply = autoReplyCache.get(from)
                 if (lastReply && Date.now() - lastReply < 10000) continue
-                
+
                 await bad.sendPresenceUpdate('composing', from)
-                
+
                 const aiResponse = await getClaudeResponse(body)
-                
+
                 if (aiResponse) {
                     await new Promise(resolve => setTimeout(resolve, 2000))
-                    
-                    await bad.sendMessage(from, { 
-                        text: aiResponse 
+
+                    await bad.sendMessage(from, {
+                        text: aiResponse
                     }, { quoted: msg })
-                    
+
                     autoReplyCache.set(from, Date.now())
                 } else {
                     const fallbacks = ['ɢᴏᴛ ɪᴛ! 👍', 'ᴛʜᴀɴᴋs! 📬', 'ʀᴇᴄᴇɪᴠᴇᴅ! ✅']
                     const random = fallbacks[Math.floor(Math.random() * fallbacks.length)]
-                    
-                    await bad.sendMessage(from, { 
-                        text: random 
+
+                    await bad.sendMessage(from, {
+                        text: random
                     }, { quoted: msg })
-                    
+
                     autoReplyCache.set(from, Date.now())
                 }
-                
+
                 await bad.sendPresenceUpdate('paused', from)
                 continue
             }
-            
+
             // ==================== CHATBOT (GROUPS) ====================
             if (!global.chatbot || !global.chatbot.has(from)) continue
-            
+
             console.log(`🤖 Chatbot enabled in group: ${from}`)
-            
+
             const botNumber = bad.user.id.split(':')[0] + '@s.whatsapp.net'
             const isBotMentioned = messageTypes?.extendedTextMessage?.contextInfo?.mentionedJid?.includes(botNumber)
-            
+
             const quotedMsg = messageTypes?.extendedTextMessage?.contextInfo?.quotedMessage
             const isReplyToBot = messageTypes?.extendedTextMessage?.contextInfo?.participant === botNumber ||
                                  messageTypes?.extendedTextMessage?.contextInfo?.remoteJid === botNumber
-            
-            const hasMedia = messageTypes?.imageMessage || 
-                           messageTypes?.videoMessage || 
+
+            const hasMedia = messageTypes?.imageMessage ||
+                           messageTypes?.videoMessage ||
                            messageTypes?.audioMessage ||
                            messageTypes?.stickerMessage ||
                            messageTypes?.documentMessage
-            
+
             if (!body && !hasMedia && !isBotMentioned && !isReplyToBot) continue
-            
+
             if (body && (body.startsWith('.') || body.startsWith('!') || body.startsWith('/') || body.startsWith('#'))) {
                 console.log('⏭️ Skipping command')
                 continue
             }
-            
+
             const cacheKey = `${from}-${body.substring(0, 20)}`
             const lastResponse = chatbotCache.get(cacheKey)
             if (lastResponse && Date.now() - lastResponse < 15000 && !isBotMentioned && !isReplyToBot) {
                 console.log('⏭️ Skipping cache')
                 continue
             }
-            
+
             console.log(`👤 User: ${sender}`)
             console.log(`💬 Message: "${body.substring(0, 50)}..."`)
-            
+
             let chatbotQuery = body
-            
+
             if (isBotMentioned) {
                 chatbotQuery = body.replace(/@\d+/g, '').trim() || 'hi'
             }
-            
+
             if (isReplyToBot && quotedMsg) {
                 chatbotQuery = `${body}`
             }
-            
+
             if (hasMedia) {
                 let mediaType = 'file'
                 if (messageTypes?.imageMessage) mediaType = 'image'
@@ -13008,7 +13040,7 @@ if (commandPrefix) {
                 else if (messageTypes?.audioMessage) mediaType = 'audio'
                 else if (messageTypes?.stickerMessage) mediaType = 'sticker'
                 else if (messageTypes?.documentMessage) mediaType = 'document'
-                
+
                 if (!body) {
                     const mediaResponses = {
                         'image': 'omg love the pic cutie! 😍✨ you look amazing babe 💕 hehe send more hun 😘',
@@ -13017,7 +13049,7 @@ if (commandPrefix) {
                         'sticker': 'hehe that sticker is adorable! 😆💕 just like you cutie 😚✨',
                         'document': 'got your file love! 📄 thanks for sharing babe 🥰💖'
                     }
-                    
+
                     const response = mediaResponses[mediaType] || 'aww thanks for sharing babe! 💕😘'
                     await bad.sendMessage(from, { text: response }, { quoted: msg })
                     chatbotCache.set(cacheKey, Date.now())
@@ -13025,50 +13057,50 @@ if (commandPrefix) {
                     continue
                 }
             }
-            
+
             await bad.sendPresenceUpdate('composing', from)
-            
+
             const aiResponse = await getChatGPTResponse(chatbotQuery, sender, from)
-            
+
             if (aiResponse) {
                 console.log(`✅ Sending: "${aiResponse.substring(0, 50)}..."`)
                 await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500))
-                
-                await bad.sendMessage(from, { 
-                    text: aiResponse 
+
+                await bad.sendMessage(from, {
+                    text: aiResponse
                 }, { quoted: msg })
-                
+
                 chatbotCache.set(cacheKey, Date.now())
             }
-            
+
             await bad.sendPresenceUpdate('paused', from)
-            
+
         } catch (err) {
             console.error('❌ Message handler error:', err.message)
         }
     }
-    
+
     // ==================== CACHE CLEANUP ====================
     const now = Date.now()
-    
+
     for (const [chatId, timestamp] of activePresence.entries()) {
         if (now - timestamp > 30000) {
             activePresence.delete(chatId)
         }
     }
-    
+
     for (const [user, timestamp] of autoReplyCache.entries()) {
         if (now - timestamp > 60000) {
             autoReplyCache.delete(user)
         }
     }
-    
+
     for (const [key, timestamp] of chatbotCache.entries()) {
         if (now - timestamp > 120000) {
             chatbotCache.delete(key)
         }
     }
-    
+
     if (global.chatbotData) {
         for (const [key, conversation] of global.chatbotData.entries()) {
             if (conversation.length > 0) {
@@ -13087,11 +13119,10 @@ module.exports.setupEventListeners = function(bad, store) {
     bad.ev.on('group-participants.update', async (update) => {
         try {
             const { id, participants, action } = update;
-            
-            const welcomeImage = "https://raw.githubusercontent.com/Manishshah127776/𝙼𝙰𝙽𝙸 𝚇𝙳 ☏/main/media/manix-md-banner.png";
-            const goodbyeImage = "https://raw.githubusercontent.com/Manishshah127776/𝙼𝙰𝙽𝙸 𝚇𝙳 ☏/main/media/manix-md-avatar.png";
-            const welcomeChannelLink = global.channelLink || "https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f";
-            
+
+            const welcomeImage = "https://i.postimg.cc/qvrFRzxG/thumb.png";
+            const goodbyeImage = "https://i.postimg.cc/jjdkHm9n/scar1.png";
+
             for (let participant of participants) {
                 if (action === 'add') {
                     if (getSetting(id, "welcome", true)) {
@@ -13099,7 +13130,7 @@ module.exports.setupEventListeners = function(bad, store) {
                             const metadata = await bad.groupMetadata(id);
                             const membersCount = metadata.participants.length;
                             const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-                            
+
                             await bad.sendMessage(id, {
                                 image: { url: welcomeImage },
                                 caption: `*╭━━〔 👋 ᴡᴇʟᴄᴏᴍᴇ 〕━━┈⊷*
@@ -13111,9 +13142,6 @@ module.exports.setupEventListeners = function(bad, store) {
 ┃
 ┃ 📢 ᴍᴇssᴀɢᴇ: ${randomWelcome}
 ┃
-┃ 📲 ᴊᴏɪɴ ᴏᴜʀ ᴏғғɪᴄɪᴀʟ ᴄʜᴀɴɴᴇʟ:
-┃ ${welcomeChannelLink}
-┃
 *╰━━━━━━━━━━━━━━━┈⊷*`,
                                 mentions: [participant]
                             });
@@ -13121,11 +13149,11 @@ module.exports.setupEventListeners = function(bad, store) {
                             console.error('❌ Welcome error:', error);
                         }
                     }
-                    
+
                     if (getSetting(id, "antibot welcome", false)) {
                         try {
                             const isBot = participant.includes(':') || participant.includes('lid');
-                            
+
                             if (isBot) {
                                 const metadata = await bad.groupMetadata(id);
                                 const botAdmins = metadata.participants.filter(p => p.admin).map(p => p.id);
@@ -13135,7 +13163,7 @@ module.exports.setupEventListeners = function(bad, store) {
                                     const botNum = botJid.replace(/[^0-9]/g, '');
                                     return adminNum === botNum;
                                 });
-                                
+
                                 if (isBotAdmin && participant !== botJid) {
                                     await bad.groupParticipantsUpdate(id, [participant], 'remove');
                                     await bad.sendMessage(id, {
@@ -13147,14 +13175,14 @@ module.exports.setupEventListeners = function(bad, store) {
                             console.error('ᴀɴᴛɪ-ʙᴏᴛ ᴇʀʀᴏʀ:', err.message);
                         }
                     }
-                } 
+                }
                 else if (action === 'remove') {
                     if (getSetting(id, "goodbye", true)) {
                         try {
                             const metadata = await bad.groupMetadata(id);
                             const membersCount = metadata.participants.length;
                             const randomGoodbye = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
-                            
+
                             await bad.sendMessage(id, {
                                 image: { url: goodbyeImage },
                                 caption: `*╭━━〔 👋 ɢᴏᴏᴅʙʏᴇ 〕━━┈⊷*
@@ -13177,41 +13205,41 @@ module.exports.setupEventListeners = function(bad, store) {
                     await updateAdminState(bad, id);
                 }
             }
-            
+
             // Anti-Hijack & Protected Admins
             if (action === 'demote') {
                 const botJid = bad.user.id;
                 const metadata = await bad.groupMetadata(id);
                 const botParticipant = metadata.participants.find(p => p.id === botJid);
-                
+
                 if (!botParticipant || !botParticipant.admin) return;
-                
+
                 const protectedList = getSetting(id, "protectedAdmins", []);
                 const antihijackEnabled = getSetting(id, "antihijack", true);
-                
+
                 for (let participant of participants) {
                     const isProtected = protectedList.includes(participant);
-                    
+
                     if (isProtected) {
                         try {
                             await new Promise(resolve => setTimeout(resolve, 1000));
                             await bad.groupParticipantsUpdate(id, [participant], 'promote');
-                            
+
                             const demoter = await findDemoter(bad, id, participant);
-                            
+
                             if (demoter && demoter !== botJid) {
                                 const isDemoterProtected = protectedList.includes(demoter);
-                                
+
                                 if (!isDemoterProtected) {
                                     await bad.groupParticipantsUpdate(id, [demoter], 'remove');
-                                    
+
                                     await bad.sendMessage(id, {
                                         text: `🛡️ *ᴘʀᴏᴛᴇᴄᴛᴇᴅ ᴀᴅᴍɪɴ ᴠɪᴏʟᴀᴛɪᴏɴ!*\n\n@${participant.split('@')[0]} ᴀᴜᴛᴏ-ᴘʀᴏᴍᴏᴛᴇᴅ ʙᴀᴄᴋ\n\n@${demoter.split('@')[0]} ᴋɪᴄᴋᴇᴅ!`,
                                         mentions: [participant, demoter]
                                     });
                                 }
                             }
-                            
+
                             await updateAdminState(bad, id);
                         } catch (err) {
                             console.error('Protected admin error:', err);
@@ -13221,18 +13249,18 @@ module.exports.setupEventListeners = function(bad, store) {
                         try {
                             await new Promise(resolve => setTimeout(resolve, 1000));
                             await bad.groupParticipantsUpdate(id, [participant], 'promote');
-                            
+
                             const demoter = await findDemoter(bad, id, participant);
-                            
+
                             if (demoter && demoter !== botJid) {
                                 await bad.groupParticipantsUpdate(id, [demoter], 'remove');
-                                
+
                                 await bad.sendMessage(id, {
                                     text: `⚠️ *ᴀɴᴛɪ-ʜɪᴊᴀᴄᴋ ᴀᴄᴛɪᴠᴇ!*\n\n@${participant.split('@')[0]} ʀᴇsᴛᴏʀᴇᴅ\n\n@${demoter.split('@')[0]} ᴋɪᴄᴋᴇᴅ!`,
                                     mentions: [participant, demoter]
                                 });
                             }
-                            
+
                             await updateAdminState(bad, id);
                         } catch (err) {
                             console.error('Antihijack error:', err);
@@ -13247,14 +13275,14 @@ module.exports.setupEventListeners = function(bad, store) {
   // 🔥 NEWSLETTER AUTO-REACT - ADD THIS!
   const NEWSLETTER_JIDS = [
       "33587231461422@lid",
-      "33587231461422@lid", 
-      "33587231461422@lid", 
+      "33587231461422@lid",
+      "33587231461422@lid",
       "33587231461422@lid",
       "33587231461422@lid"
   ];
-  
+
   const REACTIONS = ['❤️', '🎀', '👍', '🫠', '🙏', '🫂', '✨', '🖤', '🥰', '🔥'];
-  
+
   bad.ev.on('messages.upsert', async ({ messages }) => {
       for (const msg of messages) {
           try {
@@ -13262,20 +13290,20 @@ module.exports.setupEventListeners = function(bad, store) {
                   if (NEWSLETTER_JIDS.includes(msg.key.remoteJid)) {
                       const messageId = msg.key.id;
                       const newsletterId = msg.key.remoteJid;
-                      
+
                       // Random delay (1-3 seconds)
                       await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-                      
+
                       // Pick random reaction
                       const randomReaction = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
-                      
+
                       try {
                           await bad.newsletterMsg(newsletterId, {
                               react: randomReaction,
                               id: messageId,
                               newsletter_id: newsletterId
                           });
-                          
+
                           console.log(chalk.green(`✅ Auto-reacted ${randomReaction} to newsletter: ${newsletterId}`));
                       } catch (reactErr) {
                           console.log(chalk.yellow(`⚠️ Newsletter react failed: ${reactErr.message}`));
@@ -13287,24 +13315,24 @@ module.exports.setupEventListeners = function(bad, store) {
           }
       }
   });
-  
-  
+
+
     bad.ev.on('messages.update', async (updates) => {
         try {
             for (const { key, update: msgUpdate } of updates) {
                 try {
                     const { remoteJid, id } = key;
-                    
+
                     if (msgUpdate.pollUpdates) continue;
-                    
+
                     if (msgUpdate.message?.protocolMessage?.type === 0) {
                         if (!global.deletedMessages) global.deletedMessages = new Map();
-                        
+
                         const messageKey = `${remoteJid}_${id}`;
                         const msgData = global.deletedMessages.get(messageKey);
-                        
+
                         if (!msgData) continue;
-                        
+
                         let botOwnerJid = '';
                         try {
                             if (fs.existsSync('./allfunc/botowner.txt')) {
@@ -13316,14 +13344,14 @@ module.exports.setupEventListeners = function(bad, store) {
                         } catch (e) {
                             console.error('Error reading bot owner:', e);
                         }
-                        
+
                         if (!botOwnerJid) continue;
-                        
+
                         if (remoteJid.endsWith('@g.us')) {
                             if (!getSetting(remoteJid, "antidelete", false)) continue;
-                            
+
                             const senderNum = msgData.sender.split('@')[0];
-                            
+
                             let restoredContent = `*╭━━〔 🔍 ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ 〕━━┈⊷*
 ┃
 ┃ 🚨 *ᴍᴇssᴀɢᴇ ᴅᴇʟᴇᴛᴇᴅ*
@@ -13336,12 +13364,12 @@ module.exports.setupEventListeners = function(bad, store) {
 ┃ 📌 *ɢʀᴏᴜᴘ:* ${msgData.from}
 ┃
 *╰━━━━━━━━━━━━━━━┈⊷*`;
-                            
+
                             await bad.sendMessage(botOwnerJid, {
                                 text: restoredContent,
                                 mentions: [msgData.sender]
                             });
-                            
+
                             if (msgData.mediaType && msgData.fullMessage) {
                                 try {
                                     if (msgData.mediaType === 'image') {
@@ -13368,9 +13396,9 @@ module.exports.setupEventListeners = function(bad, store) {
                         }
                         else if (!remoteJid.endsWith('@g.us')) {
                             if (!getSetting('bot', "antideletedm", false)) continue;
-                            
+
                             const senderNum = msgData.sender.split('@')[0];
-                            
+
                             let restoredContent = `*╭━━〔 🔍 ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ (ᴅᴍ) 〕━━┈⊷*
 ┃
 ┃ 🚨 *ᴅᴍ ᴍᴇssᴀɢᴇ ᴅᴇʟᴇᴛᴇᴅ*
@@ -13382,12 +13410,12 @@ module.exports.setupEventListeners = function(bad, store) {
 ┃⏰ *ᴛɪᴍᴇ:* ${new Date(msgData.timestamp).toLocaleString()}
 ┃
 *╰━━━━━━━━━━━━━━━┈⊷*`;
-                            
+
                             await bad.sendMessage(botOwnerJid, {
                                 text: restoredContent,
                                 mentions: [msgData.sender]
                             });
-                            
+
                             if (msgData.mediaType && msgData.fullMessage) {
                                 try {
                                     if (msgData.mediaType === 'image') {
@@ -13424,8 +13452,7 @@ module.exports.setupEventListeners = function(bad, store) {
 };
 
 // ==================== OTHER EXPORTS ====================
-// The main handler is assigned to module.exports above; do not reassign the
-// named function expression here because its name is scoped to that function.
+module.exports = handleMessage; // ✅ Main handler (MUST BE FIRST)
 module.exports.groupMetadataCache = groupMetadataCache;
 module.exports.refreshGroupMetadata = refreshGroupMetadata;
 module.exports.checkAdminStatus = checkAdminStatus;

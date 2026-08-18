@@ -1,5 +1,5 @@
 /**
-   * Create By 👑 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ 👑
+   * Create By 👑 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 👑
    * Contact Me on wa.me/9779807044421
 */
 module.exports = {
@@ -8,8 +8,8 @@ module.exports = {
     script: "./index.js",
     watch: true,
     ignore_watch: [
-      "**/*", 
-      "!index.js" 
+      "**/*",
+      "!index.js"
     ],
     autorestart: true,
     max_memory_restart: "800M",
