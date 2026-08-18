@@ -1975,19 +1975,15 @@ case 'menu2': {
 ┃ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
-  await bad.sendMessage(from, {
-    image: { url: randomImage },
-    caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-      }
-    }
-  }, { quoted: m })
+  try {
+    await bad.sendMessage(from, {
+      image: randomImage,
+      caption: menuText
+    }, { quoted: m })
+  } catch (menuImageError) {
+    console.error('❌ Menu image send failed:', menuImageError.message)
+    await reply(menuText)
+  }
 
   const _audio = menuAudio()
   if (_audio) {
@@ -2043,19 +2039,15 @@ case 'listmenu': {
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
 
-  await bad.sendMessage(from, {
-    image: { url: randomImage },
-    caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-      }
-    }
-  }, { quoted: m })
+  try {
+    await bad.sendMessage(from, {
+      image: randomImage,
+      caption: menuText
+    }, { quoted: m })
+  } catch (menuImageError) {
+    console.error('❌ Menu image send failed:', menuImageError.message)
+    await reply(menuText)
+  }
 
   const _audio = menuAudio()
   if (_audio) {
