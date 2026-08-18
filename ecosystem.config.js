@@ -1,6 +1,6 @@
 /**
    * Create By 👑 MANI XTECH 𝗬𝗧 👑
-   * Contact Me on wa.me/923271054080
+   * Contact Me on wa.me/9779807044421
 */
 module.exports = {
   apps: [{

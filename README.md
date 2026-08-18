@@ -135,7 +135,8 @@ Deploy MANIX MD 24/7 on your favorite cloud platforms:
 
 - **Framework**: **MANIX MD**
 - **Lead Developer & Brand**: **MANI XTECH**
-- **Official Channel**: [Join WhatsApp Channel](https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f)
+- **Official Channel**: [MANIX MD 💐 on WhatsApp](https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f)
+- **Owner WhatsApp**: [https://wa.me/9779807044421](https://wa.me/9779807044421)
 
 ---
 

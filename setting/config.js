@@ -1,18 +1,18 @@
 const fs = require('fs')
 
-global.owner = "966577531068" //owner number
+global.owner = "9779807044421" //owner number
 global.footer = "⇝ MANIX MD  ⇝︎" //footer section
 global.status = false //"self/public" section of the bot
 global.prefa = ['','!','.','#','&','/','@']
-global.owner = ['234']
+global.owner = ['9779807044421']
 global.xprefix = '.'
 global.gambar = "https://i.postimg.cc/D09w4jk0/download.jpg"
 global.OWNER_NAME = "@Manishxtech0" //
-global.DEVELOPER = ["6895265731"] //
+global.DEVELOPER = ["9779807044421"] //
 global.BOT_NAME = "MANIX MD BOT"
 global.bankowner = "MANIX MD BOT"
 global.creatorName = "MANIX MD BOT"
-global.ownernumber = '966577531068'  //creator number
+global.ownernumber = '9779807044421'  //creator number
 global.location = "Nepal, kathmandu, biratnagar"
 global.prefa = ['','!','.','#','&']
 //================DO NOT CHANGE OR YOU'LL GET AN ERROR=============\
@@ -20,7 +20,7 @@ global.gcmess = "☠️ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃 ☠️
 global.adminmess = "☠️ 𝐀𝐃𝐌𝐈𝐍 𝐑𝐄𝐒𝐓𝐑𝐈𝐂𝐓𝐈𝐎𝐍 ☠️  𖥂 𝐓𝐡𝐢𝐬 𝐟𝐞𝐚𝐭𝐮𝐫𝐞 𝐢𝐬 𝐫𝐞𝐬𝐭𝐫𝐢𝐜𝐭𝐞𝐝 𝐭𝐨 𝐚𝐝𝐦𝐢𝐧𝐬 𝐨𝐧𝐥𝐲."
 
 global.premmess = "☠️ 𖤐 𝐑𝐄𝐒𝐓𝐑𝐈𝐂𝐓𝐄𝐃 𝐅𝐄𝐀𝐓𝐔𝐑𝐄 𖤐 ☠️  𖥂 𝐓𝐡𝐢𝐬 𝐟𝐞𝐚𝐭𝐮𝐫𝐞 𝐢𝐬 𝐫𝐞𝐬𝐞𝐫𝐯𝐞𝐝 𝐟𝐨𝐫 𝐩𝐫𝐞𝐦𝐢𝐮𝐦 𝐮𝐬𝐞𝐫𝐬 𝐨𝐧𝐥𝐲.  🕳️ 𝐔𝐩𝐠𝐫𝐚𝐝𝐞 𝐲𝐨𝐮𝐫 𝐫𝐚𝐧𝐤… 𝐨𝐫 𝐟𝐚𝐥𝐥 𝐢𝐧𝐭𝐨 𝐨𝐛𝐥𝐢𝐯𝐢𝐨𝐧."
-global.dev = "966577531068"
+global.dev = "9779807044421"
 global.creatorName = "ꨄ MANI XTECH ꨄ"
 global.footer = "ꨄ MANI XTECH ꨄ" //footer section
 global.link = "https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f"
@@ -31,11 +31,13 @@ global.botname = "MANIX-MD"
 global.author = "༒︎ MANI XTECH ༒︎"
 global.themeemoji = '🤞'
 global.wagc = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f'
+global.channelLink = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f'
+global.ownerContact = 'https://wa.me/9779807044421'
 global.thumbnail = 'https://i.postimg.cc/D09w4jk0/download.jpg'
 global.richpp = 'https://i.postimg.cc/D09w4jk0/download.jpg'
 global.packname = "𝐒𝐓𝐈𝐂𝐊𝐄𝐑𝐒 𖣘♔︎"
 global.author = "MANIX-MD"
-global.creator = "966577531068@s.whatsapp.net"
+global.creator = "9779807044421@s.whatsapp.net"
 global.ownername = 'MANIX-MD' 
 global.onlyowner = `☠️ 𝙎𝙤𝙧𝙧𝙮, 𝙏𝙝𝙞𝙨 𝙁𝙚𝙖𝙩𝙪𝙧𝙚 𝙄𝙨 𝙍𝙚𝙨𝙩𝙧𝙞𝙘𝙩𝙚𝙙 𝙏𝙤 𝙊𝙬𝙣𝙚𝙧𝙨 𝙊𝙣𝙡𝙮.  
 🩸 𝘾𝙤𝙣𝙩𝙖𝙘𝙩 *MANIX-MD* 𝙩𝙤 𝙜𝙖𝙞𝙣 𝙤𝙬𝙣𝙚𝙧 𝙥𝙧𝙞𝙫𝙞𝙡𝙚𝙜𝙚𝙨.  
@@ -83,7 +85,7 @@ global.database = `\`[ 👑 ] MANIX-MD 😙 \` \n*
 
 𝕮𝖔𝖓𝖙𝖆𝖈𝖙 𝕺𝖚𝖗 𝕺𝖋𝖋𝖎𝖈𝖎𝖆𝖑𝖘 𝕭𝖊𝖋𝖔𝖗𝖊 𝖞𝖔𝖚 𝖋𝖆𝖑𝖑:
 
-🔥 𝖂𝖆: wa.me/966577531068
+🔥 𝖂𝖆: wa.me/9779807044421
 🕷️ 𝖙𝖌: t.me/@Manishxtech0
 💀 𝖜𝖆 𝖈𝖍𝖆𝖓𝖓𝖊𝖑:https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f
 
