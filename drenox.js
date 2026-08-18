@@ -3742,7 +3742,7 @@ case 'autoreply': {
 break
 
 
-case 'autoviewstatus': {
+case 'autoviewstatus_alt2': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
 
   const action = args[0]?.toLowerCase()
@@ -3756,7 +3756,7 @@ case 'autoviewstatus': {
 }
 break
 
-case 'autolikestatus': {
+case 'autolikestatus_alt2': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
 
   const action = args[0]?.toLowerCase()
@@ -4299,8 +4299,8 @@ case 'resetlinkgc': {
 }
 break
 
-case 'delete':
-case 'del': {
+case 'delete_alt2':
+case 'del_alt2': {
   if (!m.isGroup) return reply("Group only")
   if (!isBotAdmins) return reply("Bot must be admin")
   if (!isAdmins && !isCreator) return reply("Admin or ❌ Owner only")
@@ -4311,7 +4311,7 @@ case 'del': {
   })
 }
 break;
-case 'kick': {
+case 'kick_alt2': {
   if (!m.isGroup) return reply("ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ᴡᴏʀᴋs ɪɴ ɢʀᴏᴜᴘs.");
   if (!isAdmins && !isCreator) return reply("ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs.");
 
@@ -6363,7 +6363,7 @@ case "antibill": {
 }
 break;
 
-case 'checkadmin':
+case 'checkadmin_alt2':
 case 'admincheck':
 case 'testadmin': {
   if (!m.isGroup) return reply('ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪs ғᴏʀ ɢʀᴏᴜᴘs ᴏɴʟʏ!')
@@ -6437,7 +6437,7 @@ case "ytmp4": {
         {
             headers: {
                 'content-type': 'application/json',
-                'x-rapidapi-key': 'e73bff0542msha94d08136fc4eeep184ff6jsn5bcade1d7824',
+                'x-rapidapi-key': (process.env.RAPIDAPI_KEY || ''),
                 'x-rapidapi-host': 'youtube-video-audio-downloader.p.rapidapi.com'
             }
         });
@@ -6524,7 +6524,7 @@ break
       //═══════════════════════════════════════════════════════════
 // TIKTOK - Download TikTok Videos
 // ═══════════════════════════════════════════════════════════
-case "tiktok":
+case "tiktok_alt2":
 case "tt": {
     if (!text) return reply(example("https://vt.tiktok.com/xxxxx"));
     if (!text.includes('tiktok.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
@@ -6714,7 +6714,7 @@ case "fbdl": {
         const response = await axios.get('https://facebook-scraper3.p.rapidapi.com/video', {
             params: { url: text },
             headers: {
-                'x-rapidapi-key': 'e73bff0542msha94d08136fc4eeep184ff6jsn5bcade1d7824',
+                'x-rapidapi-key': (process.env.RAPIDAPI_KEY || ''),
                 'x-rapidapi-host': 'facebook-scraper3.p.rapidapi.com'
             }
         });
@@ -6763,7 +6763,7 @@ case "x": {
         const response = await axios.get('https://twitter-video-and-image-downloader.p.rapidapi.com/api/twitter/media', {
             params: { url: text },
             headers: {
-                'x-rapidapi-key': 'e73bff0542msha94d08136fc4eeep184ff6jsn5bcade1d7824',
+                'x-rapidapi-key': (process.env.RAPIDAPI_KEY || ''),
                 'x-rapidapi-host': 'twitter-video-and-image-downloader.p.rapidapi.com'
             }
         });
@@ -6827,7 +6827,7 @@ case "gen3": {
         {
             headers: {
                 'content-type': 'application/json',
-                'x-rapidapi-key': 'e73bff0542msha94d08136fc4eeep184ff6jsn5bcade1d7824',
+                'x-rapidapi-key': (process.env.RAPIDAPI_KEY || ''),
                 'x-rapidapi-host': 'runwayml.p.rapidapi.com'
             }
         });
@@ -7102,8 +7102,8 @@ break;
 // ═══════════════════════════════════════════════════════════
 // YTMP4 - Download YouTube Videos
 // ═══════════════════════════════════════════════════════════
-case 'ytmp4':
-case 'ytvideo': {
+case 'ytmp4_alt2':
+case 'ytvideo_alt2': {
   if (!text) return reply(`*Usage:* ${prefix}ytmp4 <youtube url>`);
 
   await loading();
@@ -7394,7 +7394,7 @@ case 'fact': case 'randomfact': {
 }
 break
 
-case 'trivia': {
+case 'trivia_alt2': {
   await loading()
 
   try {
@@ -7443,7 +7443,7 @@ case 'riddle': {
 }
 break
 
-case 'advice': {
+case 'advice_alt2': {
   await loading()
 
   try {
@@ -7980,8 +7980,8 @@ case 'neko2': {
 }
 break
 
-case 'telegramstalk':
-case 'tgstalk': {
+case 'telegramstalk_alt2':
+case 'tgstalk_alt2': {
   if (!text) return reply(`*ᴜsᴀɢᴇ:* ${prefix}telegram <username>\n\n*ᴇxᴀᴍᴘʟᴇ:* ${prefix}telegram telegram`)
 
   await loading()
@@ -8506,7 +8506,7 @@ case 'math': {
 }
 break
 
-case 'trivia': {
+case 'trivia_alt3': {
   const questions = [
     { q: "ᴡʜᴀᴛ ɪs ᴛʜᴇ ᴄᴀᴘɪᴛᴀʟ ᴏғ ғʀᴀɴᴄᴇ?", a: "ᴘᴀʀɪs" },
     { q: "ʜᴏᴡ ᴍᴀɴʏ ᴄᴏɴᴛɪɴᴇɴᴛs ᴀʀᴇ ᴛʜᴇʀᴇ?", a: "7" },
@@ -8598,7 +8598,7 @@ case 'guess': {
 }
 break
 
-case 'waifu': case 'neko': case 'megumin': case 'shinobu': {
+case 'waifu': case 'neko': case 'megumin_alt2': case 'shinobu': {
   await loading()
 
   try {
@@ -8620,8 +8620,8 @@ case 'waifu': case 'neko': case 'megumin': case 'shinobu': {
 }
 break
 
-case 'naruto': case 'sasuke': case 'itachi': case 'kakashi': case 'madara':
-case 'sakura': case 'nezuko': case 'miku': case 'mikasa': case 'elaina': {
+case 'naruto_alt2': case 'sasuke_alt2': case 'itachi_alt2': case 'kakashi_alt2': case 'madara_alt2':
+case 'sakura_alt2': case 'nezuko_alt2': case 'miku_alt2': case 'mikasa_alt2': case 'elaina_alt2': {
   await loading()
 
   try {
@@ -8644,12 +8644,12 @@ case 'sakura': case 'nezuko': case 'miku': case 'mikasa': case 'elaina': {
 }
 break
 
-case 'akiyama': case 'ana': case 'asuna': case 'boruto': case 'chiho':
-case 'deidara': case 'doraemon': case 'emilia': case 'erza': case 'gremory':
-case 'hestia': case 'inori': case 'isuzu': case 'itori': case 'kaga':
-case 'kagura': case 'kaori': case 'keneki': case 'kotori': case 'kurumi':
-case 'loli': case 'onepiece': case 'rize': case 'sagiri': case 'tsunade':
-case 'yotsuba': case 'yuki1': case 'yumeko': {
+case 'akiyama_alt2': case 'ana_alt2': case 'asuna_alt2': case 'boruto_alt2': case 'chiho_alt2':
+case 'deidara_alt2': case 'doraemon_alt2': case 'emilia_alt2': case 'erza_alt2': case 'gremory_alt2':
+case 'hestia_alt2': case 'inori_alt2': case 'isuzu_alt2': case 'itori_alt2': case 'kaga_alt2':
+case 'kagura_alt2': case 'kaori_alt2': case 'keneki_alt2': case 'kotori_alt2': case 'kurumi_alt2':
+case 'loli_alt2': case 'onepiece_alt2': case 'rize_alt2': case 'sagiri_alt2': case 'tsunade_alt2':
+case 'yotsuba_alt2': case 'yuki1': case 'yumeko_alt2': {
   await loading()
 
   try {
@@ -8672,7 +8672,7 @@ case 'yotsuba': case 'yuki1': case 'yumeko': {
 }
 break
 
-case 'husbu': case 'minato': {
+case 'husbu_alt2': case 'minato_alt2': {
   await loading()
 
   try {
@@ -8693,7 +8693,7 @@ case 'husbu': case 'minato': {
 }
 break
 
-case 'nekonime': case 'art': {
+case 'nekonime_alt2': case 'art_alt2': {
   await loading()
 
   try {
@@ -9707,7 +9707,7 @@ case 'kiss': case 'bite': case 'yeet': case 'bully': case 'bonk':
 case 'wink': case 'poke': case 'nom': case 'slap': case 'smile':
 case 'wave': case 'awoo': case 'blush': case 'smug': case 'glomp':
 case 'happy': case 'dance': case 'cringe': case 'cuddle': case 'highfive':
-case 'shinobu': case 'handhold': {
+case 'shinobu_alt2': case 'handhold': {
   axios.get(`https://api.waifu.pics/sfw/${command}`)
     .then(({data}) => {
       bad.sendImageAsSticker(from, data.url, m, {
@@ -9911,7 +9911,7 @@ case 'tovn': {
 }
 break;
 
-case 'readmore': {
+case 'readmore_alt2': {
     if (!text) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴛᴇxᴛ!\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} text1|text2`);
 
     const [text1, text2] = text.split('|');
@@ -10048,8 +10048,8 @@ case 'blur': {
 }
 break;
 
-case 'toanime':
-case 'cartoon': {
+case 'toanime_alt2':
+case 'cartoon_alt2': {
     const quoted = m.quoted ? m.quoted : m;
     const mime = (quoted.msg || quoted).mimetype || '';
 
@@ -10264,7 +10264,7 @@ case 'movie': {
     try {
         await reply('🎬 sᴇᴀʀᴄʜɪɴɢ ᴍᴏᴠɪᴇ...');
 
-        const response = await fetch(`https://www.omdbapi.com/?apikey=c7d9eed3&t=${encodeURIComponent(text)}`);
+        const response = await fetch(`https://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY || ''}&t=${encodeURIComponent(text)}`);
         const data = await response.json();
 
         if (data.Response === 'False') return reply('❌ ᴍᴏᴠɪᴇ ɴᴏᴛ ғᴏᴜɴᴅ!');
@@ -10820,7 +10820,7 @@ case 'shy':
 case 'sad':
 case 'moon':
 case 'anger':
-case 'happy':
+case 'happy_alt2':
 case 'confused':
 case 'heart':
 case 'cool':
@@ -10946,7 +10946,7 @@ case "tweetgen": {
     }
 }
 break;
-case 'weather': {
+case 'weather_alt2': {
   if (!isCreator) return reply('ᴏᴡɴᴇʀ ᴏɴʟʏ.')
   if (!text) return reply('ᴡʜᴀᴛ ʟᴏᴄᴀᴛɪᴏɴ?')
 
@@ -10969,7 +10969,7 @@ case 'weather': {
   bad.sendMessage(m.chat, { text: textw }, { quoted: m })
 }
 break
-case 'readqr': {
+case 'readqr_alt2': {
   if (!quoted) return reply(`Reply to a QR code image with ${prefix}readqr`)
   if (!/image/.test(mime)) return reply('Reply to a QR code image!')
 
@@ -11203,8 +11203,8 @@ break;
 // 🌟 ʟᴏɢᴏ ᴄᴏᴍᴍᴀɴᴅs
 // ═══════════════════════════════════════════════════════
 
-case 'logo':
-case 'logo2':
+case 'logo_alt2':
+case 'logo2_alt2':
 case 'makelogo2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ʟᴏɢᴏ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
@@ -11335,7 +11335,7 @@ break;
 // ═══════════════════════════════════════════════════════
 
 case 'neon':
-case 'neontext': {
+case 'neontext_alt2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɴᴇᴏɴ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
     try {
@@ -11357,7 +11357,7 @@ case 'neontext': {
 break;
 
 case 'glitch':
-case 'glitchtext': {
+case 'glitchtext_alt2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢʟɪᴛᴄʜ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
     try {
@@ -11442,7 +11442,7 @@ case 'metal': {
 }
 break;
 
-case 'luxurygold':
+case 'luxurygold_alt2':
 case 'goldtext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢᴏʟᴅ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
@@ -11487,7 +11487,7 @@ case 'rainbowtext': {
 break;
 
 case 'gradient':
-case 'gradienttext': {
+case 'gradienttext_alt2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢʀᴀᴅɪᴇɴᴛ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
     try {
@@ -11508,7 +11508,7 @@ case 'gradienttext': {
 }
 break;
 
-case 'fire':
+case 'fire_alt2':
 case 'firetext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ꜰɪʀᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
@@ -11551,69 +11551,16 @@ case 'thunder': {
     }
 }
 break;
-
   case 'pair': {
-    try {
-        // ✅ Check free RAM only
-        const freeStorage = os.freemem() / (1024 * 1024); // in MB
-        if (freeStorage < 300) {
-            return reply('⚠️ Slot is full, please try again later.');
-        }
+    const qrDashboard = process.env.QR_DASHBOARD_URL || 'https://manix-md.onrender.com/';
+    return reply(`📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 WhatsApp QR Pairing*
 
-        // ✅ Argument check
-        if (!q) return reply(`Example:\n ${prefix + command} 92300......`);
+Open the dashboard and scan the QR code with WhatsApp → Linked devices → Link a device:
+${qrDashboard}
 
-        // ✅ Extract number
-        const rawNumber = q.replace(/[^0-9]/g, ''); // digits only
-        const Xreturn = rawNumber + "@s.whatsapp.net";
-
-        // ✅ Validate WhatsApp registration
-        const contactInfo = await bad.onWhatsApp(Xreturn);
-        if (!contactInfo || contactInfo.length === 0) {
-            return reply("❌ The number is not registered on WhatsApp.");
-        }
-
-        // ✅ Country code and prefix restrictions
-        const countryCode = rawNumber.slice(0, 3);
-        const prefixxx = rawNumber.slice(0, 1);
-        const firstTwoDigits = rawNumber.slice(0, 2);
-
-        const isValidWhatsAppNumber = (number) => {
-            return number.length >= 10 && number.length <= 15 && !isNaN(number);
-        };
-
-        if (countryCode === "252" || prefixxx === "0" || firstTwoDigits === "89" || countryCode.startsWith("85")) {
-            return reply("🚫 Sorry, numbers with code 252, prefix 0, starting with 89, or +85 are not supported.");
-        }
-
-        if (!isValidWhatsAppNumber(rawNumber)) {
-            return reply("❌ Invalid WhatsApp number. Please enter a valid number.");
-        }
-
-        // ✅ Proceed with pairing
-        const startpairing = require('./pair.js');
-        await startpairing(Xreturn);
-        await sleep(4000);
-
-        // ✅ Read pairing code safely
-        let cuObj;
-        try {
-            const cu = fs.readFileSync('./manixmdtimewisher/pairing/pairing.json', 'utf-8');
-            cuObj = JSON.parse(cu);
-        } catch (e) {
-            return reply("⚠️ Pairing failed. Please try again.");
-        }
-
-        // ✅ Send code
-        await m.reply(`${cuObj.code}`);
-
-    } catch (err) {
-        console.error("Error in pair:", err);
-        m.reply("❌ An unexpected error occurred while processing your request.");
-    }
-}
-break;
-
+Custom pair codes are disabled. Use the QR dashboard only.`);
+  }
+  break;
 case 'water':
 case 'watertext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴡᴀᴛᴇʀ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
@@ -11659,7 +11606,7 @@ case 'frozen': {
 break;
 
 case 'galaxy':
-case 'space': {
+case 'space_alt2': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ɢᴀʟᴀxʏ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
     try {
@@ -11680,7 +11627,7 @@ case 'space': {
 }
 break;
 
-case 'anime':
+case 'anime_alt2':
 case 'animetext': {
     if (!text) return reply(`❌ ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴᴀᴍᴇ ᴛᴏ ɢᴇɴᴇʀᴀᴛᴇ ᴀɴɪᴍᴇ ᴛᴇxᴛ\n\nᴇxᴀᴍᴘʟᴇ: ${prefix + command} ʏᴏᴜʀ ɴᴀᴍᴇ`);
 
@@ -11802,7 +11749,7 @@ case 'worm': {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer YOUR_OPENROUTER_API_KEY_HERE`,  // ← Paste your sk-or-... key here!
+                'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || ''}`,  // ← Paste your sk-or-... key here!
                 'Content-Type': 'application/json',
                 'HTTP-Referer': 'https://namelesstech.sapa.host',  // Your bot site (optional)
                 'X-Title': 'Nameless Tech WarmGPT'
@@ -12291,7 +12238,7 @@ case 'vv': {
 }
 break
 
-case 'save':
+case 'save_alt2':
 case 'download':
 case 'svt': {
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
@@ -12330,7 +12277,7 @@ case 'idch': {
 }
 break
 
-case 'reactch':
+case 'reactch_alt2':
 case 'react-ch': {
   if (!args[0] || (!isCreator && !isPremium)) {
     return reply(`
@@ -12443,7 +12390,7 @@ case 'news': {
         await reply('📰 ғᴇᴛᴄʜɪɴɢ ʟᴀᴛᴇsᴛ ɴᴇᴡs...');
 
         const category = text || 'general';
-        const response = await fetch(`https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=e53dace5235742d6b6889de64cfbf949`);
+        const response = await fetch(`https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${process.env.NEWSAPI_KEY || ''}`);
         const data = await response.json();
 
         if (data.status !== 'ok' || !data.articles.length) {
