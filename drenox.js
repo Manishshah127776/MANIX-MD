@@ -945,7 +945,9 @@ if (global.autobio) {
   // ❌ DM me loading band
 //  if (!m.isGroup) return
 
-  if (!menuCommands.includes(command)) {
+  // Menu commands must produce one response only; the old fallback animation
+  // could create several separate messages when edit support was unavailable.
+  if (menuCommands.includes(command)) {
     return
   }
 
