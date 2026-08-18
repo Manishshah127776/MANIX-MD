@@ -12960,6 +12960,7 @@ module.exports.setupEventListeners = function(bad, store) {
             
             const welcomeImage = "https://i.postimg.cc/qvrFRzxG/thumb.png";
             const goodbyeImage = "https://i.postimg.cc/jjdkHm9n/scar1.png";
+            const welcomeChannelLink = global.channelLink || "https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f";
             
             for (let participant of participants) {
                 if (action === 'add') {
@@ -12979,6 +12980,9 @@ module.exports.setupEventListeners = function(bad, store) {
 ┃ 👥 ᴛᴏᴛᴀʟ ᴍᴇᴍʙᴇʀs: ${membersCount}
 ┃
 ┃ 📢 ᴍᴇssᴀɢᴇ: ${randomWelcome}
+┃
+┃ 📲 ᴊᴏɪɴ ᴏᴜʀ ᴏғғɪᴄɪᴀʟ ᴄʜᴀɴɴᴇʟ:
+┃ ${welcomeChannelLink}
 ┃
 *╰━━━━━━━━━━━━━━━┈⊷*`,
                                 mentions: [participant]
