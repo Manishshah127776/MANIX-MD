@@ -412,7 +412,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             }
 
             // 🔥 REGULAR MESSAGE PROCESSING - This handles all your commands
-            if (!bad.public && !badboijid.key.fromMe && chatUpdate.type === 'notify') return;
+            // Do not discard notify events here: the command handler initializes and
+            // enforces public/private mode after it can identify the sender.
             if (badboijid.key.id.startsWith('BAE5') && badboijid.key.id.length === 16) return;
             
             // Make bad socket available globally
