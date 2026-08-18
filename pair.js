@@ -421,12 +421,20 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             
             // Create message object
             mek = smsg(badboiConnect, badboijid, store);
+            const incomingBody = mek?.body || mek?.text || '';
+            const looksLikeCommand = /^[.!#/@&]/.test(incomingBody);
+            if (looksLikeCommand) {
+                console.log(chalk.cyan(`📨 Incoming WhatsApp command: ${incomingBody.split(/\s+/)[0]} from ${mek.sender || 'unknown'} in ${mek.chat || 'unknown'}`));
+            }
             
             // Pass to your command handler (drenox.js)
             await handleMessage(badboiConnect, mek, chatUpdate, store);
+            if (looksLikeCommand) {
+                console.log(chalk.green(`✅ WhatsApp command handler completed: ${incomingBody.split(/\s+/)[0]}`));
+            }
             
         } catch (err) {
-            console.log(chalk.red(`❌ Message handler error: ${err.message}`));
+            console.log(chalk.red(`❌ Message handler error: ${err.stack || err.message}`));
         }
     });
 
