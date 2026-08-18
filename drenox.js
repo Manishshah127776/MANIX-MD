@@ -1396,7 +1396,6 @@ ${boardDisplay}
 // ALLMENU CASE - NEW
 // ═══════════════════════════════════════════════════════════
 case 'allmenu':
-case 'menu':
 case 'info':
 case 'menu2': {
   await loading()
@@ -2005,6 +2004,7 @@ break
     //═══════════════════════════════════════════════════════════
 // MAIN MENU - WITH NEWSLETTER FORWARD
 // ═══════════════════════════════════════════════════════════
+case 'menu':
 case 'listmenu': {
   await loading()
   
