@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const express = require('express');
 const { Server } = require('socket.io');
 const readline = require('readline');
@@ -232,6 +233,35 @@ function launchBot() {
 
 // Render Web Services require an open HTTP port; the bot itself remains event-driven.
 const webRuntime = startHealthServer();
+
+// A lightweight self-ping reduces idle spin-down on Render Free while the process is awake.
+// It cannot wake a sleeping instance; an external monitor or paid always-on plan is the
+// reliable solution for strict 24/7 availability.
+const keepAliveUrl = process.env.RENDER_EXTERNAL_URL || 'https://manix-md.onrender.com';
+const keepAliveIntervalMs = 14 * 60 * 1000;
+
+function pingKeepAlive() {
+    try {
+        const target = new URL('/healthz', keepAliveUrl);
+        const client = target.protocol === 'https:' ? https : http;
+        const request = client.get(target, {
+            headers: { 'User-Agent': 'MANI-XD-Render-Keep-Alive' }
+        }, (response) => {
+            response.resume();
+            console.log(chalk.gray(`⏱️ Keep-alive health ping: HTTP ${response.statusCode}`));
+        });
+
+        request.setTimeout(10000, () => request.destroy(new Error('keep-alive request timeout')));
+        request.on('error', (error) => {
+            console.log(chalk.gray(`⏱️ Keep-alive ping skipped: ${error.message}`));
+        });
+    } catch (error) {
+        console.log(chalk.gray(`⏱️ Keep-alive ping skipped: ${error.message}`));
+    }
+}
+
+setTimeout(pingKeepAlive, 60 * 1000);
+setInterval(pingKeepAlive, keepAliveIntervalMs);
 
 // Graceful shutdown
 process.on('SIGINT', () => {
