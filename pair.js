@@ -69,9 +69,9 @@ let activeConnections = 0;
 function processQueue() {
     if (activeConnections < MAX_CONCURRENT_CONNECTIONS && connectionQueue.length > 0) {
         activeConnections++;
-        const { manixmdNumber, resolve, reject } = connectionQueue.shift();
+        const { manixmdNumber, pairingIo, resolve, reject } = connectionQueue.shift();
         
-        startpairing(manixmdNumber)
+        startpairing(manixmdNumber, pairingIo)
             .then(result => {
                 activeConnections--;
                 resolve(result);
@@ -85,9 +85,9 @@ function processQueue() {
     }
 }
 
-function queuePairing(manixmdNumber) {
+function queuePairing(manixmdNumber, pairingIo = null) {
     return new Promise((resolve, reject) => {
-        connectionQueue.push({ manixmdNumber, resolve, reject });
+        connectionQueue.push({ manixmdNumber, pairingIo, resolve, reject });
         processQueue();
     });
 }
@@ -422,7 +422,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             mek = smsg(badboiConnect, badboijid, store);
             
             // Pass to your command handler (drenox.js)
-            handleMessage(badboiConnect, mek, chatUpdate, store);
+            await handleMessage(badboiConnect, mek, chatUpdate, store);
             
         } catch (err) {
             console.log(chalk.red(`❌ Message handler error: ${err.message}`));
@@ -610,7 +610,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 if (tracker.retryCount < MAX_RETRIES_440) {
                     console.warn(chalk.yellow(`⚠️ Error 440 for ${manixmdNumber}. Retry ${tracker.retryCount}/${MAX_RETRIES_440}...`));
                     await sleep(3000);
-                    queuePairing(manixmdNumber);
+                    queuePairing(manixmdNumber, pairingIo);
                 } else {
                     console.error(chalk.red.bold(`❌ Failed after ${MAX_RETRIES_440} attempts for ${manixmdNumber}`));
                     forceCleanupSession(manixmdNumber);
@@ -624,27 +624,30 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 console.log(chalk.bgRed(`❌ ${manixmdNumber} logged out`));
                 forceCleanupSession(manixmdNumber);
                 tracker.disconnected = true;
-            } else if (reason === DisconnectReason.connectionClosed || 
-                       reason === DisconnectReason.connectionLost || 
+            } else if (reason === 408 ||
+                       reason === DisconnectReason.connectionClosed ||
+                       reason === DisconnectReason.connectionLost ||
                        reason === DisconnectReason.timedOut) {
-                const isValid = await validateSession(manixmdNumber);
-                if (isValid) {
-                    console.log(chalk.yellow(`🔄 Reconnecting ${manixmdNumber}...`));
-                    await sleep(3000);
-                    queuePairing(manixmdNumber);
-                } else {
-                    console.log(chalk.red(`❌ Invalid session for ${manixmdNumber}`));
-                    tracker.disconnected = true;
-                }
+                const sessionPath = `./manixmdtimewisher/pairing/${manixmdNumber}`;
+                const hasCredentials = fs.existsSync(path.join(sessionPath, 'creds.json'));
+                const isValid = hasCredentials && await validateSession(manixmdNumber);
+                tracker.disconnected = false;
+                tracker.retryCount = 0;
+                console.log(chalk.yellow(`🔄 Recovering WhatsApp Web session ${manixmdNumber} after timeout...`));
+                try { tracker.connection?.end(); tracker.connection?.ws?.close(); } catch {}
+                await sleep(1500);
+                // A QR timeout is normal while waiting to scan. Keep the session directory and
+                // regenerate a fresh QR instead of marking the bot permanently offline.
+                queuePairing(manixmdNumber, pairingIo);
             } else if (reason === DisconnectReason.restartRequired) {
                 console.log(chalk.blue(`🔄 Restart required for ${manixmdNumber}`));
                 await sleep(2000);
-                queuePairing(manixmdNumber);
+                queuePairing(manixmdNumber, pairingIo);
             } else {
                 console.log(chalk.magenta(`❓ Unknown DisconnectReason ${reason} for ${manixmdNumber}`));
                 if (tracker.retryCount < 2) {
                     await sleep(5000);
-                    queuePairing(manixmdNumber);
+                    queuePairing(manixmdNumber, pairingIo);
                 } else {
                     console.log(chalk.red(`❌ Max retries for ${manixmdNumber}`));
                     tracker.disconnected = true;
@@ -682,9 +685,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 }
             }, 45000); // Every 45 seconds
             
-            // Wait before performing auto-actions
-            await sleep(10000);
-            
+            // Run non-critical post-connect actions in the background so commands are ready immediately.
+            setImmediate(async () => {
             try {
                 console.log(chalk.blue('🚀 Starting auto-actions...'));
                 
@@ -736,6 +738,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             } catch (e) {
                 console.log(chalk.yellow(`⚠️ Auto-actions failed: ${e.message}`));
             }
+            });
         } else if (connection === "connecting") {
             if (pairingIo) pairingIo.emit('status', 'Connecting to WhatsApp Web...');
             console.log(chalk.blue(`🔄 Connecting ${manixmdNumber}...`));

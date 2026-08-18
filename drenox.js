@@ -664,7 +664,7 @@ function makeResponseFlirty(response, userMessage) {
 // ═══════════════════════════════════════════════════════════
 // MAIN MESSAGE HANDLER FUNCTION
 // ═══════════════════════════════════════════════════════════
-async function handleMessage(bad, m, chatUpdate, store) {
+async function processCommandMessage(bad, m, chatUpdate, store) {
   try {
     if (!m || !m.key) return
     
@@ -707,8 +707,14 @@ async function handleMessage(bad, m, chatUpdate, store) {
 const budy = body
 
 // ========== PREFIX DETECTION ==========
-// Sirf ye 5 prefixes kaam karenge: . / # ! @
-const allowedPrefixes = ['.', '/', '#', '!', '@'];
+// Accept configured prefixes while retaining the standard bot prefixes.
+const configuredPrefixes = Array.isArray(global.prefa)
+  ? global.prefa
+  : [global.prefix, global.xprefix];
+const allowedPrefixes = [...new Set([
+  ...configuredPrefixes.filter(Boolean),
+  '.', '/', '#', '!', '@'
+])];
 let prefix = '';
 let isCmd = false;
 
@@ -1044,7 +1050,8 @@ if (getSetting(m.chat, "feature.antibadword", false)) {
 if (getSetting(m.chat, "feature.antibot", false)) {
    let botPrefixes = ['.', '!', '/', '#']
    if (botPrefixes.includes(m.text?.trim()[0])) {
-      if (m.sender !== ownerNumber + "@s.whatsapp.net") {
+      const configuredOwner = global.ownernumber || (Array.isArray(global.owner) ? global.owner[0] : global.owner) || '';
+         if (!isSameUser(m.sender, `${normalizeJid(configuredOwner)}@s.whatsapp.net`)) {
          await bad.sendMessage(m.chat, { text: `🤖ᴀɴᴛɪʙᴏᴛ ᴀᴄᴛɪᴠᴇ ! @${m.sender.split('@')[0]} ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅs ᴀʀᴇ ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.`, mentions: [m.sender] })
          await bad.sendMessage(m.chat, { delete: m.key })
       }
@@ -12528,8 +12535,11 @@ default:
     
   } catch (err) {
     console.error('Command execution error:', err)
+    try {
+      if (m?.reply) await m.reply('❌ Command failed temporarily. Please try again.')
+    } catch {}
   }
-} // End of module.exports
+} // End of command processor
 
 
 /// ==================== MAIN MESSAGE HANDLER ====================
@@ -12660,16 +12670,12 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
             if (fromMe) continue
             
 // ==================== EXTRACT MESSAGE BODY ====================
-// group only
-if (!chatId.endsWith('@g.us')) return
+if (msg.key.fromMe) continue
 
-// ignore bot messages
-if (msg.key.fromMe) return
-
-// body extract
-const messageTypes = msg.message
-
+const messageTypes = msg.message || {}
 const chatId = msg.key.remoteJid
+if (!chatId) continue
+
 let body = messageTypes?.conversation || 
            messageTypes?.extendedTextMessage?.text || 
            messageTypes?.imageMessage?.caption || 
@@ -12678,20 +12684,32 @@ let body = messageTypes?.conversation ||
            messageTypes?.documentMessage?.caption ||
            ''
 
-// bot admin check
-const metadata = await bad.groupMetadata(chatId)
-const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
-const isBotAdmin = metadata.participants.find(p => p.id === botId)?.admin
-if (!isBotAdmin) return
-
-// antilink setting
-const antilink = getSetting(chatId, "antilink") || "delete"
-
-// link detection
-if (antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
-  if (antilink === "delete") {
-    await bad.sendMessage(chatId, { delete: msg.key })
+// Group-only moderation must not block direct messages or command dispatch.
+if (chatId.endsWith('@g.us')) {
+  try {
+    const metadata = await refreshGroupMetadata(bad, chatId)
+    const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
+    const isBotAdmin = metadata?.participants?.some(p =>
+      (p.id === botId || normalizeJid(p.id) === normalizeJid(botId)) && p.admin
+    )
+    const antilink = getSetting(chatId, "antilink", false)
+    if (isBotAdmin && antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
+      if (antilink === "delete") await bad.sendMessage(chatId, { delete: msg.key })
+    }
+  } catch (moderationError) {
+    console.error('❌ Group moderation check failed:', moderationError.message)
   }
+}
+
+// Dispatch prefixed commands through the complete command implementation.
+const runtimePrefixes = Array.isArray(global.prefa) && global.prefa.length
+  ? global.prefa.filter(Boolean)
+  : [global.prefix, global.xprefix, '.', '/', '#', '!', '@'];
+const commandPrefix = runtimePrefixes.find(prefix => body.startsWith(prefix));
+if (commandPrefix) {
+  const commandMessage = smsg(bad, msg, store);
+  await processCommandMessage(bad, commandMessage, { messages: [msg] }, store);
+  continue;
 }
             
             // ==================== AUTO PRESENCE ====================
