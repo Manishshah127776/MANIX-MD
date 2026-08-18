@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const readline = require('readline');
 const chalk = require('chalk');
 const figlet = require('figlet');
@@ -14,6 +15,27 @@ const PAIRING_DIR = './manixmdtimewisher/pairing/';
 const startpairing = require('./pair');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const PORT = Number.parseInt(process.env.PORT || '10000', 10);
+
+function startHealthServer() {
+    const server = http.createServer((req, res) => {
+        if (req.url === '/healthz') {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('ok');
+            return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('MANIX MD bot is running');
+    });
+
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(chalk.blue(`🌐 Health server listening on port ${PORT}`));
+    });
+
+    return server;
+}
 
 const autoLoadPairs = async () => {
     console.log(chalk.cyan('🔄 Auto-loading all paired users...'));
@@ -193,6 +215,9 @@ function launchBot() {
     console.log(chalk.blue('📊 Bot monitoring active...'));
     console.log(chalk.gray('Press Ctrl+C to stop the bot\n'));
 }
+
+// Render Web Services require an open HTTP port; the bot itself remains event-driven.
+startHealthServer();
 
 // Graceful shutdown
 process.on('SIGINT', () => {
