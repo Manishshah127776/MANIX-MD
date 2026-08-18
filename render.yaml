@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: manix-md
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: WHATSAPP_AUTH_DIR
+        sync: false
+      - key: WHATSAPP_SESSION_TTL_DAYS
+        value: "30"

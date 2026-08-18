@@ -96,38 +96,36 @@ Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**.
 
 ---
 
-## 📱 Pairing Methods
+## 📱 Pairing Method
 
-MANIX MD offers two convenient ways to pair your bot:
+MANIX MD uses **WhatsApp Web QR pairing only**. Start the bot and open its public dashboard, then scan the QR code from **WhatsApp → Linked devices → Link a device**. The dashboard is served by `index.js`, uses the hosting provider’s `PORT`, and exposes `/healthz` for deployment health checks.
 
-### 1. Web QR System (Recommended)
-Pair your bot visually using a professional web dashboard:
-1. Start the web server:
-   ```bash
-   npm run web
-   ```
-2. Open your browser to `http://localhost:3000` (or your deployed URL).
-3. Scan the generated QR code with **WhatsApp > Linked Devices > Link a Device**.
-
-### 2. Phone Pairing Code
-Pair using a simple 8-character code:
-1. Run the pairing utility:
-   ```bash
-   node pair.js
-   ```
-2. Enter your WhatsApp bot phone number when prompted.
-3. Enter the generated code into **WhatsApp > Linked Devices > Link with phone number**.
+The previous custom phone-pairing-code flow is not required. For restart-safe pairing, set `WHATSAPP_AUTH_DIR` to a persistent disk directory on the hosting provider. Without persistent storage, a fresh QR scan may be required after a service restart or redeploy.
 
 ---
 
-## ☁️ Cloud Deployment
+## ☁️ Cloud Deployment: Render and Railway
 
-Deploy MANIX MD 24/7 on your favorite cloud platforms:
+The repository now includes deployment manifests for both platforms:
 
-- **Railway / Render / Heroku**:
-  - Connect your GitHub repository (`Manishshah127776/MANIX-MD`).
-  - Set the start command to `npm start` or `npm run web`.
-  - Enjoy uninterrupted uptime!
+| Platform | Repository configuration | Start command | Health check |
+|---|---|---|---|
+| Render | `render.yaml` and `Procfile` | `npm start` | `/healthz` |
+| Railway | `railway.json` | `npm start` | `/healthz` |
+
+### Render
+
+Create a new **Web Service** from `Manishshah127776/MANIX-MD`. Render can use the included `render.yaml` Blueprint, or you can set the build command to `npm install` and the start command to `npm start`. Add `BOT_TOKEN` as a secret. Optionally configure `WHATSAPP_AUTH_DIR` to a mounted persistent-disk path.
+
+### Railway
+
+Create a new Railway project from the GitHub repository. Railway reads `railway.json`, uses Railpack, starts `npm start`, checks `/healthz`, and restarts the service automatically after failures. Add `BOT_TOKEN` as a Railway variable and optionally set `WHATSAPP_AUTH_DIR` to a persistent-volume path.
+
+### Important: do not run both instances with the same bot credentials
+
+Render and Railway can both be configured from this repository, but only **one production instance should actively poll the same Telegram bot token and WhatsApp session at a time**. Running both simultaneously with identical credentials can cause Telegram polling conflicts and WhatsApp session instability. Use the second deployment as standby, testing, or failover unless you give it separate credentials and a separate WhatsApp session directory.
+
+The hosting providers’ free tiers may sleep or restart services, so strict 24/7 uptime and restart-safe WhatsApp pairing require an always-on plan and persistent storage.
 
 ---
 
