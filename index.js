@@ -6,6 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const express = require('express');
+const { Server } = require('socket.io');
 const readline = require('readline');
 const chalk = require('chalk');
 const figlet = require('figlet');
@@ -19,22 +21,22 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const PORT = Number.parseInt(process.env.PORT || '10000', 10);
 
 function startHealthServer() {
-    const server = http.createServer((req, res) => {
-        if (req.url === '/healthz') {
-            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('ok');
-            return;
-        }
+    const app = express();
+    const server = http.createServer(app);
+    const io = new Server(server);
 
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('MANIX MD bot is running');
+    app.use(express.static(path.join(__dirname, 'public')));
+    app.get('/healthz', (req, res) => res.status(200).send('ok'));
+
+    io.on('connection', (socket) => {
+        socket.emit('status', 'Preparing WhatsApp Web QR pairing...');
     });
 
     server.listen(PORT, '0.0.0.0', () => {
-        console.log(chalk.blue(`🌐 Health server listening on port ${PORT}`));
+        console.log(chalk.blue(`🌐 WhatsApp Web pairing dashboard listening on port ${PORT}`));
     });
 
-    return server;
+    return { server, io };
 }
 
 const autoLoadPairs = async () => {
@@ -98,8 +100,15 @@ const initializeBot = async () => {
     console.log(chalk.green('   MANI XTECH 𝗬𝗧 𝐩𝐚𝐢𝐫𝐢𝐧𝐠 𝐬𝐲𝐬𝐭𝐞𝐦       '));
     console.log(chalk.yellow('═══════════════════════════════════════════════\n'));
 
-    await autoLoadPairs();
     launchBot();
+
+    try {
+        console.log(chalk.blue('📱 Starting WhatsApp Web QR pairing...'));
+        await startpairing('web-session', webRuntime.io);
+        console.log(chalk.green('✅ WhatsApp Web pairing is ready at the public dashboard.'));
+    } catch (error) {
+        console.log(chalk.red(`❌ Failed to start WhatsApp Web pairing: ${error.message}`));
+    }
 };
 
 function launchBot() {
@@ -217,7 +226,7 @@ function launchBot() {
 }
 
 // Render Web Services require an open HTTP port; the bot itself remains event-driven.
-startHealthServer();
+const webRuntime = startHealthServer();
 
 // Graceful shutdown
 process.on('SIGINT', () => {

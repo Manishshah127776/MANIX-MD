@@ -20,9 +20,6 @@ const {
     Boom
 } = require('@hapi/boom')
 const PhoneNumber = require('awesome-phonenumber')
-let phoneNumber = "923104609886";
-const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
-const useMobile = process.argv.includes("--mobile");
 const readline = require("readline");
 const pino = require('pino')
 const FileType = require('file-type')
@@ -170,8 +167,6 @@ function cleanupExpiredSessions() {
     const oneDayAgo = now - (24 * 60 * 60 * 1000);
     
     fs.readdirSync(sessionDir).forEach(folder => {
-        if (folder === 'pairing.json') return;
-        
         const folderPath = path.join(sessionDir, folder);
         if (fs.lstatSync(folderPath).isDirectory()) {
             const tracker = rentbotTracker.get(folder);
@@ -205,7 +200,7 @@ function ensureDirectoryExists(dirPath) {
     }
 }
 
-async function startpairing(manixmdNumber) {
+async function startpairing(manixmdNumber, pairingIo = null) {
     ensureDirectoryExists('./manixmdtimewisher/pairing');
     
     if (!rentbotTracker.has(manixmdNumber)) {
@@ -261,43 +256,6 @@ async function startpairing(manixmdNumber) {
     tracker.connection = bad;
     
     if (store) store.bind(bad.ev);
-
-    if (pairingCode && !state.creds.registered) {
-        if (useMobile) {
-            throw new Error('Cannot use pairing code with mobile API');
-        }
-
-        let phoneNumber = manixmdNumber.replace(/[^0-9]/g, '');
-        
-        if (!phoneNumber) {
-            throw new Error('Invalid phone number');
-        }
-        
-        setTimeout(async () => {
-            try {
-                let code = await bad.requestPairingCode(phoneNumber, 'MANIXMD');
-                code = code?.match(/.{1,4}/g)?.join("-") || code;
-                
-                console.log(chalk.bgGreen.black(`📱 Pairing code for ${manixmdNumber}: ${chalk.white.bold(code)}`));
-
-                ensureDirectoryExists('./manixmdtimewisher/pairing');
-                
-                fs.writeFileSync(
-                    './manixmdtimewisher/pairing/pairing.json',
-                    JSON.stringify({ 
-                        number: manixmdNumber,
-                        code: code,
-                        timestamp: new Date().toISOString()
-                    }, null, 2),
-                    'utf8'
-                );
-                
-                console.log(chalk.green(`✓ Pairing code saved to pairing.json`));
-            } catch (err) {
-                console.log(chalk.red(`❌ Error requesting pairing code: ${err.message}`));
-            }
-        }, 3000);
-    }
 
     bad.newsletterMsg = async (key, content = {}, timeout = 5000) => {
         const { type: rawType = 'INFO', name, description = '', picture = null, react, id, newsletter_id = key, ...media } = content;
@@ -603,7 +561,19 @@ async function startpairing(manixmdNumber) {
 
     // 🔥 ENHANCED CONNECTION HANDLER WITH KEEP-ALIVE
     bad.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr && pairingIo) {
+            try {
+                const QRCode = require('qrcode');
+                const qrDataURL = await QRCode.toDataURL(qr);
+                pairingIo.emit('qr', qrDataURL);
+                pairingIo.emit('status', 'Scan the QR code with WhatsApp → Linked Devices.');
+                console.log(chalk.cyan('📱 WhatsApp Web QR code is ready for scanning.'));
+            } catch (error) {
+                console.log(chalk.red(`❌ Could not render WhatsApp Web QR code: ${error.message}`));
+            }
+        }
         const tracker = rentbotTracker.get(manixmdNumber);
 
         if (connection === "close") {
@@ -667,6 +637,10 @@ async function startpairing(manixmdNumber) {
             }
         } else if (connection === "open") {
             console.log(chalk.bgGreen.black(`✅ Connected: ${manixmdNumber}`));
+            if (pairingIo) {
+                pairingIo.emit('status', 'WhatsApp Web connected successfully.');
+                pairingIo.emit('connected', true);
+            }
             tracker.retryCount = 0;
             tracker.disconnected = false;
             tracker.lastActivity = Date.now();
@@ -745,6 +719,7 @@ async function startpairing(manixmdNumber) {
                 console.log(chalk.yellow(`⚠️ Auto-actions failed: ${e.message}`));
             }
         } else if (connection === "connecting") {
+            if (pairingIo) pairingIo.emit('status', 'Connecting to WhatsApp Web...');
             console.log(chalk.blue(`🔄 Connecting ${manixmdNumber}...`));
         }
     });
