@@ -216,6 +216,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     tracker.retryCount++;
     tracker.disconnected = false;
     tracker.lastActivity = Date.now();
+    if (pairingIo) {
+        pairingIo.currentQr = null;
+        pairingIo.currentConnected = false;
+        pairingIo.currentStatus = 'Connecting to WhatsApp Web...';
+        pairingIo.emit('status', pairingIo.currentStatus);
+    }
 
     const { version, isLatest } = await fetchLatestBaileysVersion();
     
@@ -567,8 +573,11 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             try {
                 const QRCode = require('qrcode');
                 const qrDataURL = await QRCode.toDataURL(qr);
+                pairingIo.currentQr = qrDataURL;
+                pairingIo.currentConnected = false;
+                pairingIo.currentStatus = 'Scan the QR code with WhatsApp → Linked Devices.';
                 pairingIo.emit('qr', qrDataURL);
-                pairingIo.emit('status', 'Scan the QR code with WhatsApp → Linked Devices.');
+                pairingIo.emit('status', pairingIo.currentStatus);
                 console.log(chalk.cyan('📱 WhatsApp Web QR code is ready for scanning.'));
             } catch (error) {
                 console.log(chalk.red(`❌ Could not render WhatsApp Web QR code: ${error.message}`));
@@ -578,6 +587,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
 
         if (connection === "close") {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+            if (pairingIo) {
+                pairingIo.currentQr = null;
+                pairingIo.currentConnected = false;
+                pairingIo.currentStatus = 'WhatsApp Web disconnected. Refresh to generate a new QR code.';
+                pairingIo.emit('status', pairingIo.currentStatus);
+            }
             console.log(chalk.yellow(`🔌 Connection closed for ${manixmdNumber}, reason: ${reason}`));
 
             if (reason === 405) {
@@ -638,7 +653,10 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         } else if (connection === "open") {
             console.log(chalk.bgGreen.black(`✅ Connected: ${manixmdNumber}`));
             if (pairingIo) {
-                pairingIo.emit('status', 'WhatsApp Web connected successfully.');
+                pairingIo.currentQr = null;
+                pairingIo.currentConnected = true;
+                pairingIo.currentStatus = 'WhatsApp Web connected successfully.';
+                pairingIo.emit('status', pairingIo.currentStatus);
                 pairingIo.emit('connected', true);
             }
             tracker.retryCount = 0;

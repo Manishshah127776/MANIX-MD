@@ -24,12 +24,17 @@ function startHealthServer() {
     const app = express();
     const server = http.createServer(app);
     const io = new Server(server);
+    io.currentQr = null;
+    io.currentStatus = 'Preparing WhatsApp Web QR pairing...';
+    io.currentConnected = false;
 
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
     io.on('connection', (socket) => {
-        socket.emit('status', 'Preparing WhatsApp Web QR pairing...');
+        socket.emit('status', io.currentStatus);
+        if (io.currentQr) socket.emit('qr', io.currentQr);
+        if (io.currentConnected) socket.emit('connected', true);
     });
 
     server.listen(PORT, '0.0.0.0', () => {
