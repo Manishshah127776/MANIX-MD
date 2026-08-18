@@ -1,3 +1,9 @@
+const BOT_TOKEN = process.env.BOT_TOKEN;
+
+if (!BOT_TOKEN) {
+  throw new Error('BOT_TOKEN environment variable is required.');
+}
+
 module.exports = {
-  BOT_TOKEN: '8980919346:AAHjLeiVc78gmLi9beh34JrKc3hxmY7AeXw',  
+  BOT_TOKEN,
 };
