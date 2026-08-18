@@ -49,6 +49,7 @@ const { getSetting, setSetting } = require("./Settings.js")
 const groupCache = new Map(); // Cache group metadata
 const groupMetadataCache = new Map();
 const loadingAnimations = new Map()
+const recentMessageDispatches = new Map()
 //const groupMetadata = m.isGroup ? await bad.groupMetadata(from).catch(e => {}) :
 
 // ═══════════════════════════════════════════════════════════
@@ -938,7 +939,7 @@ if (global.autobio) {
   }
 };
 
-    const menuCommands = ['menu', 'allmenu', 'downloadmenu', 'dlmenu', 'admin', 'adminmenu', 'gamemenu', 'stickermenu', 'gphelp', 'groupmenu', 'helpmenu', 'help']
+    const menuCommands = ['menu', 'listmenu', 'allmenu', 'info', 'menu2', 'downloadmenu', 'dlmenu', 'admin', 'adminmenu', 'gamemenu', 'stickermenu', 'gphelp', 'groupmenu', 'helpmenu', 'help', 'bugmenu', 'ownermenu', 'funmenu', 'animemenu', 'utilitymenu', 'voicemenu', 'emojimenu', 'logomenu', 'aimenu', 'miscmenu', 'imagemenu']
 
     async function loading() {
 
@@ -5331,8 +5332,7 @@ break
 // 4. TIKTOK STALK
 // ═══════════════════════════════════════════════════════════════
 case 'ttstalk':
-case 'tiktokstalk':
-case 'tiktok': {
+case 'tiktokstalk': {
     if (!text) return reply(`📱 *TikTok Stalk*\n\nExample: .ttstalk khaby.lame\n\nUsername bina @ ke likho!`);
 
     try {
@@ -6422,50 +6422,41 @@ break
 case "ytvideo":
 case "ytmp4": {
     if (!text) return reply(example("https://youtube.com/watch?v=xxxxx"));
-    if (!text.includes('youtube.com') && !text.includes('youtu.be')) {
+    if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(text)) {
         return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ʏᴏᴜᴛᴜʙᴇ ʟɪɴᴋ");
     }
 
+    let videoPath = null
     try {
-        await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-
-        const response = await axios.post('https://youtube-video-audio-downloader.p.rapidapi.com/videos/downloads',
-        {
-            url: text,
-            quality: '720'
-        },
-        {
-            headers: {
-                'content-type': 'application/json',
-                'x-rapidapi-key': (process.env.RAPIDAPI_KEY || ''),
-                'x-rapidapi-host': 'youtube-video-audio-downloader.p.rapidapi.com'
-            }
-        });
-
-        const data = response.data;
-
-        if (data && data.downloadUrl) {
-            await bad.sendMessage(m.chat, {
-                video: {url: data.downloadUrl},
-                caption: `╭━━━〔 *ʏᴏᴜᴛᴜʙᴇ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮
-
-📝 *ᴛɪᴛʟᴇ:* ${data.title || 'N/A'}
-⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${data.duration || 'N/A'}
-📊 *ǫᴜᴀʟɪᴛʏ:* 720p
-
-╰━━━━━━━━━━━━━━━━━╯`,
-                mimetype: 'video/mp4'
-            }, {quoted: m});
-
-            await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
-        } else {
-            throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ʟɪɴᴋ ғᴏᴜɴᴅ');
-        }
-
+        await bad.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+        const ytdlp = require('youtube-dl-exec')
+        const base = path.join(os.tmpdir(), `manix-xmd-video-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+        videoPath = `${base}.mp4`
+        await ytdlp(text, {
+            noPlaylist: true,
+            noWarnings: true,
+            noCheckCertificates: true,
+            format: 'bv*[ext=mp4]+ba[ext=m4a]/best[ext=mp4]/best',
+            mergeOutputFormat: 'mp4',
+            output: `${base}.%(ext)s`,
+            jsRuntime: 'node',
+            remoteComponents: 'ejs:github'
+        })
+        if (!fs.existsSync(videoPath)) throw new Error('Video file was not created')
+        await bad.sendMessage(m.chat, {
+            video: fs.readFileSync(videoPath),
+            caption: `╭━━━〔 *ʏᴏᴜᴛᴜʙᴇ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮\n\n🔗 *sᴏᴜʀᴄᴇ:* ʏᴏᴜᴛᴜʙᴇ\n📊 *ǫᴜᴀʟɪᴛʏ:* ᴜᴘ ᴛᴏ 720p\n\n╰━━━━━━━━━━━━━━━━━╯`,
+            mimetype: 'video/mp4'
+        }, { quoted: m });
+        await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
     } catch (error) {
-        console.error('YouTube Video Error:', error.message);
-        await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
+        console.error('YouTube Video Error:', error.stderr || error.message);
+        await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
         return reply(`❌ ʏᴏᴜᴛᴜʙᴇ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${error.message}`);
+    } finally {
+        if (videoPath) {
+            try { fs.unlinkSync(videoPath) } catch {}
+        }
     }
 }
 break;
@@ -6476,6 +6467,7 @@ break;
 case 'play':
 case 'song': {
   if (!text) return reply(`🎵 Usage: ${prefix}${command} <song name or YouTube URL>`)
+  let audioPath = null
   try {
     await bad.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
     const yts = require('yt-search')
@@ -6487,21 +6479,39 @@ case 'song': {
       await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
       return reply('❌ No results found')
     }
+
     const video = search.videos[0]
+    const safeTitle = String(video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
+    const outputBase = path.join(os.tmpdir(), `manix-xmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    audioPath = `${outputBase}.mp3`
+
+    await ytdlp(video.url, {
+      noPlaylist: true,
+      noWarnings: true,
+      noCheckCertificates: true,
+      format: 'bestaudio/best',
+      extractAudio: true,
+      audioFormat: 'mp3',
+      audioQuality: '5',
+      output: `${outputBase}.%(ext)s`,
+      jsRuntime: 'node',
+      remoteComponents: 'ejs:github'
+    })
+
+    if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
     const info = await ytdlp(video.url, {
       dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificates: true,
-      preferFreeFormats: true,
-      format: 'bestaudio[ext=m4a]/bestaudio',
-      jsRuntime: 'node'
-    })
-    if (!info?.url) throw new Error('No playable audio format was returned')
-    const safeTitle = String(info.title || video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
+      skipDownload: true,
+      jsRuntime: 'node',
+      remoteComponents: 'ejs:github'
+    }).catch(() => ({}))
+
     await bad.sendMessage(m.chat, {
-      audio: { url: info.url },
-      mimetype: info.ext === 'webm' ? 'audio/webm' : 'audio/mp4',
-      fileName: `${safeTitle}.${info.ext || 'm4a'}`,
+      audio: fs.readFileSync(audioPath),
+      mimetype: 'audio/mpeg',
+      fileName: `${safeTitle}.mp3`,
       contextInfo: {
         externalAdReply: {
           title: info.title || video.title || 'YouTube Audio',
@@ -6517,50 +6527,45 @@ case 'song': {
   } catch (e) {
     console.error('Play command error:', e.stderr || e.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    return reply('⚠️ Could not fetch that song right now. Try another title or YouTube link.')
+    return reply(`⚠️ Could not fetch that song right now. ${e.message || 'Try another title or YouTube link.'}`)
+  } finally {
+    if (audioPath) {
+      try { fs.unlinkSync(audioPath) } catch {}
+    }
   }
 }
 break
       //═══════════════════════════════════════════════════════════
 // TIKTOK - Download TikTok Videos
 // ═══════════════════════════════════════════════════════════
+case "tiktok":
 case "tiktok_alt2":
 case "tt": {
     if (!text) return reply(example("https://vt.tiktok.com/xxxxx"));
-    if (!text.includes('tiktok.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
+    if (!/tiktok\.com\//i.test(text)) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
 
     try {
-        await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
+        await bad.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+        const ytdlp = require('youtube-dl-exec');
+        const info = await ytdlp(text, {
+            dumpSingleJson: true,
+            noWarnings: true,
+            noCheckCertificates: true,
+            format: 'best[ext=mp4]/best'
+        });
+        const videoUrl = info?.url || [...(info?.formats || [])].reverse().find(format => format?.url)?.url;
+        if (!videoUrl) throw new Error('No playable TikTok video was returned');
 
-        const response = await axios.get(`https://api.nexoracle.com/downloader/tiktok-wm?apikey=free_key@maher_apis&url=${encodeURIComponent(text)}`);
-
-        const data = response.data.result;
-
-        if (data && data.url) {
-            const caption = `╭━━━〔 *ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮
-
-📝 *ᴛɪᴛʟᴇ:* ${data.title || 'N/A'}
-👤 *ᴀᴜᴛʜᴏʀ:* ${data.author?.nickname || 'N/A'}
-⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${data.duration || 'N/A'}s
-❤️ *ʟɪᴋᴇs:* ${data.metrics?.like_count?.toLocaleString() || 0}
-💬 *ᴄᴏᴍᴍᴇɴᴛs:* ${data.metrics?.comment_count?.toLocaleString() || 0}
-
-╰━━━━━━━━━━━━━━━━━╯`;
-
-            await bad.sendMessage(m.chat, {
-                video: {url: data.url},
-                caption: caption,
-                mimetype: 'video/mp4'
-            }, {quoted: m});
-
-            await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
-        } else {
-            throw new Error('ɴᴏ ᴠɪᴅᴇᴏ ғᴏᴜɴᴅ');
-        }
-
+        const caption = `╭━━━〔 *ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮\n\n📝 *ᴛɪᴛʟᴇ:* ${info.title || 'N/A'}\n👤 *ᴀᴜᴛʜᴏʀ:* ${info.uploader || info.channel || 'N/A'}\n\n╰━━━━━━━━━━━━━━━━━╯`;
+        await bad.sendMessage(m.chat, {
+            video: { url: videoUrl },
+            caption,
+            mimetype: 'video/mp4'
+        }, { quoted: m });
+        await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
     } catch (error) {
-        console.error('TikTok Error:', error.message);
-        await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
+        console.error('TikTok Error:', error.stderr || error.message);
+        await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
         return reply(`❌ ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${error.message}`);
     }
 }
@@ -6921,42 +6926,20 @@ case 'getcontact': {
 
 case 'owner':
 case 'contact': {
-    // Pehle yeh message bhejo
-    const msg = await bad.sendMessage(m.chat, {
-        text: `✦ 📞 ᴺᵉᵉᵈ ᴴᵉˡᵖ? » ᶜᵒⁿᵗᵃᶜᵗ ᴹʸ ᴼʷⁿᵉʳs ✦`
-    }, { quoted: m });
-
-    await sleep(1000);
-
-    // 👑 Owner 1 - shadow
-    const vcard1 = 'BEGIN:VCARD\n' +
-                  'VERSION:3.0\n' +
-                  'FN: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n' +
-                  'TEL;type=CELL;type=VOICE;waid=9779807044421:+9779807044421\n' +
-                  'END:VCARD';
-
+    const ownerCard = buildUserVCard({
+        name: '𝙼𝙰𝙽𝙸 𝚇𝙼𝙳',
+        number: '9779807044421',
+        status: 'Official MANI XMD contact'
+    })
+    await bad.sendMessage(m.chat, {
+        text: '✦ 📞 ɴᴇᴇᴅ ʜᴇʟᴘ? ᴄᴏɴᴛᴀᴄᴛ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ✦'
+    }, { quoted: m })
     await bad.sendMessage(m.chat, {
         contacts: {
             displayName: '𝙼𝙰𝙽𝙸 𝚇𝙼𝙳',
-            contacts: [{ vcard: vcard1 }]
+            contacts: [{ displayName: '𝙼𝙰𝙽𝙸 𝚇𝙼𝙳', vcard: ownerCard }]
         }
-    }, { quoted: msg });
-
-    await sleep(1000);
-
-    // 👑 Owner 2 - ZAMAN
-    const vcard2 = 'BEGIN:VCARD\n' +
-                  'VERSION:3.0\n' +
-                  'FN: RIZWAN\n' +
-                  'TEL;type=CELL;type=VOICE;waid=9779807044421:+9779807044421\n' +
-                  'END:VCARD';
-
-    await bad.sendMessage(m.chat, {
-        contacts: {
-            displayName: 'Shadow',
-            contacts: [{ vcard: vcard2 }]
-        }
-    }, { quoted: msg });
+    }, { quoted: m })
 }
 break;
 
@@ -7076,25 +7059,43 @@ break;
 case 'ytmp3':
 case 'ytaudio': {
   if (!text) return reply(`*Usage:* ${prefix}ytmp3 <youtube url>`);
+  if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(text)) {
+    return reply('❌ Please provide a valid YouTube link.')
+  }
 
-  await loading();
-
+  let audioPath = null
   try {
-    const apiUrl = `${NEXORACLE_API}downloader/ytmp3?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
-    const data = await fetchJson(apiUrl);
-
-    if (data.status && data.result?.download) {
-      await bad.sendMessage(m.chat, {
-        audio: { url: data.result.download },
-        mimetype: 'audio/mpeg',
-        fileName: `${data.result.title || 'audio'}.mp3`
-      }, { quoted: m });
-    } else {
-      reply('❌ Failed to download audio.');
-    }
+    await bad.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
+    const ytdlp = require('youtube-dl-exec')
+    const base = path.join(os.tmpdir(), `manix-xmd-ytaudio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    audioPath = `${base}.mp3`
+    await ytdlp(text, {
+      noPlaylist: true,
+      noWarnings: true,
+      noCheckCertificates: true,
+      format: 'bestaudio/best',
+      extractAudio: true,
+      audioFormat: 'mp3',
+      audioQuality: '5',
+      output: `${base}.%(ext)s`,
+      jsRuntime: 'node',
+      remoteComponents: 'ejs:github'
+    })
+    if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
+    await bad.sendMessage(m.chat, {
+      audio: fs.readFileSync(audioPath),
+      mimetype: 'audio/mpeg',
+      fileName: 'manix-xmd-audio.mp3'
+    }, { quoted: m })
+    await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
   } catch (err) {
-    console.error(err);
-    reply('❌ Failed to download audio.');
+    console.error('YouTube audio error:', err.stderr || err.message)
+    await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    return reply(`❌ Failed to download audio. ${err.message || ''}`)
+  } finally {
+    if (audioPath) {
+      try { fs.unlinkSync(audioPath) } catch {}
+    }
   }
 }
 break;
@@ -7537,51 +7538,39 @@ case 'channelreact': {
             return reply('❌ Max 4 emojis allowed.')
         }
 
-        // 1. Get Recaptcha Token
-        const { data: captchaData } = await axios.get('https://omegatech-api.dixonomega.tech/api/tools/recaptcha-v3', {
-            params: {
-                sitekey: '6LemKk8sAAAAAH5PB3f1EspbMlXjtwv5C8tiMHSm',
-                url: 'https://back.asitha.top/api',
-                use_enterprise: 'false'
+        // Use WhatsApp's native newsletter APIs. The previous third-party
+        // captcha/JWT service now rejects valid links with `Strict Security: Blocked`.
+        const inviteCode = postLink.split('/channel/')[1].split(/[/?#]/)[0]
+        const metadata = await bad.newsletterMetadata('invite', inviteCode)
+        if (!metadata?.id) throw new Error('WhatsApp could not resolve that channel invite')
+        if (typeof bad.newsletterFetchMessages !== 'function' || typeof bad.newsletterReactMessage !== 'function') {
+            throw new Error('This WhatsApp session does not support native channel reactions')
+        }
+
+        const latest = await bad.newsletterFetchMessages(metadata.id, Math.min(emojis.length, 4), 0, 0)
+        const serverIds = []
+        const collectServerIds = (node) => {
+            if (!node) return
+            if (Array.isArray(node)) {
+                for (const item of node) collectServerIds(item)
+                return
             }
-        })
-
-        if (!captchaData?.success || !captchaData?.token) {
-            throw new Error('Recaptcha bypass failed')
+            if (typeof node !== 'object') return
+            const serverId = node.attrs?.server_id || node.server_id
+            if (serverId && !serverIds.includes(String(serverId))) serverIds.push(String(serverId))
+            for (const value of Object.values(node)) collectServerIds(value)
         }
+        collectServerIds(latest)
+        if (!serverIds.length) throw new Error('No recent channel post was available to react to')
 
-        const userJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZGNjM2MyMjgzMGQzNGZiMzIwMzc5OSIsImlhdCI6MTc3NjQ1MjI1MywiZXhwIjoxNzc3MDU3MDUzfQ.DuaYpoDrUmF39HjOi2ulk14dZHEWLmSxWH4_MIooaOk'
-        const backendUrl = 'https://back.asitha.top/api'
-
-        // 2. Get Temp API Key
-        const { data: tempKeyData } = await axios.post(`${backendUrl}/user/get-temp-token`,
-            { recaptcha_token: captchaData.token },
-            { headers: { Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' } }
-        )
-
-        if (!tempKeyData?.token) {
-            throw new Error('Temp API key failed')
-        }
-
-        // 3. Send Reaction
-        const reactRes = await axios.post(`${backendUrl}/channel/react-to-post?apiKey=${tempKeyData.token}`,
-            { post_link: postLink, reacts: emojis.join(',') },
-            { headers: { Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' } }
-        )
-
-        if (reactRes.status < 200 || reactRes.status >= 300) {
-            throw new Error(reactRes.data?.message || 'Failed to send reaction')
+        const sent = []
+        for (let i = 0; i < Math.min(emojis.length, serverIds.length); i++) {
+            await bad.newsletterReactMessage(metadata.id, serverIds[i], emojis[i])
+            sent.push(emojis[i])
         }
 
         await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-        reply(`╭━━〔 🔥 ʀᴇᴀᴄᴛɪᴏɴ sᴇɴᴛ 〕━━┈⊷
-┃
-┃ 🔗 ʟɪɴᴋ: ${postLink}
-┃ 😊 ᴇᴍᴏᴊɪs: ${emojis.join(', ')}
-┃
-┃ ✅ sᴜᴄᴄᴇssғᴜʟʟʏ ʀᴇᴀᴄᴛᴇᴅ!
-┃
-╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+        reply(`╭━━〔 🔥 ʀᴇᴀᴄᴛɪᴏɴ sᴇɴᴛ 〕━━┈⊷\n┃\n┃ 🔗 ʟɪɴᴋ: ${postLink}\n┃ 😊 ᴇᴍᴏᴊɪs: ${sent.join(', ')}\n┃\n┃ ✅ ɴᴀᴛɪᴠᴇ ᴡʜᴀᴛsᴀᴘᴘ ʀᴇᴀᴄᴛɪᴏɴ ᴄᴏᴍᴘʟᴇᴛᴇ!\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
 
     } catch (e) {
         console.error('Channel React Error:', e)
@@ -12701,6 +12690,18 @@ const commandHandler = handleMessage
 /// ==================== MAIN MESSAGE HANDLER ====================
 module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
     const messages = chatUpdate.messages || []
+    const dispatchKey = mek?.key?.remoteJid && mek?.key?.id
+        ? `${mek.key.remoteJid}:${mek.key.id}`
+        : null
+    if (dispatchKey) {
+        const previous = recentMessageDispatches.get(dispatchKey)
+        if (previous && Date.now() - previous < 30000) return
+        recentMessageDispatches.set(dispatchKey, Date.now())
+        if (recentMessageDispatches.size > 500) {
+            const oldest = recentMessageDispatches.keys().next().value
+            recentMessageDispatches.delete(oldest)
+        }
+    }
     if (mek?.key && messages.length) {
         await commandHandler(bad, mek, chatUpdate, store)
     }
@@ -12830,16 +12831,9 @@ module.exports = async function handleMessage(bad, mek, chatUpdate, store) {
             if (fromMe) continue
 
 // ==================== EXTRACT MESSAGE BODY ====================
-// group only
-if (!chatId.endsWith('@g.us')) return
-
-// ignore bot messages
-if (msg.key.fromMe) return
-
-// body extract
 const messageTypes = msg.message
-
 const chatId = msg.key.remoteJid
+if (!chatId) continue
 let body = messageTypes?.conversation ||
            messageTypes?.extendedTextMessage?.text ||
            messageTypes?.imageMessage?.caption ||
@@ -12848,19 +12842,21 @@ let body = messageTypes?.conversation ||
            messageTypes?.documentMessage?.caption ||
            ''
 
-// bot admin check
-const metadata = await bad.groupMetadata(chatId)
-const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
-const isBotAdmin = metadata.participants.find(p => p.id === botId)?.admin
-if (!isBotAdmin) return
-
-// antilink setting
-const antilink = getSetting(chatId, "antilink") || "delete"
-
-// link detection
-if (antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
-  if (antilink === "delete") {
-    await bad.sendMessage(chatId, { delete: msg.key })
+// Group-only anti-link maintenance. Do not return from this message loop:
+// DMs and commands must continue to the handler below.
+if (chatId.endsWith('@g.us')) {
+  try {
+    const metadata = await bad.groupMetadata(chatId)
+    const botId = bad.user.id.split(':')[0] + '@s.whatsapp.net'
+    const isBotAdmin = metadata.participants.find(p => p.id === botId)?.admin
+    if (isBotAdmin) {
+      const antilink = getSetting(chatId, "antilink") || "delete"
+      if (antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body) && antilink === "delete") {
+        await bad.sendMessage(chatId, { delete: msg.key })
+      }
+    }
+  } catch (groupError) {
+    console.error('❌ Group maintenance error:', groupError.message)
   }
 }
 
@@ -13067,7 +13063,7 @@ if (antilink && /(https?:\/\/|www\.|chat\.whatsapp\.com)/i.test(body)) {
 };
 
 // ==================== SETUP EVENT LISTENERS ====================
-module.exports.setupEventListeners = function(bad, store) {
+const setupEventListeners = function(bad, store) {
     bad.ev.on('group-participants.update', async (update) => {
         try {
             const { id, participants, action } = update;
@@ -13405,6 +13401,7 @@ module.exports.setupEventListeners = function(bad, store) {
 
 // ==================== OTHER EXPORTS ====================
 module.exports = handleMessage; // ✅ Main handler (MUST BE FIRST)
+module.exports.setupEventListeners = setupEventListeners;
 module.exports.groupMetadataCache = groupMetadataCache;
 module.exports.refreshGroupMetadata = refreshGroupMetadata;
 module.exports.checkAdminStatus = checkAdminStatus;
