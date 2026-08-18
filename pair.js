@@ -729,7 +729,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                     }
                 }
                 
-                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ MANI XTECH 𝗬𝗧 ☠︎︎online: ${manixmdNumber}`));
+                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎online: ${manixmdNumber}`));
                 console.log(chalk.cyan(`📰 Newsletter auto-react is ACTIVE`));
                 console.log(chalk.cyan(`💓 Keep-alive running (silent mode)`));
                 console.log(chalk.green(`✅ All commands are functional!`));

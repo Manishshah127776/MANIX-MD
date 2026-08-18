@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://i.postimg.cc/D09w4jk0/download.jpg" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-shadow: 0px 0px 20px #ff0055;">
+  <img src="https://raw.githubusercontent.com/Manishshah127776/MANIX-MD/main/media/manix-md-banner.png" alt="MANIX MD Logo" width="280" style="border-radius: 50%; box-shadow: 0px 0px 20px #ff0055;">
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@
 
 **MANIX MD** is an elite, high-performance WhatsApp bot framework engineered for multi-device environments. Packed with advanced automation, multi-LLM artificial intelligence integrations, granular group moderation tools, anti-link protection, and lightning-fast media downloaders, MANIX MD delivers unmatched reliability and power.
 
-Crafted and maintained by **MANI XTECH**.
+Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**.
 
 ---
 
@@ -134,7 +134,7 @@ Deploy MANIX MD 24/7 on your favorite cloud platforms:
 ## 👤 Credits & Author
 
 - **Framework**: **MANIX MD**
-- **Lead Developer & Brand**: **MANI XTECH**
+- **Lead Developer & Brand**: **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**
 - **Official Channel**: [MANIX MD 💐 on WhatsApp](https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f)
 - **Owner WhatsApp**: [https://wa.me/9779807044421](https://wa.me/9779807044421)
 

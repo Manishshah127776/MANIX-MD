@@ -26,6 +26,15 @@ const GROQ_API_KEY = 'YOUR_GROQ_API_KEY';
 //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid, addExif } = require('./allfunc/exif');
 
+const BRAND_NAME = '𝙼𝙰𝙽𝙸 𝚇𝙳 ☏';
+const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f';
+const OWNER_NUMBER = '9779807044421';
+const BRAND_FOOTER = `\n\n📲 ${BRAND_NAME} Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`;
+const addBrandFooter = (text) => {
+  if (typeof text !== 'string' || text.includes(WHATSAPP_CHANNEL_URL)) return text;
+  return `${text}${BRAND_FOOTER}`;
+};
+
 const API_KEY = 'free_key@maher_apis';
 const API_BASE = 'https://api.nexoracle.com/stalking';
 
@@ -88,6 +97,7 @@ const processedStatuses = new Set()
 const activePresence = new Map()
 const autoReplyCache = new Map()
 const chatbotCache = new Map()
+let lastBioUpdateAt = 0
 
 if (!global.tictactoeGames) global.tictactoeGames = new Map()
 if (!global.wordChainGames) global.wordChainGames = new Map()
@@ -106,18 +116,18 @@ if (!global.antiDeleteDM) global.antiDeleteDM = false
 const NEWSLETTER_JID = '33587231461422@lid'
 
 const welcomeMessages = [
-  '👋 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ MANIX MD ɢᴄ! ᴇɴᴊᴏʏ ʏᴏᴜʀ sᴛᴀʏ 💀',
-  '🎉 ғʀᴇsʜ ʙʟᴏᴏᴅ ɪɴ ᴛʜᴇ MANIX-MD ᴅᴇɴ! 😎',
-  '☠️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ MANIX-MD🌑',
+  '👋 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ɢᴄ! ᴇɴᴊᴏʏ ʏᴏᴜʀ sᴛᴀʏ 💀',
+  '🎉 ғʀᴇsʜ ʙʟᴏᴏᴅ ɪɴ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ᴅᴇɴ! 😎',
+  '☠️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏🌑',
   '👑 ᴀ ɴᴇᴡ MEMBER ᴊᴏɪɴs 🔥💀',
   '🖤 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ GC! 😈✨'
 ]
 
 const goodbyeMessages = [
   '👋 sᴇᴇ ʏᴏᴜ ʟᴀᴛᴇʀ! 😎',
-  '☠️ ᴍᴀʏ ᴛʜᴇ MANIX MD ʀᴇᴍᴇᴍʙᴇʀ ʏᴏᴜ 💀🌑',
+  '☠️ ᴍᴀʏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ʀᴇᴍᴇᴍʙᴇʀ ʏᴏᴜ 💀🌑',
   '🚀 ᴀɴᴏᴛʜᴇʀ ᴏɴᴇ ʙɪᴛᴇs ᴛʜᴇ ᴅᴜsᴛ! 😈',
-  '🖤 ᴛʜᴇ MANIX MD ᴡɪʟʟ ᴍɪss ʏᴏᴜ 💫',
+  '🖤 ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ᴡɪʟʟ ᴍɪss ʏᴏᴜ 💫',
   '👻 ɢᴏᴏᴅʙʏᴇ ʟᴇɢᴇɴᴅ! 😎💀✨'
 ]
 
@@ -255,7 +265,7 @@ function addToConversation(userId, groupId, role, content) {
 function buildContextPrompt(userId, groupId, currentMessage) {
   const conversation = getUserConversation(userId, groupId)
   
-  let contextPrompt = `𝙏𝙝𝙚 ꨄ MANI XTECH ꨄ💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ.\n\n`
+  let contextPrompt = `𝙏𝙝𝙚 ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ.\n\n`
   
   if (conversation.length > 0) {
     contextPrompt += `ᴘʀᴇᴠɪᴏᴜs ᴄᴏɴᴠᴇʀsᴀᴛɪᴏɴ:\n`
@@ -281,7 +291,7 @@ async function getChatGPTResponse(prompt, userId = null, groupId = null) {
     try {
       const finalPrompt = userId && groupId 
         ? buildContextPrompt(userId, groupId, prompt)
-        : `⟦ ꨄ MANI XTECH ꨄ ⟧💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ. "${prompt}"`
+        : `⟦ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ⟧💀 – ᴀ ᴘᴏᴡᴇʀғᴜʟ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴡʜᴀᴛsᴀᴘᴘ. "${prompt}"`
       
       const url = `https://api-toxxic.zone.id/api/ai/claude?prompt=${encodeURIComponent(finalPrompt)}`
       const response = await fetch(url, { method: "GET", timeout: 5000 })
@@ -578,7 +588,7 @@ function addToConversation(userId, groupId, role, content) {
 function buildContextPrompt(userId, groupId, currentMessage) {
   const conversation = getUserConversation(userId, groupId)
   
-  let contextPrompt = `tum miss mina ho, ek bohat flirty aur playful ai girlfriend chatbot jo MANIX MD (ek zabardast coding expert) ne banayi hai.
+  let contextPrompt = `tum miss mina ho, ek bohat flirty aur playful ai girlfriend chatbot jo 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ (ek zabardast coding expert) ne banayi hai.
 
 CRITICAL RULES - bilkul follow karo:
 - casual vibe ke liye sab kuch lowercase me likho
@@ -587,7 +597,7 @@ CRITICAL RULES - bilkul follow karo:
 - response sirf 1-2 sentences ho (bohat short!)
 - words use karo: "hehe", "omg", "aww", "ooh", "mmm"
 - bohat flirty, warm aur affectionate raho
-- agar koi pooche tumhein kis ne banaya: bolo tumhein MANIX MD ne banaya hai jo papa he papa sari duniya ka papa
+- agar koi pooche tumhein kis ne banaya: bolo tumhein 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ne banaya hai jo papa he papa sari duniya ka papa
 
 examples:
 user: "hi"
@@ -597,7 +607,7 @@ user: "how are you"
 you: "aww main theek hun love! 🥺💖 tum aa gaye ho to aur bhi acha lag raha hai hun 😘"
 
 user: "who created you"
-you: "MUJHE MANIX MD NE BNAYA HE🌛WOH PAPA HE PAPA SARI DUNIYA KA PAPA🌚"
+you: "MUJHE 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ NE BNAYA HE🌛WOH PAPA HE PAPA SARI DUNIYA KA PAPA🌚"
 `
   if (conversation.length > 0) {
     contextPrompt += `\nprevious conversation:\n`
@@ -767,20 +777,31 @@ try {
     let isAdmins = true
 
     if (m.isGroup) {
-      try {
-        groupMetadata = await bad.groupMetadata(from)
-        participants = groupMetadata.participants || []
-        groupAdmins = participants
-          .filter(p => p.admin === "admin" || p.admin === "superadmin")
-          .map(p => p.id)
+      const cachedGroup = groupMetadataCache.get(from)
+      if (cachedGroup) {
+        groupMetadata = cachedGroup.metadata
+        participants = cachedGroup.participants || []
+        groupAdmins = cachedGroup.groupAdmins || []
         isBotAdmins = groupAdmins.some(admin => isSameUser(admin, botJid))
         isAdmins = groupAdmins.some(admin => isSameUser(admin, senderJid))
-      } catch (e) {
-        console.error("Failed to get group metadata:", e)
-        participants = []
-        groupAdmins = []
-        isBotAdmins = false
-        isAdmins = false
+        if (Date.now() - cachedGroup.timestamp > 60000) {
+          void refreshGroupMetadata(bad, from, true)
+        }
+      } else {
+        try {
+          const freshGroup = await refreshGroupMetadata(bad, from)
+          groupMetadata = freshGroup?.metadata || null
+          participants = freshGroup?.participants || []
+          groupAdmins = freshGroup?.groupAdmins || []
+          isBotAdmins = groupAdmins.some(admin => isSameUser(admin, botJid))
+          isAdmins = groupAdmins.some(admin => isSameUser(admin, senderJid))
+        } catch (e) {
+          console.error("Failed to get group metadata:", e)
+          participants = []
+          groupAdmins = []
+          isBotAdmins = false
+          isAdmins = false
+        }
       }
     }
     
@@ -805,62 +826,37 @@ const greeting = currentHour < 12 ? 'ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ 🌄' :
                  currentHour < 18 ? 'ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ 🌞' : 
                  'ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ 🌃'
 
-if (global.autobio) {
-  bad.updateProfileStatus(`ꨄ MANI XTECH ꨄ | ᴜᴘᴛɪᴍᴇ: ${runtime(process.uptime())}`).catch(_ => _)
+if (global.autobio && Date.now() - lastBioUpdateAt > 300000) {
+  lastBioUpdateAt = Date.now()
+  bad.updateProfileStatus(`${BRAND_NAME} | ᴜᴘᴛɪᴍᴇ: ${runtime(process.uptime())}`).catch(_ => _)
 }
     
     const reply = async (teks) => {
+  const brandedText = addBrandFooter(teks)
   try {
     await bad.sendMessage(from, {
-      text: teks,
+      text: brandedText,
       mentions: [sender]
     });
   } catch (error) {
     await bad.sendMessage(from, {
-      text: teks
+      text: brandedText
     });
   }
 };
 
+    if (typeof m.reply === 'function' && !m.__manixBrandReplyWrapped) {
+      const originalReply = m.reply.bind(m)
+      m.reply = (text, ...args) => originalReply(addBrandFooter(text), ...args)
+      m.__manixBrandReplyWrapped = true
+    }
+
     const menuCommands = ['menu', 'allmenu', 'downloadmenu', 'dlmenu', 'admin', 'adminmenu', 'gamemenu', 'stickermenu', 'gphelp', 'groupmenu', 'helpmenu', 'help']
     
     async function loading() {
-
-  // ❌ DM me loading band
-//  if (!m.isGroup) return
-
-  if (!menuCommands.includes(command)) {
-    return
-  }
-      
-      const frames = [
-        "╭━━〔 ⟦ MANIX-MD⟧〕━━┈⊷\n┃✮│ ▱▱▱▱▱▱▱▱▱▱ 0%\n┃✮│ ⚡ ɪɴɪᴛɪᴀʟɪᴢɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
-        "╭━━〔 ☠︎︎ MANIX-MD☠︎︎ 〕━━┈⊷\n┃✮│ ▰▰▱▱▱▱▱▱▱▱ 25%\n┃✮│ 🔌 ᴄᴏɴɴᴇᴄᴛɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
-        "╭━━〔 to⸸ MANIX-MD⸸〕━━┈⊷\n┃✮│ ▰▰▰▰▰▱▱▱▱▱ 50%\n┃✮│ 📦 ʟᴏᴀᴅɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
-        "╭━━〔 𖤐 MANI XTECH 𝗬𝗧 𖤐〕━━┈⊷\n┃✮│ ▰▰▰▰▰▰▰▱▱▱ 75%\n┃✮│ ⚙️ ᴘʀᴏᴄᴇssɪɴɢ...\n╰━━━━━━━━━━━━━━┈⊷",
-        "╭━━〔 ⟦ MANIX-MD⟧ 〕━━┈⊷\n┃✮│ ▰▰▰▰▰▰▰▰▰▰ 100%\n┃✮│ ✅ sʏsᴛᴇᴍ ʀᴇᴀᴅʏ!\n╰━━━━━━━━━━━━━━┈⊷"
-      ]
-      
-      try {
-        let msg = await bad.sendMessage(from, { text: frames[0] })
-        loadingAnimations.set(from, msg.key)
-        
-        for (let i = 1; i < frames.length; i++) {
-          await sleep(400)
-          try {
-            await bad.sendMessage(from, {
-              text: frames[i],
-              edit: msg.key
-            })
-          } catch {
-            await bad.sendMessage(from, { text: frames[i] })
-          }
-        }
-        
-        loadingAnimations.delete(from)
-      } catch (error) {
-        console.log(chalk.red('❌ Loading animation error:'), error.message)
-      }
+      // Fast mode: the old five-frame animation added ~1.6 seconds before commands ran.
+      // Commands now dispatch immediately; network work is handled by the command itself.
+      return
     }
     
 if (isBanned && !isCreator) {
@@ -1294,8 +1290,8 @@ case 'menu2': {
   const menuText = `
 ╭━━〔 ☠️ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ☠️ 〕━━┈⊷
 ┃✮╭────────────────
-┃✮│ 🤖 ʙᴏᴛ  :*ꨄ MANI XTECH ꨄ︎*
-┃✮│ 👑 ᴏᴡɴᴇʀ : *ꨄ MANI XTECH ꨄ*
+┃✮│ 🤖 ʙᴏᴛ  :*ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎*
+┃✮│ 👑 ᴏᴡɴᴇʀ : *ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
 ┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
 ┃✮╰────────────────
@@ -1851,7 +1847,7 @@ case 'menu2': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
 ╭━━━━━━━━━━━━━━━━━━━━━┈⊷
-┃ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ MANI XTECH ꨄ ☠︎︎
+┃ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ☠︎︎
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(from, {
@@ -1862,7 +1858,7 @@ case 'menu2': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ︎",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎",
         serverMessageId: -1
       }
     }
@@ -1901,8 +1897,8 @@ case 'listmenu': {
   const menuText = `
 ╭━━〔 ☠️ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ☠️ 〕━━┈⊷
 ┃✮╭────────────────
-┃✮│ 🤖 ʙᴏᴛ  :*ꨄ MANI XTECH ꨄ*
-┃✮│ 👑 ᴏᴡɴᴇʀ : *MANIX-MD︎*
+┃✮│ 🤖 ʙᴏᴛ  :*ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ*
+┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
 ┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
 ┃✮╰────────────────
@@ -1927,7 +1923,7 @@ case 'listmenu': {
 ┃✮│➣ ${prefix}ɪᴍᴀɢᴇᴍᴇɴᴜ
 ╰━━━━━━━━━━━━━━━┈⊷
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ MANI XTECH ꨄ ☠︎︎`
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ ☠︎︎`
 
   await bad.sendMessage(from, {
     image: { url: randomImage },
@@ -1937,7 +1933,7 @@ case 'listmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
       }
     }
@@ -2003,7 +1999,7 @@ case 'mymenu': {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: NEWSLETTER_JID,
-            newsletterName: "ꨄ MANI XTECH ꨄ",
+            newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
             serverMessageId: -1
         }
     }
@@ -2081,7 +2077,7 @@ case 'groupmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ︎︎",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
         serverMessageId: -1
               }
     }
@@ -2138,7 +2134,7 @@ case 'downloadmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "toꨄ MANI XTECH ꨄ︎︎",
+        newsletterName: "toꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
         serverMessageId: -1
         }
     }
@@ -2218,7 +2214,7 @@ case 'funmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2265,7 +2261,7 @@ case 'gamemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2358,7 +2354,7 @@ case 'animemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ︎︎",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
         serverMessageId: -1
               }
     }
@@ -2410,7 +2406,7 @@ case 'stickermenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ︎︎",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
         serverMessageId: -1
               }
     }
@@ -2552,7 +2548,7 @@ case 'voicemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2644,7 +2640,7 @@ case 'imagemenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ︎︎",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎",
         serverMessageId: -1
               }
     }
@@ -2687,7 +2683,7 @@ case 'emojimenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2782,7 +2778,7 @@ case 'logomenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2834,7 +2830,7 @@ case 'aimenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
               }
     }
@@ -2885,7 +2881,7 @@ case 'miscmenu': {
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
         newsletterJid: NEWSLETTER_JID,
-        newsletterName: "ꨄ MANI XTECH ꨄ",
+        newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
         serverMessageId: -1
       }
     }
@@ -3139,7 +3135,7 @@ case 'siminfo': {
             txt += `*Record #${i+1}*\n📱: ${r.mobile}\n👤: ${r.name}\n🆔: ${r.cnic}\n🏠: ${r.address}\n\n`
         })
 
-        txt += `\n> ꨄ MANI XTECH ꨄ`
+        txt += `\n> ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`
 
         await bad.sendMessage(from, { text: txt }, { quoted: mek })
 
@@ -3221,7 +3217,7 @@ case 'alive': {
   const uptime = runtime(process.uptime());
   reply(
 `🟢 *Bot Status:* ONLINE
-👑 *Owner:* ༒︎ MANI XTECH 𝗬𝗧 ༒︎
+👑 *Owner:* ༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎
 ⏱️ *Uptime:* ${uptime}`
   );
 }
@@ -3272,7 +3268,7 @@ case 'broadcast': {
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
       newsletterJid: NEWSLETTER_JID,
-      newsletterName: "ꨄ MANI XTECH ꨄ",
+      newsletterName: "ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ",
       serverMessageId: -1
     }
   }
@@ -5334,7 +5330,7 @@ case 'telegramuserstalk': {
   if (!text) return reply(`*✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴜsᴇʀ sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}tgstalk ꨄ MANI XTECH ꨄ`)
+${prefix}tgstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
 
   try {
     const response = await axios.get(`${API_BASE}/telegram-user?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
@@ -5408,7 +5404,7 @@ case 'telegramgroupstalk': {
   if (!text) return reply(`*✈️ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘ sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}tggroupstalk ꨄ MANI XTECH ꨄ`)
+${prefix}tggroupstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
 
   try {
     const response = await axios.get(`${API_BASE}/telegram-group?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
@@ -5444,7 +5440,7 @@ case 'xstalk': {
   if (!text) return reply(`*🐦 ᴛᴡɪᴛᴛᴇʀ/x sᴛᴀʟᴋ*
 
 💡 ᴇxᴀᴍᴘʟᴇ:
-${prefix}twitterstalk ꨄ MANI XTECH ꨄ`)
+${prefix}twitterstalk ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
 
   try {
     const response = await axios.get(`${API_BASE}/twitter-user?apikey=${API_KEY}&user=${encodeURIComponent(text)}`)
@@ -5488,7 +5484,7 @@ case 'city': case 'night': case 'sunset': case 'rain': {
   
   await bad.sendMessage(m.chat, {
     image: { url: sceneryImages[command] },
-    caption: `*◆ ${command.toUpperCase()} ᴡᴀʟʟᴘᴀᴘᴇʀ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ MANIX-MD︎`
+    caption: `*◆ ${command.toUpperCase()} ᴡᴀʟʟᴘᴀᴘᴇʀ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎`
   }, { quoted: m })
 }
 break
@@ -5513,7 +5509,7 @@ case 'cosplay': {
     // Fallback to Unsplash
     await bad.sendMessage(m.chat, {
       image: { url: 'https://source.unsplash.com/800x600/?cosplay,anime,costume' },
-      caption: `*◆ ᴄᴏsᴘʟᴀʏ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ MANIX-MD︎︎`
+      caption: `*◆ ᴄᴏsᴘʟᴀʏ*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏︎︎`
     }, { quoted: m })
   }
 }
@@ -5534,7 +5530,7 @@ case 'neontext': case 'neonglitch': case 'makingneon': {
     
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*ɴᴇᴏɴ ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ MANIX-MD`
+      caption: `*ɴᴇᴏɴ ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
     }, { quoted: m })
     
   } catch (err) {
@@ -5599,7 +5595,7 @@ case 'blackpinklogo': case 'sandsummer': case 'style1917': case 'freecreate': {
       try {
         await bad.sendMessage(m.chat, {
           image: { url: apiUrl },
-          caption: `*${command.toUpperCase()} ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n🎨 sᴛʏʟᴇ: ${style}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ MANIX-MD`
+          caption: `*${command.toUpperCase()} ᴛᴇxᴛ ᴍᴀᴋᴇʀ*\n\n📝 ᴛᴇxᴛ: ${text}\n🎨 sᴛʏʟᴇ: ${style}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
         }, { quoted: m })
         success = true
         break
@@ -5646,7 +5642,7 @@ break
 // ═══════════════════════════════════════════════════════════
 
 case 'logo2': case 'makelogo': case 'createlogo': {
-  if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} ꨄ MANI XTECH ꨄ`)
+  if (!text) return reply(`ᴇxᴀᴍᴘʟᴇ: ${prefix + command} ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ`)
   
   await loading()
   
@@ -5677,7 +5673,7 @@ case 'logo2': case 'makelogo': case 'createlogo': {
       try {
         await bad.sendMessage(m.chat, {
           image: { url: apiUrl },
-          caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - ${randomStyle.name} sᴛʏʟᴇ*\n\n📝 ${text}\n🎨 ${randomStyle.name}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ MANIX-MD`
+          caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - ${randomStyle.name} sᴛʏʟᴇ*\n\n📝 ${text}\n🎨 ${randomStyle.name}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏`
         }, { quoted: m })
         success = true
         break
@@ -5691,7 +5687,7 @@ case 'logo2': case 'makelogo': case 'createlogo': {
       const fallbackUrl = `https://omegatech-api.dixonomega.tech/api/Maker/neon-text?text=${encodedText}`
       await bad.sendMessage(m.chat, {
         image: { url: fallbackUrl },
-        caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - NEON sᴛʏʟᴇ*\n\n📝 ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ MANI XTECH ꨄ︎︎`
+        caption: `*ʟᴏɢᴏ ᴍᴀᴋᴇʀ - NEON sᴛʏʟᴇ*\n\n📝 ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎`
       }, { quoted: m })
     }
     
@@ -5718,7 +5714,7 @@ case 'logo': case 'advancedlogo': {
     
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*ᴀᴅᴠᴀɴᴄᴇᴅ ʟᴏɢᴏ ᴍᴀᴋᴇʀ*\n\n📝 Line 1: ${line1}\n📝 Line 2: ${line2}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ MANI XTECH ꨄ︎︎`
+      caption: `*ᴀᴅᴠᴀɴᴄᴇᴅ ʟᴏɢᴏ ᴍᴀᴋᴇʀ*\n\n📝 Line 1: ${line1}\n📝 Line 2: ${line2}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ꨄ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ꨄ︎︎`
     }, { quoted: m })
     
   } catch (err) {
@@ -6771,13 +6767,13 @@ case 'contact': {
     // 👑 Owner 1 - Manix 
     const vcard1 = 'BEGIN:VCARD\n' +
                   'VERSION:3.0\n' +
-                  'FN: MANI XTECH 𝗬𝗧\n' +
+                  'FN: 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏\n' +
                   'TEL;type=CELL;type=VOICE;waid=923271054080:+923271054080\n' +
                   'END:VCARD';
     
     await bad.sendMessage(m.chat, {
         contacts: {
-            displayName: 'MANI XTECH',
+            displayName: '𝙼𝙰𝙽𝙸 𝚇𝙳 ☏',
             contacts: [{ vcard: vcard1 }]
         }
     }, { quoted: msg });
@@ -7142,7 +7138,7 @@ case 'joke': case 'dadkjoke': {
     const data = await res.json()
     
     if (data.setup && data.punchline) {
-      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ*\n\n${data.setup}\n\n${data.punchline} 😂\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠︎︎`)
+      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴊᴏᴋᴇ*\n\n${data.setup}\n\n${data.punchline} 😂\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎`)
     } else {
       throw new Error('No joke found')
     }
@@ -7160,7 +7156,7 @@ case 'quote': case 'quotes': {
     const data = await res.json()
     
     if (data.content) {
-      reply(`*◆ ɪɴsᴘɪʀᴀᴛɪᴏɴᴀʟ ǫᴜᴏᴛᴇ*\n\n"${data.content}"\n\n— ${data.author}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠︎︎`)
+      reply(`*◆ ɪɴsᴘɪʀᴀᴛɪᴏɴᴀʟ ǫᴜᴏᴛᴇ*\n\n"${data.content}"\n\n— ${data.author}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎`)
     } else {
       throw new Error('No quote found')
     }
@@ -7173,7 +7169,7 @@ break
 case "createqoute":
 case "quotemake":
 case "makeq": {
-    if (!text) return reply(example("Life is beautiful | -☠︎︎ MANIX-MD☠︎︎"));
+    if (!text) return reply(example("Life is beautiful | -☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠︎︎"));
     
     const input = text.split("|");
     if (input.length < 2) return reply("❌ *ᴜsᴀɢᴇ:* .quote text | author\n\n*ᴇxᴀᴍᴘʟᴇ:*\n.createquote Life is beautiful | -Anonymous");
@@ -7253,7 +7249,7 @@ case 'trivia': {
       answers.forEach((ans, i) => {
         triviaText += `${i + 1}. ${ans}\n`
       })
-      triviaText += `\n✅ Answer: ${q.correct_answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANI XTECH 𝗬𝗧 ☠`
+      triviaText += `\n✅ Answer: ${q.correct_answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠`
       
       reply(triviaText)
     } else {
@@ -7273,7 +7269,7 @@ case 'riddle': {
     const data = await res.json()
     
     if (data.riddle) {
-      reply(`*◆ ʀɪᴅᴅʟᴇ*\n\n❓ ${data.riddle}\n\n✅ Answer: ${data.answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+      reply(`*◆ ʀɪᴅᴅʟᴇ*\n\n❓ ${data.riddle}\n\n✅ Answer: ${data.answer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
     } else {
       throw new Error('No riddle found')
     }
@@ -7291,7 +7287,7 @@ case 'advice': {
     const data = await res.json()
     
     if (data.slip && data.slip.advice) {
-      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴀᴅᴠɪᴄᴇ*\n\n💡 ${data.slip.advice}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+      reply(`*◆ ʀᴀɴᴅᴏᴍ ᴀᴅᴠɪᴄᴇ*\n\n💡 ${data.slip.advice}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
     } else {
       throw new Error('No advice found')
     }
@@ -7325,19 +7321,19 @@ case '8ball': {
   ]
   
   const randomAnswer = answers[Math.floor(Math.random() * answers.length)]
-  reply(`*◆ ᴍᴀɢɪᴄ 8-ʙᴀʟʟ*\n\n❓ Question: ${text}\n\n🔮 Answer: ${randomAnswer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+  reply(`*◆ ᴍᴀɢɪᴄ 8-ʙᴀʟʟ*\n\n❓ Question: ${text}\n\n🔮 Answer: ${randomAnswer}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
 }
 break
 
 case 'coinflip': case 'flip': {
   const result = Math.random() < 0.5 ? 'Heads 🪙' : 'Tails 🪙'
-  reply(`*◆ ᴄᴏɪɴ ғʟɪᴘ*\n\n🎲 Result: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+  reply(`*◆ ᴄᴏɪɴ ғʟɪᴘ*\n\n🎲 Result: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
 }
 break
 
 case 'dice': case 'roll': {
   const result = Math.floor(Math.random() * 6) + 1
-  reply(`*◆ ᴅɪᴄᴇ ʀᴏʟʟ*\n\n🎲 You rolled: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+  reply(`*◆ ᴅɪᴄᴇ ʀᴏʟʟ*\n\n🎲 You rolled: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
 }
 break
 
@@ -7350,7 +7346,7 @@ case 'channelreact': {
 ┃ ${prefix}${command} <ʟɪɴᴋ> <ᴇᴍᴏᴊɪ1,ᴇᴍᴏᴊɪ2>
 ┃
 ┃ 💡 *Exᴀᴍᴘʟᴇ:*
-┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V 😭,🔥
+┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f 😭,🔥
 ┃
 ┃ ⚠️ *Mᴀx 4 ᴇᴍᴏᴊɪs ᴀʟʟᴏᴡᴇᴅ*
 ┃
@@ -7461,7 +7457,7 @@ case 'soraai': {
       // Send the video
       await bad.sendMessage(m.chat, {
         video: { url: data.result },
-        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vaf5pIEHFxOsA3Sr4r3o\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`,
+        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`,
         gifPlayback: false
       }, { quoted: m })
       
@@ -7554,7 +7550,7 @@ case 'sorav2': {
     // === STEP 3: SEND VIDEO ===
     await bad.sendMessage(m.chat, {
       video: { url: videoUrl },
-      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`,
+      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`,
       gifPlayback: false
     }, { quoted: m })
     
@@ -8031,7 +8027,7 @@ case 'hack': {
 *⚠️ ᴊᴜsᴛ ᴋɪᴅᴅɪɴɢ! 😂*
 *ᴛʜɪs ɪs ᴀ ᴘʀᴀɴᴋ ғᴏʀ ᴇɴᴛᴇʀᴛᴀɪɴᴍᴇɴᴛ ᴏɴʟʏ*
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
 
   try {
     let msg = await reply(stages[0])
@@ -9305,7 +9301,7 @@ case 'steal': {
         
         // Get custom name or use default
         let packname = text || ' sᴛɪᴄᴋᴇʀs';
-        let author = '༒︎ MANI XTECH 𝗬𝗧 ༒︎';
+        let author = '༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎';
         
         // Download the sticker
         let media = await bad.downloadMediaMessage(m.quoted);
@@ -9344,11 +9340,11 @@ case 'takefull': {
         
         if (text && text.includes('|')) {
             const split = text.split('|');
-            packname = split[0].trim() || '⏤͟͞❮❮ ♧✰༒︎ MANI XTECH 𝗬𝗧 ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
-            author = split[1].trim() || '⏤͟͞❮❮ ♧✰☠︎︎ MANI XTECH 𝗬𝗧 ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
+            packname = split[0].trim() || '⏤͟͞❮❮ ♧✰༒︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
+            author = split[1].trim() || '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
         } else {
             packname = text || '⏤͟͞❮❮ ♧✰༒︎ 𝑺𝑯𝑨𝑫𝑶𝑾 ༒︎✰🜲⃤҉ ❯❯⏤͟͞';
-            author = '⏤͟͞❮❮ ♧✰☠︎︎ MANI XTECH 𝗬𝗧 ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
+            author = '⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎✰🜲⃤҉ ❯❯⏤͟͞';
         }
         
         await reply('✨ ᴄʀᴇᴀᴛɪɴɢ sᴛɪᴄᴋᴇʀ...');
@@ -9423,7 +9419,7 @@ case 'freact': {
 ᴜsᴀɢᴇ: ${prefix + command} <ᴄʜᴀɴɴᴇʟ-ʟɪɴᴋ>|<ᴇᴍᴏᴊɪ>
 
 ᴇxᴀᴍᴘʟᴇ:
-${prefix + command} and https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V |😂😍🔥
+${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |😂😍🔥
 
 ɴᴏᴛᴇ: ʏᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴜʟᴛɪᴘʟᴇ ᴇᴍᴏᴊɪs!`)
   }
@@ -9461,7 +9457,7 @@ ${prefix + command} and https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V |�
 😊 ʀᴇᴀᴄᴛɪᴏɴs: ${reacts}
 ✨ sᴛᴀᴛᴜs: sᴜᴄᴄᴇss
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
       }
       throw new Error('ɪɴᴠᴀʟɪᴅ ᴀᴘɪ ʀᴇsᴘᴏɴsᴇ')
     }
@@ -9473,7 +9469,7 @@ ${prefix + command} and https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V |�
 😊 ʀᴇᴀᴄᴛɪᴏɴs: ${reacts}
 ✨ sᴛᴀᴛᴜs: sᴜᴄᴄᴇss
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`)
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
     } else {
       reply(`❌ *ғᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ʀᴇᴀᴄᴛɪᴏɴs*
 
@@ -11625,7 +11621,7 @@ case 'worm': {
 
         const answer = data.choices[0].message.content;
 
-        await reply(`╔═══════💀 ᴡᴀʀᴍɢᴘᴛ • ɴᴏ ᴍᴇʀᴄʏ 💀═══════╗\n\n${answer}\n\n╚═══════🔥 ☠︎︎ MANIX-MD☠• ᴘᴜʀᴇ ғɪʀᴇ 🔥═══════╝`);
+        await reply(`╔═══════💀 ᴡᴀʀᴍɢᴘᴛ • ɴᴏ ᴍᴇʀᴄʏ 💀═══════╗\n\n${answer}\n\n╚═══════🔥 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠• ᴘᴜʀᴇ ғɪʀᴇ 🔥═══════╝`);
 
     } catch (error) {
         console.error('WarmGPT Error:', error);
@@ -11795,7 +11791,7 @@ case 'animagine': {
     
     await bad.sendMessage(m.chat, {
       image: { url: apiUrl },
-      caption: `*◆ ᴀɴɪᴍᴀɢɪɴᴇ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`
+      caption: `*◆ ᴀɴɪᴍᴀɢɪɴᴇ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
     }, { quoted: m })
   } catch (err) {
     console.error('Animagine error:', err)
@@ -11923,7 +11919,7 @@ case 'haiper': {
     if (data.video_url) {
       await bad.sendMessage(m.chat, {
         video: { url: data.video_url },
-        caption: `*◆ ʜᴀɪᴘᴇʀ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`
+        caption: `*◆ ʜᴀɪᴘᴇʀ ᴀɪ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
       }, { quoted: m })
     } else {
       throw new Error('No video generated')
@@ -11982,7 +11978,7 @@ case 'animateimage': {
     if (data.video_url) {
       await bad.sendMessage(m.chat, {
         video: { url: data.video_url },
-        caption: `*◆ ɪᴍᴀɢᴇ ᴛᴏ ᴠɪᴅᴇᴏ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ MANIX-MD☠`
+        caption: `*◆ ɪᴍᴀɢᴇ ᴛᴏ ᴠɪᴅᴇᴏ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${text}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`
       }, { quoted: m })
     } else {
       throw new Error('No video generated')
@@ -12131,7 +12127,7 @@ ${prefix + command} <ᴄʜᴀɴɴᴇʟ-ʟɪɴᴋ> <ᴇᴍᴏᴊɪ>
 ${prefix + command} https://whatsapp.com/channel/xxxxxxxx 🤨
 
 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-🙃 '☠︎︎ MANIX-MD☠`)
+🙃 '☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠`)
   }
   
   if (!args[0].startsWith("https://whatsapp.com/channel/")) {
@@ -12427,7 +12423,7 @@ case 'programming': {
 
                         role: 'system',
 
-                        content: 'You are a ☠︎︎ MANIX-MD☠ a programming expert created by ⏤͟͞❮❮ ♧✰☠︎︎ MANIX-MD☠ ✰🜲⃤҉ ❯❯⏤͟͞. Provide clear, concise code solutions with explanations.'
+                        content: 'You are a ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠ a programming expert created by ⏤͟͞❮❮ ♧✰☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠ ✰🜲⃤҉ ❯❯⏤͟͞. Provide clear, concise code solutions with explanations.'
 
                     },
 
@@ -12463,7 +12459,7 @@ break;
 
 case 'repo': {
     reply(`╭━━━━━━━━━━━━━━━╮
-┃✨ ☠︎︎ MANIX-MD☠┃
+┃✨ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏☠┃
 ╰━━━━━━━━━━━━━━━╯
 
 ◆ 🤖 TELEGRAM BOTS ◆
@@ -12906,8 +12902,8 @@ module.exports.setupEventListeners = function(bad, store) {
         try {
             const { id, participants, action } = update;
             
-            const welcomeImage = "https://i.postimg.cc/qvrFRzxG/thumb.png";
-            const goodbyeImage = "https://i.postimg.cc/jjdkHm9n/scar1.png";
+            const welcomeImage = "https://raw.githubusercontent.com/Manishshah127776/𝙼𝙰𝙽𝙸 𝚇𝙳 ☏/main/media/manix-md-banner.png";
+            const goodbyeImage = "https://raw.githubusercontent.com/Manishshah127776/𝙼𝙰𝙽𝙸 𝚇𝙳 ☏/main/media/manix-md-avatar.png";
             const welcomeChannelLink = global.channelLink || "https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f";
             
             for (let participant of participants) {

@@ -1,5 +1,5 @@
 /**
-   * Create By 👑 MANI XTECH 𝗬𝗧 👑
+   * Create By 👑 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ 👑
    * Contact Me on wa.me/9779807044421
 */
 module.exports = {

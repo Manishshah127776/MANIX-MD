@@ -9,7 +9,12 @@ const { sleep } = require('./utils');
 const { BOT_TOKEN } = require('./token');
 const axios = require("axios")
 
+const BRAND_NAME = '𝙼𝙰𝙽𝙸 𝚇𝙳 ☏';
+const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f';
+const OWNER_NUMBER = '9779807044421';
+const OWNER_CONTACT_URL = `https://wa.me/${OWNER_NUMBER}`;
 const PAIRING_DASHBOARD_URL = process.env.PAIRING_DASHBOARD_URL || 'https://manix-md.onrender.com';
+const START_BANNER_PATH = path.join(__dirname, 'media', 'manix-md-banner.png');
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const adminFilePath = path.join(__dirname, 'manixmdstorage', 'admin.json');
@@ -101,12 +106,13 @@ const checkUserJoinedChannels = async (userId) => {
 // ========== SEND CHANNELS REQUIRED MESSAGE ==========
 const sendChannelsRequiredMessage = async (chatId) => {
   return bot.sendMessage(chatId,
-    `🚨 *You must join our official channel before pairing.*`,
+    `🚨 *You must join our official Telegram channel before pairing.*\n\n📢 WhatsApp channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📢 Join Channel', url: 'https://t.me/MEZUKAOTP' }],
+          [{ text: '📢 Join Telegram Channel', url: 'https://t.me/MEZUKAOTP' }],
+          [{ text: '📲 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ WhatsApp Channel', url: WHATSAPP_CHANNEL_URL }],
           [{ text: '✅ I have joined', callback_data: 'check_join' }]
         ]
       }
@@ -119,9 +125,9 @@ const sendGroupMessage = async (chatId, replyToMessageId = null) => {
   const botInfo = await bot.getMe();
   const botUsername = botInfo.username;
   
-  const message = `╭━━〔 🛡️ 𝙑𝙄𝙋 𝙎𝙀𝘾𝙐𝙍𝙀 〕━━╮
+  const message = `╭━━〔 ${BRAND_NAME} 〕━━╮
 ➤ Use in DM 👇
-╰━━〔 🚀 𝙎𝙏𝘼𝙍𝙏 𝙉𝙊𝙒 〕━━╯`;
+╰━━〔 🚀 𝙎𝙏𝘼𝙍𝙏 𝙉𝙊𝙒 〕━━╯\n\n📲 Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`;
 
   const options = {
     parse_mode: 'Markdown',
@@ -151,13 +157,14 @@ bot.onText(/\/start/, async (msg) => {
   // Private chat mein normal start message
   await bot.sendPhoto(
     chatId,
-    "https://i.postimg.cc/D09w4jk0/download.jpg",
+    START_BANNER_PATH,
     {
-      caption: `🪀 *𝙏𝙝𝙚 ꨄ MANI XTECH ꨄ*\n\n╔════════════════════╗\n ⤷ /pair — open WhatsApp Web QR pairing\n ⤷ /unpair — clear the WhatsApp Web session\n╚════════════════════╝`,
+      caption: `🪀 *${BRAND_NAME}*\n\n╔════════════════════╗\n ⤷ /pair — open WhatsApp Web QR pairing\n ⤷ /unpair — clear the WhatsApp Web session\n╚════════════════════╝\n\n📲 Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`,
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: "👑 Owner", url: "https://t.me/@Manishxtech0" }]
+          [{ text: '📲 WhatsApp Channel', url: WHATSAPP_CHANNEL_URL }],
+          [{ text: '☎ Contact Owner', url: OWNER_CONTACT_URL }]
         ]
       }
     }
@@ -186,7 +193,9 @@ bot.onText(/\/pair(?:\s+.*)?/, async (msg) => {
       `2. Go to Settings → Linked Devices\n` +
       `3. Tap “Link a Device” → “Link with QR code”\n` +
       `4. Scan the QR code shown on the dashboard\n\n` +
-      `🌐 Dashboard: ${PAIRING_DASHBOARD_URL}`,
+      `🌐 Dashboard: ${PAIRING_DASHBOARD_URL}\n\n` +
+      `📲 Channel: ${WHATSAPP_CHANNEL_URL}\n` +
+      `☎ Contact: wa.me/${OWNER_NUMBER}`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
@@ -203,15 +212,6 @@ bot.on('callback_query', async (callbackQuery) => {
   const userId = callbackQuery.from.id;
   const chatId = msg.chat.id;
 
-  if (data && data.startsWith('copy_code_')) {
-    const code = data.replace('copy_code_', '');
-    await bot.answerCallbackQuery(callbackQuery.id, { 
-      text: `✅ Code copied: ${code}`, 
-      show_alert: true
-    });
-    return;
-  }
-
   if (data === 'check_join') {
     const allJoined = await checkUserJoinedChannels(userId);
 
@@ -220,7 +220,7 @@ bot.on('callback_query', async (callbackQuery) => {
         text: '✅ Thanks for joining! Now use /pair command.', 
         show_alert: true
       });
-      await bot.sendMessage(chatId, '✅ *Thanks for joining our channel!*\n\nNow send /pair to start pairing.', { parse_mode: 'Markdown' });
+      await bot.sendMessage(chatId, `✅ *Thanks for joining our Telegram channel!*\n\n📲 WhatsApp channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}\n\nNow send /pair to start pairing.`, { parse_mode: 'Markdown' });
     } else {
       await bot.answerCallbackQuery(callbackQuery.id, { 
         text: '❌ Please join our channel first!', 
@@ -245,7 +245,7 @@ bot.onText(/\/unpair(?:\s+.*)?/, async (msg) => {
   try {
     const sessionPath = path.join(__dirname, 'manixmdtimewisher', 'pairing', 'web-session');
     await fs.rm(sessionPath, { recursive: true, force: true });
-    return bot.sendMessage(chatId, '✅ WhatsApp Web session cleared. Open the pairing dashboard and scan a new QR code.', {
+    return bot.sendMessage(chatId, `✅ ${BRAND_NAME} WhatsApp Web session cleared. Open the pairing dashboard and scan a new QR code.\n\n📲 Channel: ${WHATSAPP_CHANNEL_URL}\n☎ Contact: wa.me/${OWNER_NUMBER}`, {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [[{ text: '📲 Open Pairing Dashboard', url: PAIRING_DASHBOARD_URL }]]
