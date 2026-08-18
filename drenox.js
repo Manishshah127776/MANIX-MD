@@ -13256,7 +13256,8 @@ module.exports.setupEventListeners = function(bad, store) {
 };
 
 // ==================== OTHER EXPORTS ====================
-module.exports = handleMessage; // ✅ Main handler (MUST BE FIRST)
+// The main handler is assigned to module.exports above; do not reassign the
+// named function expression here because its name is scoped to that function.
 module.exports.groupMetadataCache = groupMetadataCache;
 module.exports.refreshGroupMetadata = refreshGroupMetadata;
 module.exports.checkAdminStatus = checkAdminStatus;
