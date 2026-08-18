@@ -635,7 +635,10 @@ try {
 } catch {
   console.log(chalk.yellow('⚠️ image1.jpg not found'))
 }
-
+const MANIX_MENU_IMAGE = fs.readFileSync('./public/assets/menu-art.jpg')
+const MANIX_BOT_IMAGE = fs.readFileSync('./public/assets/bot-avatar.jpg')
+const MANIX_MUSIC_IMAGE = fs.readFileSync('./public/assets/music-art.jpg')
+const MANIX_VCARD_IMAGE = fs.readFileSync('./public/assets/vcard-card.png')
 const menuAudioList = [
     './media/menu.mp3',
     './media/menu1.mp3',
@@ -1291,7 +1294,7 @@ if (getSetting(m.chat, "autoReact", false)) {
               tictactoeGames.delete(from)
 
               await bad.sendMessage(from, {
-                image: { url: 'https://i.postimg.cc/jjdkHm9n/scar1.png' },
+                image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
                 caption: `*╭━━〔 🏆 ᴠɪᴄᴛᴏʀʏ! 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -1305,7 +1308,7 @@ ${boardDisplay}
               tictactoeGames.delete(from)
 
               await bad.sendMessage(from, {
-                image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+                image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
                 caption: `*╭━━〔 🤝 ᴅʀᴀᴡ 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -1396,10 +1399,7 @@ case 'info':
 case 'menu2': {
   await loading()
 
-  const menuImages = [
-    'https://i.postimg.cc/ryHdbFpp/1785835670900.png',
-    'https://i.postimg.cc/vBNmp3bK/1785835299547.png'
-  ]
+  const menuImages = [MANIX_MENU_IMAGE, MANIX_BOT_IMAGE]
 
   const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)]
   const uptime = runtime(process.uptime())
@@ -1410,7 +1410,7 @@ case 'menu2': {
 ┃✮│ 🤖 ʙᴏᴛ  :*𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
-┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
+┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *WhatsApp*
 ┃✮╰────────────────
 ╰━━━━━━━━━━━━━━━┈⊷
 
@@ -1941,6 +1941,11 @@ case 'menu2': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
 ╭━━〔 📱 ᴍɪsᴄ ᴍᴇɴᴜ 〕━━┈⊷
+┃✮│➣ ${prefix}ᴘʟᴀʏ
+┃✮│➣ ${prefix}sᴏɴɢ
+┃✮│➣ ${prefix}ʏᴛᴍᴘ𝟹
+┃✮│➣ ${prefix}ᴛᴏᴍᴘ𝟹
+┃✮│➣ ${prefix}sᴘᴏᴛɪғʏ
 ┃✮│➣ ${prefix}ʀᴇᴘᴏ
 ┃✮│➣ ${prefix}sᴄʀɪᴘᴛ
 ┃✮│➣ ${prefix}ᴛᴇsᴛ
@@ -1999,25 +2004,18 @@ case 'menu':
 case 'listmenu': {
   await loading()
 
-  const menuImages = [
-    'https://i.postimg.cc/vBNmp3bK/1785835299547.png',
-    'https://i.postimg.cc/ryHdbFpp/1785835670900.png',
-    'https://i.postimg.cc/BbnxChNg/1785835767830.png',
-    'https://i.postimg.cc/vBNmp3bK/1785835299547.png',
-    'https://i.postimg.cc/BbnxChNg/1785835767830.png',
-    'https://i.postimg.cc/vBNmp3bK/1785835299547.png'
-  ]
+  const menuImages = [MANIX_MENU_IMAGE, MANIX_BOT_IMAGE]
 
   const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)]
   const uptime = runtime(process.uptime())
 
   const menuText = `
-╭━━〔 ☠️ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ☠️ 〕━━┈⊷
+╭━━〔 ᴍᴇɴᴜ ᴄᴀᴛᴇɢᴏʀɪᴇs 〕━━┈⊷
 ┃✮╭────────────────
 ┃✮│ 🤖 ʙᴏᴛ  :*𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 👑 ᴏᴡɴᴇʀ : *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*
 ┃✮│ 📦 ᴠᴇʀsɪᴏɴ  : *2.0*
-┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢*
+┃✮│ 📡 ᴘʟᴀᴛғᴏʀᴍ : *WhatsApp*
 ┃✮╰────────────────
 ╰━━━━━━━━━━━━━━━┈⊷
 
@@ -2109,7 +2107,7 @@ case 'mymenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
     contextInfo: {
         forwardingScore: 999,
@@ -2187,7 +2185,7 @@ case 'groupmenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2244,7 +2242,7 @@ case 'downloadmenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2324,7 +2322,7 @@ case 'funmenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2371,7 +2369,7 @@ case 'gamemenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2464,7 +2462,7 @@ case 'animemenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2516,7 +2514,7 @@ case 'stickermenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2615,7 +2613,7 @@ case 'utilitymenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2658,7 +2656,7 @@ case 'voicemenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2750,7 +2748,7 @@ case 'imagemenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2793,7 +2791,7 @@ case 'emojimenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2888,7 +2886,7 @@ case 'logomenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2940,7 +2938,7 @@ case 'aimenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -2968,6 +2966,11 @@ break
 case 'miscmenu': {
   const menuText = `
 ╭━━〔 📱 ᴍɪsᴄ ᴍᴇɴᴜ 〕━━┈⊷
+┃✮│➣ ${prefix}ᴘʟᴀʏ
+┃✮│➣ ${prefix}sᴏɴɢ
+┃✮│➣ ${prefix}ʏᴛᴍᴘ𝟹
+┃✮│➣ ${prefix}ᴛᴏᴍᴘ𝟹
+┃✮│➣ ${prefix}sᴘᴏᴛɪғʏ
 ┃✮│➣ ${prefix}ʀᴇᴘᴏ
 ┃✮│➣ ${prefix}sᴄʀɪᴘᴛ
 ┃✮│➣ ${prefix}ᴛᴇsᴛ
@@ -2991,7 +2994,7 @@ case 'miscmenu': {
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
   await bad.sendMessage(m.chat, {
-    image: { url: 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+    image: MANIX_MUSIC_IMAGE,
     caption: menuText,
     contextInfo: {
       forwardingScore: 999,
@@ -4743,7 +4746,7 @@ ${prefix}wastalk https://whatsapp.com/channel/...`)
     if (!data) return reply('❌ ᴄʜᴀɴɴᴇʟ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.img || 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+      image: { url: data.img || 'https://manix-md.onrender.com/assets/music-art.jpg' },
       caption: `*╭━━〔 📱 ᴡᴀ ᴄʜᴀɴɴᴇʟ 〕━━┈⊷*
 ┃
 ┃ 📝 ɴᴀᴍᴇ: ${data.title || 'N/A'}
@@ -5090,7 +5093,7 @@ const truths = [
 let question = truths[Math.floor(Math.random() * truths.length)]
 
 await bad.sendMessage(m.chat, {
-image: { url: 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
 caption: `♤ᴛʀᴜᴛʜ ᴛɪᴍᴇ♤\n\n ➩ ${question}`
 }, { quoted: m });
 
@@ -5205,7 +5208,7 @@ const dares = [
 let dare = dares[Math.floor(Math.random() * dares.length)]
 
 await bad.sendMessage(m.chat, {
-image: { url: 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
 caption: `♤ DARE TIME ♤\n\n➩ ${dare}`
 }, { quoted: m })
 
@@ -5226,7 +5229,7 @@ ${prefix}githubstalk nexoracle`)
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.avatar_url || data.avatar || 'https://i.postimg.cc/ryHdbFpp/1785835670900.png' },
+      image: { url: data.avatar_url || data.avatar || 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
       caption: `*╭━━〔 💻 ɢɪᴛʜᴜʙ sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 👤 ᴜsᴇʀɴᴀᴍᴇ: ${data.login || 'N/A'}
@@ -5417,7 +5420,7 @@ ${prefix}ttstalk2 ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`)
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.avatarLarger || data.avatar || 'https://i.postimg.cc/qvrFRzxG/thumb.png' },
+      image: { url: data.avatarLarger || data.avatar || 'https://manix-md.onrender.com/assets/menu-art.jpg' },
       caption: `*╭━━〔 🎵 ᴛɪᴋᴛᴏᴋ sᴛᴀʟᴋ 2 〕━━┈⊷*
 ┃
 ┃ 👤 ᴜsᴇʀɴᴀᴍᴇ: ${data.uniqueId || data.username || 'N/A'}
@@ -5456,7 +5459,7 @@ ${prefix}tgstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+      image: { url: data.photo || data.avatar || 'https://manix-md.onrender.com/assets/menu-art.jpg' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴜsᴇʀ sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 👤 ᴜsᴇʀɴᴀᴍᴇ: ${data.username || 'N/A'}
@@ -5493,7 +5496,7 @@ ${prefix}tgchannelstalk ☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎`)
     if (!data) return reply('❌ ᴄʜᴀɴɴᴇʟ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+      image: { url: data.photo || data.avatar || 'https://manix-md.onrender.com/assets/menu-art.jpg' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ᴄʜᴀɴɴᴇʟ sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 📢 ᴄʜᴀɴɴᴇʟ: ${data.title || data.name || 'N/A'}
@@ -5530,7 +5533,7 @@ ${prefix}tggroupstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
     if (!data) return reply('❌ ɢʀᴏᴜᴘ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.photo || data.avatar || 'https://i.postimg.cc/vBNmp3bK/1785835299547.png' },
+      image: { url: data.photo || data.avatar || 'https://manix-md.onrender.com/assets/menu-art.jpg' },
       caption: `*╭━━〔 ✈️ ᴛᴇʟᴇɢʀᴀᴍ ɢʀᴏᴜᴘ sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 👥 ɢʀᴏᴜᴘ: ${data.title || data.name || 'N/A'}
@@ -5566,7 +5569,7 @@ ${prefix}twitterstalk 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳`)
     if (!data) return reply('❌ ᴜsᴇʀ ɴᴏᴛ ғᴏᴜɴᴅ')
 
     await bad.sendMessage(from, {
-      image: { url: data.profile_image_url || data.avatar || 'https://i.postimg.cc/BbnxChNg/1785835767830.png' },
+      image: { url: data.profile_image_url || data.avatar || 'https://manix-md.onrender.com/assets/music-art.jpg' },
       caption: `*╭━━〔 🐦 ᴛᴡɪᴛᴛᴇʀ/x sᴛᴀʟᴋ 〕━━┈⊷*
 ┃
 ┃ 👤 ᴜsᴇʀɴᴀᴍᴇ: ${data.username || data.screen_name || 'N/A'}
@@ -6470,65 +6473,49 @@ break;
 
 case 'play':
 case 'song': {
-  if (!text) return reply(`🎵 Provide a song name`)
-
+  if (!text) return reply(`🎵 Usage: ${prefix}${command} <song name or YouTube URL>`)
   try {
     await bad.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
-
     const yts = require('yt-search')
-    const axios = require('axios')
-
-    // 1️⃣ YouTube Search
-    const search = await yts(text)
+    const ytdlp = require('youtube-dl-exec')
+    const search = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(text)
+      ? { videos: [{ url: text, title: text, author: { name: 'YouTube' } }] }
+      : await yts(text)
     if (!search.videos.length) {
       await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
       return reply('❌ No results found')
     }
-
     const video = search.videos[0]
-
-    // 2️⃣ API Call
-    const api = `https://api.ootaizumi.web.id/downloader/youtube`
-    const { data } = await axios.get(api, {
-      params: {
-        url: video.url,
-        format: 'mp3'
-      }
+    const info = await ytdlp(video.url, {
+      dumpSingleJson: true,
+      noWarnings: true,
+      noCheckCertificates: true,
+      preferFreeFormats: true,
+      format: 'bestaudio[ext=m4a]/bestaudio',
+      jsRuntime: 'node'
     })
-
-    if (!data.status || !data.result?.download) {
-      throw new Error('Download failed')
-    }
-
-    const result = data.result
-
-    // 3️⃣ Send Audio
-    await bad.sendMessage(
-      m.chat,
-      {
-        audio: { url: result.download },
-        mimetype: 'audio/mpeg',
-        fileName: `${result.title}.mp3`,
-        contextInfo: {
-          externalAdReply: {
-            title: result.title,
-            body: result.author?.channelTitle || 'YouTube Audio',
-            thumbnailUrl: result.thumbnail,
-            sourceUrl: video.url,
-            mediaType: 1,
-            renderLargerThumbnail: true
-          }
+    if (!info?.url) throw new Error('No playable audio format was returned')
+    const safeTitle = String(info.title || video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
+    await bad.sendMessage(m.chat, {
+      audio: { url: info.url },
+      mimetype: info.ext === 'webm' ? 'audio/webm' : 'audio/mp4',
+      fileName: `${safeTitle}.${info.ext || 'm4a'}`,
+      contextInfo: {
+        externalAdReply: {
+          title: info.title || video.title || 'YouTube Audio',
+          body: info.uploader || video.author?.name || 'YouTube',
+          thumbnailUrl: info.thumbnail || video.thumbnail,
+          sourceUrl: info.webpage_url || video.url,
+          mediaType: 1,
+          renderLargerThumbnail: true
         }
-      },
-      { quoted: m }
-    )
-
+      }
+    }, { quoted: m })
     await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-
   } catch (e) {
-    console.error(e)
+    console.error('Play command error:', e.stderr || e.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    reply('⚠️ Error while processing the request')
+    return reply('⚠️ Could not fetch that song right now. Try another title or YouTube link.')
   }
 }
 break
@@ -6909,6 +6896,15 @@ case 'getcontact': {
       } catch (photoError) {
         console.error('❌ vCard profile photo send failed:', photoError.message)
       }
+    }
+
+    try {
+      await bad.sendMessage(from, {
+        image: MANIX_VCARD_IMAGE,
+        caption: `📇 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴠᴄᴀʀᴅ ᴄᴀʀᴅ\n👤 ${contactName}\n📞 +${number}`
+      }, { quoted: m })
+    } catch (cardError) {
+      console.error('❌ vCard card image send failed:', cardError.message)
     }
 
     const details = [
@@ -7512,7 +7508,7 @@ case 'channelreact': {
 ┃ ${prefix}${command} <ʟɪɴᴋ> <ᴇᴍᴏᴊɪ1,ᴇᴍᴏᴊɪ2>
 ┃
 ┃ 💡 *Exᴀᴍᴘʟᴇ:*
-┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V 😭,🔥
+┃ ${prefix}${command} https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f 😭,🔥
 ┃
 ┃ ⚠️ *Mᴀx 4 ᴇᴍᴏᴊɪs ᴀʟʟᴏᴡᴇᴅ*
 ┃
@@ -7623,7 +7619,7 @@ case 'soraai': {
       // Send the video
       await bad.sendMessage(m.chat, {
         video: { url: data.result },
-        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vaf5pIEHFxOsA3Sr4r3o\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
+        caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴏʀ*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ᴀsᴘᴇᴄᴛ: ${aspect}\n🤖 ᴍᴏᴅᴇʟ: Sora AI\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
         gifPlayback: false
       }, { quoted: m })
 
@@ -7716,7 +7712,7 @@ case 'sorav2': {
     // === STEP 3: SEND VIDEO ===
     await bad.sendMessage(m.chat, {
       video: { url: videoUrl },
-      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
+      caption: `*◆ sᴏʀᴀ ᴀɪ ᴠɪᴅᴇᴏ ɢᴇɴᴇʀᴀᴛᴇᴅ!*\n\n📝 ᴘʀᴏᴍᴘᴛ: ${prompt}\n📐 ʀᴀᴛɪᴏ: ${aspect}\n🆔 ɪᴅ: \`${videoId}\`\n\n---\n*ᴄʀᴇᴅɪᴛ:* @Omegatech-01\n*ғᴏʟʟᴏᴡ:* https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`,
       gifPlayback: false
     }, { quoted: m })
 
@@ -9585,7 +9581,7 @@ case 'freact': {
 ᴜsᴀɢᴇ: ${prefix + command} <ᴄʜᴀɴɴᴇʟ-ʟɪɴᴋ>|<ᴇᴍᴏᴊɪ>
 
 ᴇxᴀᴍᴘʟᴇ:
-${prefix + command} and https://whatsapp.com/channel/0029Vb6iopUDzgTJuzPCk32V |😂😍🔥
+${prefix + command} and https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f |😂😍🔥
 
 ɴᴏᴛᴇ: ʏᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴜʟᴛɪᴘʟᴇ ᴇᴍᴏᴊɪs!`)
   }
@@ -10606,7 +10602,7 @@ case 'giveup': {
   global.tictactoeGames.delete(gameId)
 
   await bad.sendMessage(from, {
-    image: { url: 'https://i.postimg.cc/qvrFRzxG/thumb.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: `*╭━━〔 🏳️ sᴜʀʀᴇɴᴅᴇʀ 〕━━┈⊷*
 ┃
 ┃ @${normalizeJid(m.sender)} ɢᴀᴠᴇ ᴜᴘ!
@@ -10661,7 +10657,7 @@ if (m.isGroup && global.tictactoeGames && global.tictactoeGames.has(from) && !is
           global.tictactoeGames.delete(from)
 
           await bad.sendMessage(from, {
-            image: { url: 'https://i.postimg.cc/jjdkHm9n/scar1.png' },
+            image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
             caption: `*╭━━〔 🏆 ᴠɪᴄᴛᴏʀʏ! 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -10675,7 +10671,7 @@ ${boardDisplay}
           global.tictactoeGames.delete(from)
 
           await bad.sendMessage(from, {
-            image: { url: 'https://i.postimg.cc/NMn8rzqh/image1.png' },
+            image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
             caption: `*╭━━〔 🤝 ᴅʀᴀᴡ 〕━━┈⊷*
 ┃
 ${boardDisplay}
@@ -10768,7 +10764,7 @@ case 'endwcg': {
   global.wordChainGames.delete(from)
 
   await bad.sendMessage(from, {
-    image: { url: 'https://i.postimg.cc/NMn8rzqh/image1.png' },
+    image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: `*╭━━〔 🏁 ɢᴀᴍᴇ ᴇɴᴅᴇᴅ 〕━━┈⊷*
 ┃
 ┃ 📊 ᴛᴏᴛᴀʟ ᴡᴏʀᴅs: ${game.usedWords.length}
@@ -12677,19 +12673,23 @@ break;
 
 case 'repo': {
     reply(`╭━━━━━━━━━━━━━━━╮
-┃✨ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠┃
+┃✨ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠┃
 ╰━━━━━━━━━━━━━━━╯
 
-◆ 🤖 TELEGRAM BOTS ◆
-➥ t.me/sk_mdbot
-➥ t.me/sk_mdbot
-➥ t.me/sk_mdbot
+◆ 📦 GITHUB REPOSITORY ◆
+➥ https://github.com/Manishshah127776/MANIX-MD
 
-◆ 🔗 DIRECT PAIR ◆
-➥ .pair 92xxxxxxxxx
+◆ 📲 WHATSAPP CHANNEL ◆
+➥ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f
+
+◆ ☎ CONTACT ◆
+➥ wa.me/9779807044421
+
+◆ 🔗 QR PAIRING ◆
+➥ https://manix-md.onrender.com/
 
 ╭━━━━━━━━━━━━━━━━━━━━━╮
-┃ ⚡ just type .pair to connect ⚡ ┃
+┃ ⚡ scan the QR code to connect ⚡ ┃
 ╰━━━━━━━━━━━━━━━━━━━━━╯`);
 }
 break;
@@ -13123,8 +13123,8 @@ module.exports.setupEventListeners = function(bad, store) {
         try {
             const { id, participants, action } = update;
 
-            const welcomeImage = "https://i.postimg.cc/qvrFRzxG/thumb.png";
-            const goodbyeImage = "https://i.postimg.cc/jjdkHm9n/scar1.png";
+            const welcomeImage = "https://manix-md.onrender.com/assets/menu-art.jpg";
+            const goodbyeImage = "https://manix-md.onrender.com/assets/bot-avatar.jpg";
 
             for (let participant of participants) {
                 if (action === 'add') {

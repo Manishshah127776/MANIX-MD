@@ -141,7 +141,7 @@ bot.onText(/\/start/, async (msg) => {
   // Private chat mein normal start message
   await bot.sendPhoto(
     chatId,
-    "https://i.postimg.cc/vBNmp3bK/1785835299547.png",
+    "https://manix-md.onrender.com/assets/menu-art.jpg",
     {
       caption: `🪀 *𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n╔════════════════════╗\n ⤷ /pair <wa_number>\n ⤷ /unpair <wa_number>\n╚════════════════════╝`,
       parse_mode: 'Markdown',
