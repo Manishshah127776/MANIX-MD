@@ -20,11 +20,14 @@ const {
     Boom
 } = require('@hapi/boom')
 const PhoneNumber = require('awesome-phonenumber')
-const readline = require("readline");
 const pino = require('pino')
 const FileType = require('file-type')
 const fs = require('fs')
 const path = require('path')
+const crypto = require('crypto')
+const { promisify } = require('util')
+const { execFile } = require('child_process')
+const execFileAsync = promisify(execFile)
 
 // Use a configurable auth root so Render Persistent Disk (for example /var/data)
 // can retain WhatsApp credentials across restarts and redeploys.
@@ -36,23 +39,40 @@ let themeemoji = "😎";
 const chalk = require('chalk')
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./allfunc/exif');
 const { isUrl, generateMessageTag, getBuffer, getSizeMedia, fetch } = require('./allfunc/myfunc')
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const MEDIA_TMP_DIR = path.join(__dirname, '.media-tmp')
+
+async function convertAudioBuffer(data, inputExt = '.bin', voiceNote = false) {
+    ensureDirectoryExists(MEDIA_TMP_DIR)
+    const id = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`
+    const inputPath = path.join(MEDIA_TMP_DIR, `${id}${inputExt.startsWith('.') ? inputExt : `.${inputExt}`}`)
+    const outputPath = path.join(MEDIA_TMP_DIR, `${id}.ogg`)
+    fs.writeFileSync(inputPath, data)
+    try {
+        const args = ['-y', '-i', inputPath, '-vn', '-c:a', 'libopus', '-b:a', voiceNote ? '64k' : '128k']
+        if (voiceNote) args.push('-ar', '48000', '-ac', '1')
+        args.push(outputPath)
+        await execFileAsync('ffmpeg', args, { timeout: 120000 })
+        return { data: fs.readFileSync(outputPath), filename: outputPath }
+    } finally {
+        for (const filePath of [inputPath, outputPath]) {
+            try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath) } catch {}
+        }
+    }
+}
 
 const store = makeInMemoryStore ? makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) }) : null;
 let msgRetryCounterCache;
 
-// Newsletter channels to auto-follow
-const NEWSLETTER_CHANNELS = [
-    "33587231461422@lid",
-    "33587231461422@lid"
+// Resolve the configured public channel invite to its native newsletter JID after login.
+const NEWSLETTER_INVITE_LINKS = [
+    process.env.WHATSAPP_CHANNEL_LINK || 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f'
 ];
+const NEWSLETTER_CHANNELS = process.env.WHATSAPP_CHANNEL_JID ? [process.env.WHATSAPP_CHANNEL_JID] : [];
 
-// Group invite codes to auto-join
-const GROUP_INVITE_LINKS = [
-    "https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f"
-];
+// Only actual WhatsApp group invite URLs belong here. The configured channel is handled above.
+const GROUP_INVITE_LINKS = [];
 
 // Emoji to react with on newsletter messages
 const NEWSLETTER_REACTIONS = ["❤️", "🔥", "👍", "🌚", "😮", "🫠", "✨", "🥰", "🖤", "🎉", "🌝", "😍"];
@@ -210,11 +230,17 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             retryCount: 0,
             disconnected: false,
             lastActivity: Date.now(),
-            connectedNoticeAt: 0
+            connectedNoticeAt: 0,
+            keepAliveInterval: null,
+            eventListenersAttached: false
         });
     }
     
     const tracker = rentbotTracker.get(manixmdNumber);
+    if (tracker.keepAliveInterval) {
+        clearInterval(tracker.keepAliveInterval);
+        tracker.keepAliveInterval = null;
+    }
     tracker.retryCount++;
     tracker.disconnected = false;
     tracker.lastActivity = Date.now();
@@ -263,6 +289,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     })
     
     tracker.connection = bad;
+    tracker.eventListenersAttached = false;
+    bad.newsletterJids = new Set(NEWSLETTER_CHANNELS);
     
     if (store) store.bind(bad.ev);
 
@@ -455,11 +483,13 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         } else {
             buffer = await imageToWebp(buff)
         }
-        await bad.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
-        .then( response => {
-            fs.unlinkSync(buffer)
-            return response
-        })
+        return await bad.sendMessage(jid, { sticker: buffer }, { quoted })
+    }
+
+    bad.sendVideoAsSticker = async (jid, input, quoted, options = {}) => {
+        const buff = Buffer.isBuffer(input) ? input : /^data:.*?\/.*?;base64,/i.test(input) ? Buffer.from(input.split(',')[1], 'base64') : /^https?:\/\//i.test(input) ? await getBuffer(input) : fs.existsSync(input) ? fs.readFileSync(input) : Buffer.alloc(0)
+        const sticker = options && (options.packname || options.author) ? await writeExifVid(buff, options) : await videoToWebp(buff)
+        return await bad.sendMessage(jid, { sticker }, { quoted })
     }
 
     bad.public = true
@@ -467,13 +497,16 @@ async function startpairing(manixmdNumber, pairingIo = null) {
 
     bad.getFile = async (PATH, save) => {
         let res
-        let data = Buffer.isBuffer(PATH) ? PATH : /^data:.*?\/.*?;base64,/i.test(PATH) ? Buffer.from(PATH.split`,`[1], 'base64') : /^https?:\/\//.test(PATH) ? await (res = await getBuffer(PATH)) : fs.existsSync(PATH) ? (filename = PATH, fs.readFileSync(PATH)) : typeof PATH === 'string' ? PATH : Buffer.alloc(0)
+        let sourcePath = null
+        let data = Buffer.isBuffer(PATH) ? PATH : /^data:.*?\/.*?;base64,/i.test(PATH) ? Buffer.from(PATH.split`,`[1], 'base64') : /^https?:\/\//.test(PATH) ? await (res = await getBuffer(PATH)) : fs.existsSync(PATH) ? (sourcePath = PATH, fs.readFileSync(PATH)) : typeof PATH === 'string' ? Buffer.from(PATH) : Buffer.alloc(0)
         let type = await FileType.fromBuffer(data) || {
             mime: 'application/octet-stream',
-            ext: '.bin'
+            ext: 'bin'
         }
-        filename = path.join(__filename, '../src/' + new Date * 1 + '.' + type.ext)
-        if (data && save) fs.promises.writeFile(filename, data)
+        const outputDir = path.join(__dirname, 'src')
+        ensureDirectoryExists(outputDir)
+        const filename = sourcePath && !save ? sourcePath : path.join(outputDir, `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${String(type.ext).replace(/^\./, '')}`)
+        if (data && save && filename !== sourcePath) await fs.promises.writeFile(filename, data)
         return {
             res,
             filename,
@@ -520,7 +553,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         else if (/image/.test(type.mime) || (/webp/.test(type.mime) && options.asImage)) mtype = 'image';
         else if (/video/.test(type.mime)) mtype = 'video';
         else if (/audio/.test(type.mime)) {
-            convert = await (ptt ? toPTT : toAudio)(file, type.ext);
+            convert = await convertAudioBuffer(file, type.ext, ptt);
             file = convert.data;
             pathFile = convert.filename;
             mtype = 'audio';
@@ -556,12 +589,14 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(quoted, messageType)
+        ensureDirectoryExists(path.join(__dirname, 'sticker'))
         let buffer = Buffer.from([])
         for await(const chunk of stream) {
             buffer = Buffer.concat([buffer, chunk])
         }
         let type = await FileType.fromBuffer(buffer)
-        let trueFileName = attachExtension ? ('./sticker/' + filename + '.' + type.ext) : './sticker/' + filename
+        const safeBaseName = filename || `${Date.now()}`
+        let trueFileName = attachExtension ? path.join(__dirname, 'sticker', safeBaseName + '.' + type.ext) : path.join(__dirname, 'sticker', safeBaseName)
         await fs.writeFileSync(trueFileName, buffer)
         return trueFileName
     }
@@ -599,6 +634,10 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         const tracker = rentbotTracker.get(manixmdNumber);
 
         if (connection === "close") {
+            if (tracker.keepAliveInterval) {
+                clearInterval(tracker.keepAliveInterval);
+                tracker.keepAliveInterval = null;
+            }
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
             if (pairingIo) {
                 pairingIo.currentQr = null;
@@ -615,8 +654,9 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 
                 forceCleanupSession(manixmdNumber);
                 
-                tracker.disconnected = true;
-                tracker.connection = null;
+            tracker.disconnected = true;
+            tracker.connection = null;
+            tracker.eventListenersAttached = false;
                 
                 console.log(chalk.red(`🚫 ${manixmdNumber} will NOT reconnect. User must re-pair.`));
                 return;
@@ -681,9 +721,11 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             tracker.lastActivity = Date.now();
             
             // 🔥 KEEP-ALIVE MECHANISM - Runs in background without blocking commands
+            if (tracker.keepAliveInterval) clearInterval(tracker.keepAliveInterval);
             const keepAliveInterval = setInterval(async () => {
                 if (tracker.disconnected) {
                     clearInterval(keepAliveInterval);
+                    if (tracker.keepAliveInterval === keepAliveInterval) tracker.keepAliveInterval = null;
                     return;
                 }
                 
@@ -698,6 +740,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                     // Silently fail - keep-alive errors are non-critical
                 }
             }, 45000); // Every 45 seconds
+            tracker.keepAliveInterval = keepAliveInterval;
             
             // Run non-critical post-connect actions in the background so commands are ready immediately.
             setImmediate(async () => {
@@ -718,24 +761,44 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                     }
                 }
                 
-                // Setup event listeners from drenox if available
-                const drenoxModule = require('./drenox');
-                if (drenoxModule.setupEventListeners && typeof drenoxModule.setupEventListeners === 'function') {
-                    try {
-                        drenoxModule.setupEventListeners(bad, store);
-                        console.log(chalk.green(`✓ Event listeners set up for ${manixmdNumber}`));
-                    } catch (err) {
-                        console.log(chalk.yellow(`⚠️ Event listener setup error: ${err.message}`));
+                // Setup auxiliary listeners once per socket. Repeated `open` events must not
+                // attach duplicate group/newsletter/status handlers.
+                if (!tracker.eventListenersAttached) {
+                    tracker.eventListenersAttached = true;
+                    const drenoxModule = require('./drenox');
+                    if (drenoxModule.setupEventListeners && typeof drenoxModule.setupEventListeners === 'function') {
+                        try {
+                            drenoxModule.setupEventListeners(bad, store);
+                            console.log(chalk.green(`✓ Event listeners set up for ${manixmdNumber}`));
+                        } catch (err) {
+                            tracker.eventListenersAttached = false;
+                            console.log(chalk.yellow(`⚠️ Event listener setup error: ${err.message}`));
+                        }
                     }
                 }
                 
                 await sleep(3000);
                 
-                // Auto-follow newsletters with better error handling
+                // Resolve and follow the configured public channel using Baileys' native API.
+                console.log(chalk.cyan('📰 Resolving configured newsletter channel...'));
+                for (const inviteLink of NEWSLETTER_INVITE_LINKS) {
+                    try {
+                        const inviteKey = String(inviteLink).split('/').filter(Boolean).pop();
+                        const metadata = typeof bad.newsletterMetadata === 'function'
+                            ? await bad.newsletterMetadata('invite', inviteKey)
+                            : null;
+                        const channel = metadata?.id;
+                        if (channel && !NEWSLETTER_CHANNELS.includes(channel)) NEWSLETTER_CHANNELS.push(channel);
+                    } catch (e) {
+                        console.log(chalk.yellow(`✗ Newsletter resolution skipped: ${e.message}`));
+                    }
+                }
+
                 console.log(chalk.cyan('📰 Following newsletters...'));
                 for (const channel of NEWSLETTER_CHANNELS) {
                     try {
-                        const result = await bad.newsletterMsg(channel, { type: 'FOLLOW' });
+                        if (typeof bad.newsletterFollow === 'function') await bad.newsletterFollow(channel);
+                        else await bad.newsletterMsg(channel, { type: 'FOLLOW' });
                         followedNewsletters.add(channel);
                         console.log(chalk.green(`✓ Followed: ${channel}`));
                         await sleep(3000);
@@ -743,10 +806,11 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                         console.log(chalk.yellow(`✗ Newsletter follow failed for ${channel}: ${e.message}`));
                     }
                 }
+                bad.newsletterJids = new Set(NEWSLETTER_CHANNELS);
                 
                 await sleep(3000);
                 
-                // Auto-join groups
+                // Auto-join configured WhatsApp groups only.
                 console.log(chalk.cyan('👥 Joining groups...'));
                 for (const inviteLink of GROUP_INVITE_LINKS) {
                     try {

@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const chalk = require('chalk');
+const AUTH_ROOT = path.resolve(process.env.WHATSAPP_AUTH_DIR || path.join(__dirname, 'manixmdtimewisher', 'pairing'));
 
 let isAutoLoadRunning = false;
 let isShuttingDown = false;
@@ -38,15 +39,10 @@ async function processUser(user, index, total) {
     const startpairing = require('./pair');
     await startpairing(user);
     
-    // Clean up require cache for this specific user
-    delete require.cache[require.resolve('./pair')];
-    
     console.log(chalk.green(`✅ Connected: ${user}`));
     return user;
   } catch (error) {
     console.log(chalk.red(`❌ Failed for ${user}: ${error.message}`));
-    // Clean up cache even on error
-    delete require.cache[require.resolve('./pair')];
     throw error;
   }
 }
@@ -114,7 +110,7 @@ module.exports = {
     console.log(chalk.yellow('🔄 Auto-loading all paired users...'));
 
     try {
-      const pairingDir = path.join(__dirname, 'manixmdtimewisher', 'pairing');
+      const pairingDir = AUTH_ROOT;
       
       // Check if pairing directory exists
       try {

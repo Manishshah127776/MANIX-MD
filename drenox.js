@@ -13,6 +13,7 @@ const {
 
 const fs = require('fs')
 const path = require('path')
+const PROJECT_ROOT = __dirname
 const util = require('util')
 const chalk = require('chalk')
 const axios = require('axios')
@@ -104,8 +105,6 @@ if (!global.antiDeleteDM) global.antiDeleteDM = false
 // ═══════════════════════════════════════════════════════════
 // IMAGE & CONTENT CONSTANTS
 // ═══════════════════════════════════════════════════════════
-const NEWSLETTER_JID = '33587231461422@lid'
-
 const welcomeMessages = [
   '👋 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 YT ɢᴄ! ᴇɴᴊᴏʏ ʏᴏᴜʀ sᴛᴀʏ 💀',
   '🎉 ғʀᴇsʜ ʙʟᴏᴏᴅ ɪɴ ᴛʜᴇ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴅᴇɴ! 😎',
@@ -463,13 +462,13 @@ async function fetchAPI(endpoint, params) {
 // ═══════════════════════════════════════════════════════════
 // AUTO-CREATE REQUIRED FILES/FOLDERS
 // ═══════════════════════════════════════════════════════════
-const requiredDirs = ['./tmp', './allfunc', './media', './setting', './database']
+const requiredDirs = ['tmp', 'allfunc', 'media', 'setting', 'database'].map((dir) => path.join(PROJECT_ROOT, dir))
 const requiredFiles = {
-  './allfunc/owner.json': '[]',
-  './allfunc/premium.json': '[]',
-  './allfunc/banned.json': '[]',
-  './allfunc/botowner.txt': '',
-  './allfunc/botmode.txt': 'public'
+  [path.join(PROJECT_ROOT, 'allfunc', 'owner.json')]: '[]',
+  [path.join(PROJECT_ROOT, 'allfunc', 'premium.json')]: '[]',
+  [path.join(PROJECT_ROOT, 'allfunc', 'banned.json')]: '[]',
+  [path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt')]: '',
+  [path.join(PROJECT_ROOT, 'allfunc', 'botmode.txt')]: 'public'
 }
 
 requiredDirs.forEach(dir => {
@@ -610,19 +609,19 @@ let premium = []
 let banned = []
 
 try {
-  owner = JSON.parse(fs.readFileSync('./allfunc/owner.json'))
+  owner = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json')))
 } catch (e) {
   owner = []
 }
 
 try {
-  premium = JSON.parse(fs.readFileSync('./allfunc/premium.json'))
+  premium = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json')))
 } catch (e) {
   premium = []
 }
 
 try {
-  banned = JSON.parse(fs.readFileSync('./allfunc/banned.json'))
+  banned = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'allfunc', 'banned.json')))
 } catch (e) {
   banned = []
 }
@@ -632,19 +631,22 @@ try {
 // ═══════════════════════════════════════════════════════════
 let kingbadboipic
 try {
-  kingbadboipic = fs.readFileSync(`./media/image1.jpg`)
+  kingbadboipic = fs.readFileSync(path.join(__dirname, 'media', 'image1.jpg'))
 } catch {
-  console.log(chalk.yellow('⚠️ image1.jpg not found'))
+  kingbadboipic = fs.readFileSync(path.join(__dirname, 'public', 'assets', 'bot-avatar.jpg'))
+  console.log(chalk.blue('ℹ️ image1.jpg unavailable; using MANI XMD bot avatar fallback'))
 }
-const MANIX_MENU_IMAGE = fs.readFileSync('./public/assets/menu-art.jpg')
-const MANIX_BOT_IMAGE = fs.readFileSync('./public/assets/bot-avatar.jpg')
-const MANIX_MUSIC_IMAGE = fs.readFileSync('./public/assets/music-art.jpg')
-const MANIX_VCARD_IMAGE = fs.readFileSync('./public/assets/vcard-card.png')
+const ASSET_DIR = path.join(__dirname, 'public', 'assets')
+const MEDIA_DIR = path.join(__dirname, 'media')
+const MANIX_MENU_IMAGE = fs.readFileSync(path.join(ASSET_DIR, 'menu-art.jpg'))
+const MANIX_BOT_IMAGE = fs.readFileSync(path.join(ASSET_DIR, 'bot-avatar.jpg'))
+const MANIX_MUSIC_IMAGE = fs.readFileSync(path.join(ASSET_DIR, 'music-art.jpg'))
+const MANIX_VCARD_IMAGE = fs.readFileSync(path.join(ASSET_DIR, 'vcard-card.png'))
 const menuAudioList = [
-    './media/menu.mp3',
-    './media/menu1.mp3',
-    './media/menu2.mp3',
-    './media/menu3.mp3'
+    path.join(MEDIA_DIR, 'menu.mp3'),
+    path.join(MEDIA_DIR, 'menu1.mp3'),
+    path.join(MEDIA_DIR, 'menu2.mp3'),
+    path.join(MEDIA_DIR, 'menu3.mp3')
 ]
 let lastMenuAudioIndex = -1
 const menuAudio = () => {
@@ -779,7 +781,7 @@ async function handleMessage(bad, m, chatUpdate, store) {
     const botNumber = normalizeJid(botJid)
 
     try {
-      const botOwnerFile = './allfunc/botowner.txt'
+      const botOwnerFile = path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt')
       let storedOwner = fs.readFileSync(botOwnerFile, 'utf8').trim()
 
       if (!storedOwner) {
@@ -789,7 +791,7 @@ async function handleMessage(bad, m, chatUpdate, store) {
         const ownerNum = normalizeJid(botJid)
         if (!owner.some(o => normalizeJid(o) === ownerNum)) {
           owner.push(botJid)
-          fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
+          fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json'), JSON.stringify(owner, null, 2))
         }
       }
     } catch (e) {
@@ -808,9 +810,16 @@ async function handleMessage(bad, m, chatUpdate, store) {
       m.mtype === "buttonsResponseMessage" ? m.message?.buttonsResponseMessage?.selectedButtonId :
       m.mtype === "listResponseMessage" ? m.message?.listResponseMessage?.singleSelectReply?.selectedRowId :
       m.mtype === "templateButtonReplyMessage" ? m.message?.templateButtonReplyMessage?.selectedId :
-      m.mtype === "interactiveResponseMessage" ? JSON.parse(m.msg?.nativeFlowResponseMessage?.paramsJson).id :
+      m.mtype === "interactiveResponseMessage" ? (() => {
+        try {
+          return JSON.parse(m.msg?.nativeFlowResponseMessage?.paramsJson || '{}').id || ''
+        } catch {
+          return ''
+        }
+      })() :
       ""
     ) || ''
+const commandBody = body.trim()
 const budy = body
 
 // ========== PREFIX DETECTION ==========
@@ -820,7 +829,7 @@ let prefix = '';
 let isCmd = false;
 
 for (let p of allowedPrefixes) {
-    if (body.startsWith(p)) {
+    if (commandBody.startsWith(p)) {
         prefix = p;
         isCmd = true;
         break;
@@ -828,7 +837,7 @@ for (let p of allowedPrefixes) {
 }
 
 // ✅ Args & command
-const args = body.slice(prefix.length).trim().split(/ +/);
+const args = commandBody.slice(prefix.length).trim().split(/ +/);
 const command = args[0]?.toLowerCase() || '';
 const text = args.slice(1).join(" ").trim();
 const q = text;
@@ -844,7 +853,7 @@ const isBot = m.key.fromMe || isSameUser(senderJid, botJid) || areJidsSameUser(s
 let isCreator = false
 
 try {
-  const botOwnerFile = './allfunc/botowner.txt'
+  const botOwnerFile = path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt')
   let storedOwner = ''
 
   if (fs.existsSync(botOwnerFile)) {
@@ -990,7 +999,7 @@ if (isBanned && !isCreator) {
       bad.public = true
 
       try {
-        const botModeFile = './allfunc/botmode.txt'
+        const botModeFile = path.join(PROJECT_ROOT, 'allfunc', 'botmode.txt')
 
         if (fs.existsSync(botModeFile)) {
           const savedMode = fs.readFileSync(botModeFile, 'utf8').trim()
@@ -1987,12 +1996,16 @@ case 'menu2': {
 
   const _audio = menuAudio()
   if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-      audio: _audio,
-      mimetype: 'audio/mpeg',
-      ptt: false
-    }, { quoted: m })
+    try {
+      await sleep(2000)
+      await bad.sendMessage(m.chat, {
+        audio: _audio,
+        mimetype: 'audio/mpeg',
+        ptt: false
+      }, { quoted: m })
+    } catch (audioError) {
+      console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
   }
 }
 break
@@ -2051,12 +2064,16 @@ case 'listmenu': {
 
   const _audio = menuAudio()
   if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-      audio: _audio,
-      mimetype: 'audio/mpeg',
-      ptt: false
-    }, { quoted: m })
+    try {
+      await sleep(2000)
+      await bad.sendMessage(m.chat, {
+        audio: _audio,
+        mimetype: 'audio/mpeg',
+        ptt: false
+      }, { quoted: m })
+    } catch (audioError) {
+      console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
   }
 }
 break
@@ -2104,25 +2121,20 @@ case 'mymenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
-    contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: NEWSLETTER_JID,
-            newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-            serverMessageId: -1
-        }
-    }
-}, { quoted: m })
+    }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2182,25 +2194,20 @@ case 'groupmenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2239,25 +2246,20 @@ case 'downloadmenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "to𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
-        serverMessageId: -1
-        }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2319,25 +2321,20 @@ case 'funmenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2366,25 +2363,20 @@ case 'gamemenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2459,25 +2451,20 @@ case 'animemenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2511,25 +2498,20 @@ case 'stickermenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2610,25 +2592,20 @@ case 'utilitymenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "☠︎︎ 𝑺𝒉𝒂𝒅𝒐𝒘 𝑴𝑫 ☠︎︎",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2653,25 +2630,20 @@ case 'voicemenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2745,25 +2717,20 @@ case 'imagemenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳︎",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2788,25 +2755,20 @@ case 'emojimenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/bot-avatar.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2883,25 +2845,20 @@ case 'logomenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/menu-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2935,25 +2892,20 @@ case 'aimenu': {
   await bad.sendMessage(m.chat, {
     image: { url: 'https://manix-md.onrender.com/assets/music-art.jpg' },
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-              }
-    }
-    }, { quoted: m })
+        }, { quoted: m })
 
 const _audio = menuAudio()
 if (_audio) {
-    await sleep(2000)
-    await bad.sendMessage(m.chat, {
-        audio: _audio,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    }, { quoted: m })
+    try {
+        await sleep(2000)
+        await bad.sendMessage(m.chat, {
+            audio: _audio,
+            mimetype: 'audio/mpeg',
+            ptt: false
+        }, { quoted: m })
+    } catch (audioError) {
+        console.warn('⚠️ Menu audio skipped:', audioError.message)
+    }
 }
 }
 break
@@ -2991,16 +2943,7 @@ case 'miscmenu': {
   await bad.sendMessage(m.chat, {
     image: MANIX_MUSIC_IMAGE,
     caption: menuText,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER_JID,
-        newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-        serverMessageId: -1
-      }
-    }
-  }, { quoted: m })
+      }, { quoted: m })
 }
 break
 
@@ -3044,19 +2987,19 @@ break
 case 'fix': {
   try {
     // Force set the sender as owner
-    const botOwnerFile = './allfunc/botowner.txt'
+    const botOwnerFile = path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt')
     fs.writeFileSync(botOwnerFile, m.sender)
 
     // Add to owner.json
     if (!owner.includes(m.sender)) {
       owner.push(m.sender)
-      fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
+      fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json'), JSON.stringify(owner, null, 2))
     }
 
     // Add to premium too
     if (!premium.includes(m.sender)) {
       premium.push(m.sender)
-      fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
+      fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium, null, 2))
     }
 
     reply(`✅ *ᴏᴡɴᴇʀsʜɪᴘ ғɪxᴇᴅ!*
@@ -3380,12 +3323,7 @@ case 'broadcast': {
 
   const contextInfo = {
     forwardingScore: 999,
-    isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: NEWSLETTER_JID,
-      newsletterName: "𝙼𝙰𝙽𝙸 𝚇𝙼𝙳",
-      serverMessageId: -1
-    }
+    isForwarded: true
   }
 
   const bcText = `╭─〔 ʙʀᴏᴀᴅᴄᴀsᴛ ʙʏ ᴏᴡɴᴇʀ 〕\n│ ${text.split('\n').join('\n│ ')}\n╰─⸻⸻⸻⸻`
@@ -3428,12 +3366,12 @@ case 'setowner': {
 
   if (!owner.some(o => isSameUser(o, newOwnerJid))) {
     owner.push(newOwnerJid)
-    fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
+    fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json'), JSON.stringify(owner, null, 2))
   }
 
   if (!premium.some(p => isSameUser(p, newOwnerJid))) {
     premium.push(newOwnerJid)
-    fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
+    fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium, null, 2))
   }
 
   reply(`✅ *ᴏᴡɴᴇʀ ᴀᴅᴅᴇᴅ!*\n\n👤 @${number}\n\n• ғᴜʟʟ ʙᴏᴛ ᴀᴄᴄᴇss ɢʀᴀɴᴛᴇᴅ\n• ᴘʀᴇᴍɪᴜᴍ ғᴇᴀᴛᴜʀᴇs ᴜɴʟᴏᴄᴋᴇᴅ`)
@@ -3451,8 +3389,8 @@ case 'delown': {
   owner = owner.filter(o => !isSameUser(o, removeJid))
   premium = premium.filter(p => !isSameUser(p, removeJid))
 
-  fs.writeFileSync('./allfunc/owner.json', JSON.stringify(owner, null, 2))
-  fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium, null, 2))
+  fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json'), JSON.stringify(owner, null, 2))
+  fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium, null, 2))
 
   reply(`✅ *ᴏᴡɴᴇʀ ʀᴇᴍᴏᴠᴇᴅ!*\n\n👤 @${number}\n\n• ʙᴏᴛ ᴀᴄᴄᴇss ʀᴇᴠᴏᴋᴇᴅ\n• ᴘʀᴇᴍɪᴜᴍ ʀᴇᴍᴏᴠᴇᴅ`)
 }
@@ -3468,7 +3406,7 @@ case 'addprem': {
   if (!ceknum.length) return reply("ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
 
   premium.push(number)
-  fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium))
+  fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium))
 
   reply("sᴜᴄᴄᴇss! ᴜsᴇʀ ᴀᴅᴅᴇᴅ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ✅")
 }
@@ -3484,7 +3422,7 @@ case 'delprem': {
 
   if (indexPremium !== -1) {
     premium.splice(indexPremium, 1)
-    fs.writeFileSync('./allfunc/premium.json', JSON.stringify(premium))
+    fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium))
     reply("sᴜᴄᴄᴇss! ᴜsᴇʀ ʀᴇᴍᴏᴠᴇᴅ ғʀᴏᴍ ᴘʀᴇᴍɪᴜᴍ ✅")
   } else {
     reply("ᴜsᴇʀ ɪs ɴᴏᴛ ɪɴ ᴛʜᴇ ᴘʀᴇᴍɪᴜᴍ ʟɪsᴛ.")
@@ -9419,7 +9357,7 @@ case 'sticker': {
       packname: global.packname,
       author: global.author
     })
-    await fs.unlinkSync(encmedia)
+    if (typeof encmedia === 'string' && fs.existsSync(encmedia)) fs.unlinkSync(encmedia)
   } else if (/video/.test(mime)) {
     if ((quoted.msg || quoted).seconds > 11) return reply('ᴍᴀx 10s')
     let media = await quoted.download()
@@ -9427,7 +9365,7 @@ case 'sticker': {
       packname: global.packname,
       author: global.author
     })
-    await fs.unlinkSync(encmedia)
+    if (typeof encmedia === 'string' && fs.existsSync(encmedia)) fs.unlinkSync(encmedia)
   } else {
     return reply(`sᴇɴᴅ ɪᴍᴀɢᴇ ᴏʀ ᴠɪᴅᴇᴏ ᴡɪᴛʜ ᴄᴏᴍᴍᴀɴᴅ ${prefix + command}\nᴠɪᴅᴇᴏ ᴅᴜʀᴀᴛɪᴏɴ ᴏɴʟʏ 1-9s`)
   }
@@ -13212,14 +13150,14 @@ const setupEventListeners = function(bad, store) {
             console.error('❌ Group handler error:', error);
         }
     });
-  // 🔥 NEWSLETTER AUTO-REACT - ADD THIS!
-  const NEWSLETTER_JIDS = [
-      "33587231461422@lid",
-      "33587231461422@lid",
-      "33587231461422@lid",
-      "33587231461422@lid",
-      "33587231461422@lid"
-  ];
+  // Newsletter IDs are populated by pair.js after resolving the public invite link.
+  // Keep an optional environment fallback for deployments that already know the native JID.
+  const NEWSLETTER_JIDS = new Set(
+      String(process.env.WHATSAPP_CHANNEL_JID || '')
+          .split(',')
+          .map(value => value.trim())
+          .filter(Boolean)
+  );
 
   const REACTIONS = ['❤️', '🎀', '👍', '🫠', '🙏', '🫂', '✨', '🖤', '🥰', '🔥'];
 
@@ -13227,7 +13165,10 @@ const setupEventListeners = function(bad, store) {
       for (const msg of messages) {
           try {
               if (msg.key && msg.key.remoteJid && msg.key.remoteJid.endsWith('@newsletter')) {
-                  if (NEWSLETTER_JIDS.includes(msg.key.remoteJid)) {
+                  const trackedNewsletters = bad.newsletterJids instanceof Set
+                      ? bad.newsletterJids
+                      : NEWSLETTER_JIDS;
+                  if (trackedNewsletters.has(msg.key.remoteJid)) {
                       const messageId = msg.key.id;
                       const newsletterId = msg.key.remoteJid;
 
@@ -13275,8 +13216,8 @@ const setupEventListeners = function(bad, store) {
 
                         let botOwnerJid = '';
                         try {
-                            if (fs.existsSync('./allfunc/botowner.txt')) {
-                                botOwnerJid = fs.readFileSync('./allfunc/botowner.txt', 'utf8').trim();
+                            if (fs.existsSync(path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt'))) {
+                                botOwnerJid = fs.readFileSync(path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt'), 'utf8').trim();
                                 if (!botOwnerJid.includes('@s.whatsapp.net')) {
                                     botOwnerJid = botOwnerJid + '@s.whatsapp.net';
                                 }

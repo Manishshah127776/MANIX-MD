@@ -10,7 +10,22 @@ const { BOT_TOKEN } = require('./token');
 const { autoLoadPairs } = require('./autoload');
 const axios = require("axios")
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const telegramEnabled = Boolean(BOT_TOKEN && String(BOT_TOKEN).trim());
+const bot = telegramEnabled
+  ? new TelegramBot(BOT_TOKEN, { polling: true })
+  : {
+      onText: () => {},
+      on: () => {},
+      sendMessage: async () => null,
+      sendPhoto: async () => null,
+      answerCallbackQuery: async () => null,
+      getMe: async () => ({ username: 'manix_xmd_bot' }),
+      stopPolling: () => {}
+    };
+
+if (!telegramEnabled) {
+  console.warn('⚠️ BOT_TOKEN is not configured; Telegram polling is disabled. WhatsApp can continue running.');
+}
 const adminFilePath = path.join(__dirname, 'manixmdtimewisher', 'admin.json');
 let adminIDs = [];
 
@@ -47,7 +62,7 @@ const loadAdminIDs = async () => {
 };
 
 let isShuttingDown = false;
-let isAutoLoadRunning = true;
+let isAutoLoadRunning = false;
 
 const runAutoLoad = async () => {
   if (isAutoLoadRunning || isShuttingDown) return;
