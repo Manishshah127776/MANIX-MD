@@ -23,6 +23,7 @@ const { exec } = require('child_process')
 const googleTTS = require('google-tts-api')
 const yts = require('yt-search')
 const ytdl = require('@distube/ytdl-core')
+const { handleDownloadCommand: handleUniversalDownloadCommand } = require('./download.js')
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid, addExif } = require('./allfunc/exif');
@@ -12810,6 +12811,11 @@ break
 case 'save_alt2':
 case 'download':
 case 'svt': {
+  const downloadInput = String(q || '').trim()
+  if (/^https?:\/\//i.test(downloadInput)) {
+    await handleUniversalDownloadCommand(bad, m, [downloadInput])
+    break
+  }
   if (!isCreator) return reply("ᴏᴡɴᴇʀ ᴏɴʟʏ.")
   const quotedMessage = m.msg.contextInfo.quotedMessage
   if (quotedMessage) {

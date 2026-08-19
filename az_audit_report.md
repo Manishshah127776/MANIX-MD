@@ -189,3 +189,12 @@ Local verification against `https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1
 The YouTube and Instagram messages visible in the screenshot are provider access restrictions rather than dispatcher failures. YouTube is rejecting anonymous Render traffic and Instagram is rate-limiting anonymous server downloads. The bot now uses yt-dlp first and returns actionable cookie/authorized-provider guidance; no code-only change can legitimately bypass those upstream account or IP restrictions.
 
 **Screenshot-fix verification:** `drenox.js` syntax passed; cinfo public-page fallback passed; yt-dlp route test passed; dispatcher inventory remained **730 labels, 730 unique, zero duplicates**.
+
+
+## Supplied universal download.js adaptation
+
+The user supplied an all-platform `download.js` design. It was adapted into a project-native `download.js` without adding the unverified `rahad-all-downloader-v2` or `mediasnap` packages. The adapter uses the repository's existing `youtube-dl-exec` and `axios` dependencies, makes yt-dlp the primary downloader for YouTube, TikTok, Instagram, Facebook, X/Twitter, Threads, Pinterest, Likee, CapCut, and SoundCloud URLs, supports direct media URLs, applies cookies when configured, enforces bounded temporary files and a 100 MB limit, and cleans up downloaded files after delivery.
+
+The existing quoted-media `.download`/`.svt` owner workflow was preserved. A URL supplied to `.download <URL>` now routes through the new universal adapter, while quoted image/video saving continues through the original owner-only path. The adapter supports video, audio, and image delivery with a MANI XMD completion caption.
+
+**Adaptation verification:** `download.js` and `drenox.js` syntax checks passed; platform detection passed for YouTube, TikTok, Instagram, Facebook, X/Twitter, and direct media URLs; the adapter was confirmed to use `youtube-dl-exec`; the URL-aware `.download` branch was confirmed; and the dispatcher inventory remained **730 labels, 730 unique, zero duplicates**.
