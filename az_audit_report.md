@@ -198,3 +198,12 @@ The user supplied an all-platform `download.js` design. It was adapted into a pr
 The existing quoted-media `.download`/`.svt` owner workflow was preserved. A URL supplied to `.download <URL>` now routes through the new universal adapter, while quoted image/video saving continues through the original owner-only path. The adapter supports video, audio, and image delivery with a MANI XMD completion caption.
 
 **Adaptation verification:** `download.js` and `drenox.js` syntax checks passed; platform detection passed for YouTube, TikTok, Instagram, Facebook, X/Twitter, and direct media URLs; the adapter was confirmed to use `youtube-dl-exec`; the URL-aware `.download` branch was confirmed; and the dispatcher inventory remained **730 labels, 730 unique, zero duplicates**.
+
+
+## No-cookie audio fallback patch — 19 August 2026
+
+The repeated live `.play`/`.song` failure was reproduced more precisely: yt-dlp metadata extraction succeeded without cookies, but the hosted media URL returned HTTP 403 during audio delivery. The bot now keeps yt-dlp as the primary path and, after that media-delivery failure, attempts the documented no-auth YTMP3.GE conversion endpoint before the existing Piped fallback. The same fallback is now used by `.ytmp3`, `.ytaudio`, and the YouTube-audio branch of `download.js`.
+
+A bounded end-to-end test against `https://www.youtube.com/watch?v=dQw4w9WgXcQ` returned HTTP 200 from YTMP3.GE and downloaded a non-empty MP3 of 188,320 bytes. The user-facing recovery text no longer says that cookies must be configured. Cookies remain optional and are used only when the user supplies them for providers that reject anonymous hosted traffic.
+
+The final validation reported **730 source labels, 730 unique labels, zero duplicates, and no inventory mismatch**. The relevant API reference is https://ytmp3.ge/api/docs; it should be revalidated if the public service changes or becomes unavailable.

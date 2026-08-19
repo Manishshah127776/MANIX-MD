@@ -261,7 +261,7 @@ function isYoutubeBotCheckError(error) {
 function youtubeRecoveryHint(error) {
   const message = `${error?.message || ''} ${error?.stderr || ''}`.toLowerCase()
   if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped/.test(message)) {
-    return 'YouTube is blocking this server. Configure YT_COOKIES_PATH with a valid Netscape cookies file or try another song/link.'
+    return 'YouTube rejected the server request and the no-cookie audio fallbacks were unavailable. Try another song or link and retry shortly.'
   }
   return 'Try another title or YouTube link.'
 }
@@ -490,6 +490,44 @@ async function fetchPipedAudio(videoUrl) {
     }
   }
   throw new Error(`YouTube and fallback audio services are unavailable. ${lastError?.message || ''}`.trim())
+}
+
+async function fetchYtmp3GeAudio(videoUrl) {
+  const response = await axios.post('https://ytmp3.ge/api/convert', new URLSearchParams({
+    youtube_url: String(videoUrl),
+    quality: '192'
+  }).toString(), {
+    timeout: 60000,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'MANI-XMD/1.0'
+    },
+    validateStatus: status => status >= 200 && status < 500
+  })
+  const data = response.data || {}
+  if (response.status >= 400 || !data.success || !data.downloadUrl) {
+    throw new Error(`YTMP3.GE returned ${response.status}: ${data.error || 'conversion failed'}`)
+  }
+  const media = await axios.get(data.downloadUrl, {
+    responseType: 'arraybuffer',
+    timeout: 90000,
+    headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+    maxContentLength: 80 * 1024 * 1024,
+    maxBodyLength: 80 * 1024 * 1024,
+    validateStatus: status => status >= 200 && status < 300
+  })
+  const buffer = Buffer.from(media.data || [])
+  if (!buffer.length) throw new Error('YTMP3.GE returned an empty audio file')
+  return {
+    buffer,
+    mimetype: 'audio/mpeg',
+    fileName: `${String(data.title || 'manix-xmd-audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80) || 'manix-xmd-audio'}.mp3`,
+    title: data.title || 'YouTube Audio',
+    uploader: 'YouTube',
+    thumbnail: data.thumbnail || null,
+    sourceUrl: videoUrl
+  }
 }
 
 const DEFAULT_TIKTOK_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
@@ -6983,11 +7021,17 @@ case 'song': {
       }).catch(() => ({}))
     } catch (downloadError) {
       if (!isYoutubeBotCheckError(downloadError)) throw downloadError
-      console.warn('yt-dlp YouTube bot-check encountered; trying Piped audio fallback.')
-      const fallback = await fetchPipedAudio(video.url)
+      console.warn('yt-dlp YouTube media download failed; trying no-cookie audio fallbacks.')
+      let fallback
+      try {
+        fallback = await fetchYtmp3GeAudio(video.url)
+      } catch (ytmp3FallbackError) {
+        console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+        fallback = await fetchPipedAudio(video.url)
+      }
       audioBuffer = fallback.buffer
       audioMimetype = fallback.mimetype
-      audioFileName = `${safeTitle || 'manix-xmd-audio'}.${fallback.fileName.split('.').pop()}`
+      audioFileName = fallback.fileName || `${safeTitle || 'manix-xmd-audio'}.mp3`
       info = {
         title: fallback.title,
         uploader: fallback.uploader,
@@ -7548,11 +7592,17 @@ case 'ytaudio': {
       audioBuffer = fs.readFileSync(audioPath)
     } catch (downloadError) {
       if (!isYoutubeBotCheckError(downloadError)) throw downloadError
-      console.warn('yt-dlp YouTube bot-check encountered; trying Piped audio fallback.')
-      const fallback = await fetchPipedAudio(text)
+      console.warn('yt-dlp YouTube audio download failed; trying no-cookie audio fallbacks.')
+      let fallback
+      try {
+        fallback = await fetchYtmp3GeAudio(text)
+      } catch (ytmp3FallbackError) {
+        console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+        fallback = await fetchPipedAudio(text)
+      }
       audioBuffer = fallback.buffer
       audioMimetype = fallback.mimetype
-      audioFileName = fallback.fileName
+      audioFileName = fallback.fileName || 'manix-xmd-audio.mp3'
     }
     if (!audioBuffer) throw new Error('Audio data was not created')
     await bad.sendMessage(m.chat, {
@@ -14020,6 +14070,7 @@ module.exports.commandAliases = COMMAND_ALIASES;
 module.exports.commandCharMap = COMMAND_CHAR_MAP;
 module.exports.mediaHelpers = {
   fetchPipedAudio,
+  fetchYtmp3GeAudio,
   extractTikTokVideoId,
   parseTikTokEmbedState,
   findTikTokItemInfo,

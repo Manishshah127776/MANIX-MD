@@ -38,3 +38,7 @@ The current bundled yt-dlp binary reports `2026.07.04`, but all tested YouTube p
 The current Cobalt service at `https://api.cobalt.tools/` reports version `11.7.1` and lists Instagram among supported services, while its retired `/api/json` endpoint explicitly reports that the v7 API was shut down. The upstream documentation is `https://github.com/imputnet/cobalt/blob/main/docs/api.md`; implementation must use the documented current v11 request schema rather than the retired v7 path.
 
 References: https://raw.githubusercontent.com/TeamPiped/documentation/refs/heads/main/content/docs/public-instances/index.md ; https://github.com/imputnet/cobalt/blob/main/docs/api.md ; https://github.com/yt-dlp/yt-dlp/issues/17403
+
+## No-cookie YouTube audio fallback — 2026-08-19
+
+The documented YTMP3.GE API was reviewed at https://ytmp3.ge/api/docs. It exposes `POST https://ytmp3.ge/api/convert` with form fields `youtube_url` and `quality`, requires no authentication, and returns JSON containing `downloadUrl` on success. A bounded probe against `https://www.youtube.com/watch?v=dQw4w9WgXcQ` returned HTTP 200, `success: true`, the video title, and a download URL. This is being treated as a best-effort fallback only after yt-dlp fails; yt-dlp remains the primary downloader. The endpoint’s documentation and response must be revalidated if it becomes unavailable or changes behavior.

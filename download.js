@@ -137,6 +137,61 @@ async function downloadWithYtdlp(url, platform, options) {
   }
 }
 
+async function downloadYoutubeAudioFallback(url, options) {
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-ytaudio-'))
+  try {
+    const response = await axios.post(process.env.YTMP3GE_API_URL || 'https://ytmp3.ge/api/convert', new URLSearchParams({
+      youtube_url: url,
+      quality: options.quality === 'best' ? '320' : String(options.quality || '192')
+    }).toString(), {
+      timeout: 60000,
+      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'MANI-XMD/1.0' },
+      validateStatus: status => status >= 200 && status < 500
+    })
+    const data = response.data || {}
+    if (response.status >= 400 || !data.success || !data.downloadUrl) throw new Error(data.error || `YTMP3.GE returned HTTP ${response.status}`)
+    const fileName = `${titleFromInfo({ title: data.title }, 'youtube-audio')}_${Date.now()}.mp3`
+    const filePath = path.join(tempDir, fileName)
+    const media = await axios.get(data.downloadUrl, {
+      responseType: 'stream',
+      timeout: 90000,
+      maxContentLength: MAX_FILE_BYTES,
+      maxBodyLength: MAX_FILE_BYTES,
+      headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+      validateStatus: status => status >= 200 && status < 300
+    })
+    const writer = fs.createWriteStream(filePath)
+    let received = 0
+    media.data.on('data', chunk => {
+      received += chunk.length
+      if (received > MAX_FILE_BYTES) media.data.destroy(new Error('Audio exceeds the 100 MB limit'))
+    })
+    media.data.pipe(writer)
+    await new Promise((resolve, reject) => {
+      writer.once('finish', resolve)
+      writer.once('error', reject)
+      media.data.once('error', reject)
+    })
+    if (!received) throw new Error('YTMP3.GE returned an empty audio file')
+    return {
+      success: true,
+      path: filePath,
+      fileName,
+      size: received,
+      type: 'audio',
+      title: data.title || 'YouTube Audio',
+      platform: 'youtube',
+      thumbnail: data.thumbnail || null,
+      audioUrl: data.downloadUrl,
+      videoUrl: null,
+      cleanupDir: tempDir
+    }
+  } catch (error) {
+    await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    throw error
+  }
+}
+
 async function downloadDirectMedia(url, platform, options) {
   const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-direct-'))
   try {
@@ -193,7 +248,12 @@ async function downloadFile(url, retriesOrOptions = 2) {
   for (let attempt = 1; attempt <= options.retries; attempt += 1) {
     try {
       if (platform !== 'unknown' || !DIRECT_MEDIA_EXTENSIONS.test(input)) {
-        return await downloadWithYtdlp(input, platform, options)
+        try {
+          return await downloadWithYtdlp(input, platform, options)
+        } catch (error) {
+          if (platform === 'youtube' && options.audioOnly) return await downloadYoutubeAudioFallback(input, options)
+          throw error
+        }
       }
       return await downloadDirectMedia(input, platform, options)
     } catch (error) {
@@ -217,7 +277,7 @@ async function handleDownloadCommand(sock, msg, args) {
   if (!url) return sock.sendMessage(chatId, { text: '❌ Please provide a media link.\n\nExample: .download https://www.tiktok.com/@user/video/...' })
   await sock.sendMessage(chatId, { text: '⏳ Downloading with yt-dlp. Please wait...' })
   const result = await downloadFile(url)
-  if (!result.success) return sock.sendMessage(chatId, { text: `❌ Download failed\n\n${result.error}\n\nConfigure cookies for protected Instagram/YouTube links.` })
+  if (!result.success) return sock.sendMessage(chatId, { text: `❌ Download failed\n\n${result.error}\n\nThe provider rejected this no-cookie request. Try another link and retry shortly.` })
   try {
     const caption = `📥 *MANI XMD DOWNLOAD COMPLETE*\n\n📁 ${result.fileName}\n📊 ${(result.size / 1024 / 1024).toFixed(2)} MB\n📱 ${result.platform}\n🎵 ${result.title}`
     if (result.type === 'audio') await sock.sendMessage(chatId, { audio: { url: result.path }, mimetype: 'audio/mpeg', fileName: result.fileName, caption })
@@ -228,4 +288,4 @@ async function handleDownloadCommand(sock, msg, args) {
   }
 }
 
-module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadDirectMedia }
+module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadDirectMedia }
