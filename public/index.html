@@ -64,6 +64,16 @@
             <p id="pairing-error" class="hidden text-xs text-rose-300 mt-3" role="alert"></p>
         </section>
 
+        <section class="pairing-card rounded-2xl p-6 mb-6 text-left">
+            <h2 class="text-lg font-semibold text-pink-300 mb-2">Connect another WhatsApp number</h2>
+            <p class="text-xs text-slate-400 mb-4">Each number receives its own QR, authentication folder, reconnect state, and command session. Enter the second number with its country code.</p>
+            <label for="new-session-number" class="sr-only">Additional WhatsApp phone number</label>
+            <input id="new-session-number" type="tel" inputmode="numeric" autocomplete="tel" placeholder="977XXXXXXXXXX" class="w-full rounded-lg bg-slate-900 border border-slate-600 px-4 py-3 text-white outline-none focus:border-pink-400 mb-3">
+            <button id="start-session" type="button" class="w-full rounded-lg bg-pink-600 hover:bg-pink-500 disabled:bg-slate-700 disabled:text-slate-400 px-4 py-3 font-semibold text-white transition">Start separate number session</button>
+            <p id="session-error" class="hidden text-xs text-rose-300 mt-3" role="alert"></p>
+            <div id="session-list" class="mt-4 space-y-2"></div>
+        </section>
+
         <div class="flex flex-col gap-4 text-sm">
             <div class="flex gap-2 justify-center">
                 <a href="https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f" target="_blank" rel="noopener" class="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white">📲 WhatsApp Channel</a>
@@ -94,6 +104,12 @@
         const pairingCode = document.getElementById('pairing-code');
         const pairingCodeHelp = document.getElementById('pairing-code-help');
         const pairingError = document.getElementById('pairing-error');
+        const newSessionNumber = document.getElementById('new-session-number');
+        const startSessionButton = document.getElementById('start-session');
+        const sessionError = document.getElementById('session-error');
+        const sessionList = document.getElementById('session-list');
+        const sessions = new Map();
+        let activeSessionId = 'web-session';
 
         function setSystemStatus(isConnected, label) {
             systemStatus.className = `flex items-center ${isConnected ? 'text-green-400' : 'text-yellow-300'}`;
@@ -112,36 +128,65 @@
             pairingCodeBox.classList.remove('hidden');
         }
 
-        socket.on('qr', (qrDataURL) => {
-            qrImg.src = qrDataURL;
-            qrImg.classList.remove('hidden');
-            qrPlaceholder.classList.add('hidden');
-            qrStatus.innerText = 'Scan the QR Code to pair';
-            qrStatus.classList.remove('text-pink-500', 'text-green-400');
-            qrStatus.classList.add('text-violet-400');
-            setSystemStatus(false, 'Waiting for QR scan');
-        });
-
-        socket.on('pairing-code', showPairingCode);
-
-        socket.on('status', (status) => {
-            qrStatus.innerText = status;
-            if (!status.toLowerCase().includes('connected')) setSystemStatus(false, status);
-        });
-
-        socket.on('connected', (isConnected) => {
-            setSystemStatus(Boolean(isConnected), isConnected ? 'WhatsApp connected' : 'WhatsApp not paired');
-            requestButton.disabled = Boolean(isConnected);
-            if (isConnected) {
-                qrStatus.innerText = 'Connected Successfully!';
-                qrStatus.classList.remove('text-violet-400');
-                qrStatus.classList.add('text-green-400');
+        function displaySession(state) {
+            if (!state || state.sessionId !== activeSessionId) return;
+            qrStatus.innerText = state.status || 'Waiting for session status...';
+            setSystemStatus(Boolean(state.connected), state.connected ? 'WhatsApp connected' : `Waiting: ${state.sessionId}`);
+            requestButton.disabled = Boolean(state.connected);
+            if (state.qr) {
+                qrImg.src = state.qr;
+                qrImg.classList.remove('hidden');
+                qrPlaceholder.classList.add('hidden');
+                qrPlaceholderText.textContent = 'Scan this QR with the selected WhatsApp number.';
+            } else if (state.connected) {
                 qrImg.style.opacity = '0.5';
                 showPairingCode(null);
             } else {
                 qrImg.style.opacity = '1';
             }
-        });
+            if (state.pairingCode) showPairingCode(state.pairingCode);
+            else if (!state.pairingCodeAvailable) showPairingCode(null);
+        }
+
+        function renderSessions(list) {
+            sessionList.textContent = '';
+            list.forEach(item => {
+                sessions.set(item.sessionId, { ...sessions.get(item.sessionId), ...item });
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `w-full text-left rounded-lg border px-3 py-2 ${item.sessionId === activeSessionId ? 'border-pink-400 bg-pink-500/10' : 'border-slate-700 bg-slate-900/40'}`;
+                const label = item.sessionId === 'web-session' ? 'Default bot session' : item.sessionId.replace('@s.whatsapp.net', '');
+                button.innerHTML = `<span class="font-semibold text-slate-200"></span><span class="block text-xs text-slate-400"></span>`;
+                button.firstElementChild.textContent = label;
+                button.lastElementChild.textContent = item.connected ? 'Connected' : (item.qrAvailable ? 'QR ready' : item.status || 'Not connected');
+                button.addEventListener('click', () => {
+                    activeSessionId = item.sessionId;
+                    const state = sessions.get(item.sessionId) || item;
+                    displaySession(state);
+                    renderSessions([...sessions.values()]);
+                });
+                sessionList.appendChild(button);
+            });
+        }
+
+        function handleSessionEvent(payload) {
+            if (!payload || !payload.sessionId) return;
+            const state = sessions.get(payload.sessionId) || { sessionId: payload.sessionId };
+            if (payload.event === 'qr') state.qr = payload.value;
+            if (payload.event === 'pairing-code') {
+                state.pairingCode = payload.value;
+                state.pairingCodeAvailable = Boolean(payload.value);
+            }
+            if (payload.event === 'status') state.status = payload.value;
+            if (payload.event === 'connected') state.connected = Boolean(payload.value);
+            sessions.set(payload.sessionId, state);
+            displaySession(state);
+            renderSessions([...sessions.values()]);
+        }
+
+        socket.on('session-list', renderSessions);
+        socket.on('session-event', handleSessionEvent);
+        socket.on('connect_error', () => setSystemStatus(false, 'Dashboard connected; WhatsApp status unknown'));
 
         requestButton.addEventListener('click', async () => {
             pairingError.classList.add('hidden');
@@ -150,16 +195,18 @@
             requestButton.disabled = true;
             requestButton.textContent = 'Requesting code...';
             try {
+                const digits = phoneInput.value.replace(/\D/g, '');
                 const response = await fetch('/api/pair-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phoneInput.value })
+                    body: JSON.stringify({ phoneNumber: phoneInput.value, sessionId: digits ? `${digits}@s.whatsapp.net` : activeSessionId })
                 });
                 const result = await response.json();
                 if (!response.ok || !result.ok) throw new Error(result.error || 'Pairing code is unavailable.');
+                activeSessionId = result.sessionId || activeSessionId;
                 showPairingCode(result.code);
                 qrStatus.innerText = 'Pairing code ready. Enter it in WhatsApp.';
-                setSystemStatus(false, 'Pairing code ready');
+                setSystemStatus(false, `Pairing ${activeSessionId}`);
             } catch (error) {
                 pairingError.textContent = error.message;
                 pairingError.classList.remove('hidden');
@@ -169,7 +216,31 @@
             }
         });
 
-        socket.on('connect_error', () => setSystemStatus(false, 'Dashboard connected; WhatsApp status unknown'));
+        startSessionButton.addEventListener('click', async () => {
+            sessionError.classList.add('hidden');
+            sessionError.textContent = '';
+            startSessionButton.disabled = true;
+            startSessionButton.textContent = 'Starting separate session...';
+            try {
+                const response = await fetch('/api/session/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: newSessionNumber.value })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || 'Separate session could not be started.');
+                activeSessionId = result.sessionId;
+                newSessionNumber.value = '';
+                qrStatus.innerText = result.status || 'Separate QR session starting...';
+                setSystemStatus(false, `Pairing ${activeSessionId}`);
+            } catch (error) {
+                sessionError.textContent = error.message;
+                sessionError.classList.remove('hidden');
+            } finally {
+                startSessionButton.disabled = false;
+                startSessionButton.textContent = 'Start separate number session';
+            }
+        });
     </script>
 </body>
 </html>

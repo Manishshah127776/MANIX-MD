@@ -63,49 +63,123 @@ function startHealthServer() {
     const app = express();
     const server = http.createServer(app);
     const io = new Server(server);
-    io.currentQr = null;
-    io.currentPairingCode = null;
-    io.currentPairingCodeExpiresAt = 0;
-    io.currentStatus = 'Checking WhatsApp session state...';
-    io.currentConnected = false;
-    let lastPairingCodeRequestAt = 0;
+    const sessionStates = new Map();
+    const pairingCooldowns = new Map();
 
+    const sessionIdForPhone = phoneNumber => `${phoneNumber}@s.whatsapp.net`;
+    const sanitizeSessionId = value => {
+        const cleaned = String(value || '').replace(/[^0-9A-Za-z_.@-]/g, '').slice(0, 80);
+        return cleaned || SESSION_NAME;
+    };
+    const getSessionState = (sessionId = SESSION_NAME) => {
+        const normalizedId = sanitizeSessionId(sessionId);
+        if (!sessionStates.has(normalizedId)) {
+            const state = {
+                sessionId: normalizedId,
+                currentQr: null,
+                currentPairingCode: null,
+                currentPairingCodeExpiresAt: 0,
+                currentStatus: 'Checking WhatsApp session state...',
+                currentConnected: false,
+                startPromise: null,
+                emit(event, value) {
+                    if (event === 'qr') this.currentQr = value || null;
+                    if (event === 'pairing-code') this.currentPairingCode = value || null;
+                    if (event === 'status') this.currentStatus = String(value || '');
+                    if (event === 'connected') this.currentConnected = Boolean(value);
+                    io.emit('session-event', { sessionId: this.sessionId, event, value });
+                    if (this.sessionId === SESSION_NAME) io.emit(event, value);
+                    io.emit('session-list', [...sessionStates.values()].map(snapshot));
+                }
+            };
+            sessionStates.set(normalizedId, state);
+        }
+        return sessionStates.get(normalizedId);
+    };
+    const snapshot = state => ({
+        sessionId: state.sessionId,
+        connected: Boolean(state.currentConnected),
+        status: state.currentStatus,
+        qrAvailable: Boolean(state.currentQr),
+        pairingCodeAvailable: Boolean(state.currentPairingCode && state.currentPairingCodeExpiresAt > Date.now()),
+        pairingCodeExpiresAt: state.currentPairingCodeExpiresAt || null,
+        multiDevice: MULTI_DEVICE_ENABLED,
+        linkingMethods: MULTI_DEVICE_LINKING_METHODS
+    });
+    const allSessions = () => {
+        const merged = new Map([...sessionStates.values()].map(state => [state.sessionId, snapshot(state)]));
+        const tracked = typeof startpairing.getTrackedSessionSummaries === 'function' ? startpairing.getTrackedSessionSummaries() : [];
+        for (const item of tracked) {
+            if (!merged.has(item.sessionId)) merged.set(item.sessionId, { ...item, qrAvailable: false, pairingCodeAvailable: false, pairingCodeExpiresAt: null });
+        }
+        return [...merged.values()];
+    };
+    const startSession = async (sessionId, state) => {
+        if (state.startPromise) return state.startPromise;
+        state.startPromise = startpairing(sessionId, state).finally(() => { state.startPromise = null; });
+        return state.startPromise;
+    };
+
+    getSessionState(SESSION_NAME);
     app.use(express.json({ limit: '2kb' }));
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/healthz', (req, res) => res.status(200).send('ok'));
-    app.get('/status', (req, res) => res.json({
-        server: 'online',
-        whatsappConnected: Boolean(io.currentConnected),
-        status: io.currentStatus,
-        qrAvailable: Boolean(io.currentQr),
-        pairingCodeAvailable: Boolean(io.currentPairingCode && io.currentPairingCodeExpiresAt > Date.now()),
-        pairingCodeExpiresAt: io.currentPairingCodeExpiresAt || null,
-        multiDevice: MULTI_DEVICE_ENABLED,
-        linkingMethods: MULTI_DEVICE_LINKING_METHODS,
-        authDirectory: process.env.WHATSAPP_AUTH_DIR || 'local filesystem; configure a persistent mount for restart-safe pairing'
-    }));
+    app.get('/status', (req, res) => {
+        const defaultState = getSessionState(SESSION_NAME);
+        res.json({
+            server: 'online',
+            whatsappConnected: Boolean(defaultState.currentConnected),
+            status: defaultState.currentStatus,
+            qrAvailable: Boolean(defaultState.currentQr),
+            pairingCodeAvailable: Boolean(defaultState.currentPairingCode && defaultState.currentPairingCodeExpiresAt > Date.now()),
+            pairingCodeExpiresAt: defaultState.currentPairingCodeExpiresAt || null,
+            multiDevice: MULTI_DEVICE_ENABLED,
+            linkingMethods: MULTI_DEVICE_LINKING_METHODS,
+            sessions: allSessions(),
+            authDirectory: process.env.WHATSAPP_AUTH_DIR || 'local filesystem; configure a persistent mount for restart-safe pairing'
+        });
+    });
+    app.get('/api/sessions', (req, res) => res.json({ ok: true, sessions: allSessions(), multiDevice: MULTI_DEVICE_ENABLED }));
+
+    app.post('/api/session/start', async (req, res) => {
+        res.set('Cache-Control', 'no-store');
+        try {
+            const phoneNumber = startpairing.normalizePairingPhoneNumber(req.body?.phoneNumber);
+            const sessionId = sessionIdForPhone(phoneNumber);
+            const state = getSessionState(sessionId);
+            if (state.currentConnected) return res.status(409).json({ ok: false, sessionId, error: 'This WhatsApp number is already connected.' });
+            state.currentStatus = 'Preparing a separate WhatsApp session...';
+            state.emit('status', state.currentStatus);
+            await startSession(sessionId, state);
+            return res.json({ ok: true, sessionId, multiDevice: MULTI_DEVICE_ENABLED, status: state.currentStatus, instruction: 'Scan the QR with this specific WhatsApp number.' });
+        } catch (error) {
+            console.error(`Session start failed: ${error.message}`);
+            const isInputError = /WhatsApp number with country code/i.test(error.message || '');
+            return res.status(isInputError ? 400 : 503).json({ ok: false, error: error.message || 'WhatsApp session could not be started.' });
+        }
+    });
 
     app.post('/api/pair-code', async (req, res) => {
         res.set('Cache-Control', 'no-store');
-        const now = Date.now();
-        const cooldownMs = 30000;
-        if (now - lastPairingCodeRequestAt < cooldownMs) {
-            const retryAfter = Math.ceil((cooldownMs - (now - lastPairingCodeRequestAt)) / 1000);
-            return res.status(429).json({ ok: false, error: `Please wait ${retryAfter} seconds before requesting another pairing code.` });
-        }
-        if (io.currentConnected) {
-            return res.status(409).json({ ok: false, error: 'WhatsApp is already connected. Unpair the current session before starting another pairing flow.' });
-        }
-
         try {
             const phoneNumber = startpairing.normalizePairingPhoneNumber(req.body?.phoneNumber);
-            lastPairingCodeRequestAt = now;
-            io.currentPairingCode = null;
-            io.currentPairingCodeExpiresAt = 0;
-            io.currentStatus = 'Preparing WhatsApp pairing code...';
-            io.emit('status', io.currentStatus);
-            const code = await startpairing.requestPairingCode(SESSION_NAME, phoneNumber, io);
-            return res.json({ ok: true, code, expiresInSeconds: 120, multiDevice: MULTI_DEVICE_ENABLED, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
+            const sessionId = sanitizeSessionId(req.body?.sessionId || sessionIdForPhone(phoneNumber));
+            const state = getSessionState(sessionId);
+            if (state.currentConnected) return res.status(409).json({ ok: false, sessionId, error: 'This WhatsApp number is already connected.' });
+            const now = Date.now();
+            const lastRequestAt = pairingCooldowns.get(sessionId) || 0;
+            const cooldownMs = 30000;
+            if (now - lastRequestAt < cooldownMs) {
+                const retryAfter = Math.ceil((cooldownMs - (now - lastRequestAt)) / 1000);
+                return res.status(429).json({ ok: false, sessionId, error: `Please wait ${retryAfter} seconds before requesting another pairing code.` });
+            }
+            pairingCooldowns.set(sessionId, now);
+            state.currentPairingCode = null;
+            state.currentPairingCodeExpiresAt = 0;
+            state.currentStatus = 'Preparing WhatsApp pairing code...';
+            state.emit('status', state.currentStatus);
+            const code = await startpairing.requestPairingCode(sessionId, phoneNumber, state);
+            return res.json({ ok: true, sessionId, code, expiresInSeconds: 120, multiDevice: MULTI_DEVICE_ENABLED, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
         } catch (error) {
             console.error(`Pairing-code request failed: ${error.message}`);
             const isInputError = /WhatsApp number with country code/i.test(error.message || '');
@@ -113,18 +187,21 @@ function startHealthServer() {
         }
     });
 
-    io.on('connection', (socket) => {
-        socket.emit('status', io.currentStatus);
-        socket.emit('connected', Boolean(io.currentConnected));
-        if (io.currentQr) socket.emit('qr', io.currentQr);
-        if (io.currentPairingCode && io.currentPairingCodeExpiresAt > Date.now()) socket.emit('pairing-code', io.currentPairingCode);
+    io.on('connection', socket => {
+        socket.emit('session-list', allSessions());
+        for (const state of sessionStates.values()) {
+            socket.emit('session-event', { sessionId: state.sessionId, event: 'status', value: state.currentStatus });
+            socket.emit('session-event', { sessionId: state.sessionId, event: 'connected', value: Boolean(state.currentConnected) });
+            if (state.currentQr) socket.emit('session-event', { sessionId: state.sessionId, event: 'qr', value: state.currentQr });
+            if (state.currentPairingCode && state.currentPairingCodeExpiresAt > Date.now()) socket.emit('session-event', { sessionId: state.sessionId, event: 'pairing-code', value: state.currentPairingCode });
+        }
     });
 
     server.listen(PORT, '0.0.0.0', () => {
-        console.log(chalk.blue(`🌐 WhatsApp Web pairing dashboard listening on port ${PORT}`));
+        console.log(chalk.blue(`🌐 WhatsApp Multi-Device pairing dashboard listening on port ${PORT}`));
     });
 
-    return { server, io };
+    return { server, io, getSessionState, allSessions };
 }
 
 const autoLoadPairs = async () => {
@@ -193,15 +270,16 @@ const initializeBot = async () => {
 
     try {
         console.log(chalk.blue('📱 Starting WhatsApp Web QR pairing...'));
-        await startpairing(SESSION_NAME, webRuntime.io);
+        await startpairing(SESSION_NAME, webRuntime.getSessionState(SESSION_NAME));
         console.log(chalk.green('✅ WhatsApp Multi-Device pairing is ready at the public dashboard (QR + phone-code linking).'));
     } catch (error) {
         console.log(chalk.red(`❌ Failed to start WhatsApp Web pairing: ${error.message}`));
-        if (webRuntime?.io) {
-            webRuntime.io.currentConnected = false;
-            webRuntime.io.currentStatus = `WhatsApp startup failed: ${error.message}`;
-            webRuntime.io.emit('status', webRuntime.io.currentStatus);
-            webRuntime.io.emit('connected', false);
+        if (webRuntime?.getSessionState) {
+            const state = webRuntime.getSessionState(SESSION_NAME);
+            state.currentConnected = false;
+            state.currentStatus = `WhatsApp startup failed: ${error.message}`;
+            state.emit('status', state.currentStatus);
+            state.emit('connected', false);
         }
     }
 };

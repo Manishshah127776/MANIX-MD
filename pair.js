@@ -1025,6 +1025,16 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     return bad;
 }
 
+function getTrackedSessionSummaries() {
+    return [...rentbotTracker.entries()].map(([sessionId, tracker]) => ({
+        sessionId,
+        connected: Boolean(tracker.connection?.user && !tracker.disconnected),
+        status: tracker.disconnected ? 'WhatsApp session disconnected.' : (tracker.connection?.user ? 'WhatsApp Multi-Device connected successfully.' : 'WhatsApp session is starting...'),
+        multiDevice: MULTI_DEVICE_ENABLED,
+        linkingMethods: MULTI_DEVICE_LINKING_METHODS
+    }));
+}
+
 function smsg(bad, m, store) {
     if (!m) return m
     let M = proto.WebMessageInfo
@@ -1102,3 +1112,5 @@ fs.watchFile(file, () => {
 module.exports = startpairing;
 module.exports.requestPairingCode = requestPairingCode;
 module.exports.normalizePairingPhoneNumber = normalizePairingPhoneNumber;
+module.exports.getTrackedSessionSummaries = getTrackedSessionSummaries;
+
