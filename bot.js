@@ -29,8 +29,6 @@ if (!telegramEnabled) {
 const adminFilePath = path.join(__dirname, 'manixmdtimewisher', 'admin.json');
 let adminIDs = [];
 
-// Store user states for pairing flow
-const userStates = new Map();
 
 const exists = async (filePath) => {
   try {
@@ -101,6 +99,26 @@ const gracefulShutdown = (signal) => {
 const MANIX_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f';
 const MANIX_CHANNEL_TEXT = 'Follow the MANIX MD 💐 channel on WhatsApp: ' + MANIX_CHANNEL_URL;
 const checkUserJoinedChannels = async (_userId) => true;
+const PAIRING_DASHBOARD_URL = process.env.PAIRING_DASHBOARD_URL || 'https://manix-md.onrender.com/';
+
+const sendPairingDashboardMessage = async (chatId) => {
+  return bot.sendMessage(chatId,
+    `📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 WhatsApp QR Pairing*\n\n` +
+    `Open the dashboard and scan the QR code with WhatsApp → Linked devices:\n${PAIRING_DASHBOARD_URL}\n\n` +
+    `Custom pairing codes are disabled.`,
+    {
+      parse_mode: 'Markdown',
+      disable_web_page_preview: false,
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📲 Open QR Dashboard', url: PAIRING_DASHBOARD_URL }],
+          [{ text: '📢 MANIX MD 💐 Channel', url: MANIX_CHANNEL_URL }],
+          [{ text: '☎ Contact: 9779807044421', url: 'https://wa.me/9779807044421' }]
+        ]
+      }
+    }
+  );
+};
 
 // ========== SEND CHANNELS REQUIRED MESSAGE ==========
 const sendChannelsRequiredMessage = async (chatId) => {
@@ -158,7 +176,7 @@ bot.onText(/\/start/, async (msg) => {
     chatId,
     "https://manix-md.onrender.com/assets/menu-art.jpg",
     {
-      caption: `🪀 *𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n╔════════════════════╗\n ⤷ /pair <wa_number>\n ⤷ /unpair <wa_number>\n╚════════════════════╝`,
+      caption: `🪀 *𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n╔════════════════════╗\n ⤷ /pair - open QR dashboard\n ⤷ /unpair <wa_number>\n╚════════════════════╝`,
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
@@ -169,101 +187,13 @@ bot.onText(/\/start/, async (msg) => {
   );
 });
 
-// ========== PAIR COMMAND ==========
-bot.onText(/\/pair(?:\s+(.+))?/, async (msg, match) => {
+// ========== PAIR COMMAND (QR ONLY) ==========
+bot.onText(/\/pair(?:\s+(.+))?/, async (msg) => {
   const chatId = msg.chat.id;
-  const userId = msg.from.id;
   const isGroup = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
-  const text = match[1]?.trim();
 
-  // 🔥 GROUP MEIN /pair LIKHA TO SAME STYLISH MESSAGE (JAISE START MEIN HAI)
-  if (isGroup) {
-    return sendGroupMessage(chatId, msg.message_id);
-  }
-
-  // 🔥 PRIVATE CHAT MEIN NORMAL PAIRING PROCESS
-  const allJoined = await checkUserJoinedChannels(userId);
-
-  if (!allJoined) {
-    return sendChannelsRequiredMessage(chatId);
-  }
-
-  if (!text) {
-    userStates.set(userId, { step: 'awaiting_number' });
-    return bot.sendMessage(chatId,
-      `🔐 *Please send your WhatsApp number*\n\nExample: /pair 923xxxxxxxxx\n\nOr just type: 923xxxxxxxxx`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  if (/[a-z]/i.test(text)) {
-    return bot.sendMessage(chatId, '❌ *Letters are not allowed.*\n\nPlease send only numbers.', { parse_mode: 'Markdown' });
-  }
-
-  if (!/^\d{7,15}$/.test(text)) {
-    return bot.sendMessage(chatId, '❌ *Invalid format.*\n\nPlease send a valid WhatsApp number.\nExample: 923xxxxxxxxx', { parse_mode: 'Markdown' });
-  }
-
-  if (text.startsWith('0')) {
-    return bot.sendMessage(chatId, '❌ *Numbers starting with 0 are not allowed.*\n\nPlease include country code.', { parse_mode: 'Markdown' });
-  }
-
-  const countryCode = text.slice(0, 3);
-  if (["252", "201"].includes(countryCode)) {
-    return bot.sendMessage(chatId, '❌ *Numbers with this country code are not supported.*', { parse_mode: 'Markdown' });
-  }
-
-  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
-  if (!(await exists(pairingFolder))) {
-    await fs.mkdir(pairingFolder, { recursive: true });
-  }
-
-  const files = await fs.readdir(pairingFolder);
-  const pairedCount = files.filter(f => f.endsWith('@s.whatsapp.net')).length;
-
-  if (pairedCount >= 1000) {
-    return bot.sendMessage(chatId, '❌ *Pairing limit reached.*\n\nPlease try again later.', { parse_mode: 'Markdown' });
-  }
-
-  userStates.delete(userId);
-
-  try {
-    const startpairing = require('./pair.js');
-    const Xreturn = text + "@s.whatsapp.net";
-
-    await bot.sendMessage(chatId, '⏳ *Generating pairing code...*\n\nPlease wait a moment.', { parse_mode: 'Markdown' });
-
-    await startpairing(Xreturn);
-    await sleep(4000);
-
-    const pairingFile = path.join(pairingFolder, 'pairing.json');
-    const cu = await fs.readFile(pairingFile, 'utf-8');
-    const cuObj = JSON.parse(cu);
-    delete require.cache[require.resolve('./pair.js')];
-
-    return bot.sendMessage(chatId,
-      `🔗 *Pairing Code for WhatsApp*\n\n` +
-      `📝 *Code:* 👉 \`${cuObj.code}\` 👈\n\n` +
-      `➡️ *Instructions:*\n` +
-      `1. Open WhatsApp\n` +
-      `2. Go to Settings → Linked Devices\n` +
-      `3. Tap "Link a Device"\n` +
-      `4. Enter this code\n\n` +
-      `⚠️ *Code expires in 2 minutes*`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: `Pairing system`, callback_data: `pairing_system` }]
-          ]
-        }
-      }
-    );
-
-  } catch (error) {
-    console.error('PAIR COMMAND ERROR:', error);
-    bot.sendMessage(chatId, '❌ *Pairing service is temporarily unavailable.*\n\nPlease try again later.', { parse_mode: 'Markdown' });
-  }
+  if (isGroup) return sendGroupMessage(chatId, msg.message_id);
+  return sendPairingDashboardMessage(chatId);
 });
 
 // ========== CALLBACK QUERY HANDLER ==========
@@ -298,99 +228,6 @@ bot.on('callback_query', async (callbackQuery) => {
       });
     }
     return;
-  }
-});
-
-// ========== TEXT MESSAGE HANDLER ==========
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-  const text = msg.text;
-
-  if (msg.chat.type !== 'private') return;
-  if (!text) return;
-  if (text.startsWith('/')) return;
-
-  const userState = userStates.get(userId);
-  if (!userState || userState.step !== 'awaiting_number') return;
-
-  const phoneRegex = /^\d{7,15}$/;
-  if (!phoneRegex.test(text)) return;
-
-  userStates.delete(userId);
-
-  const allJoined = await checkUserJoinedChannels(userId);
-
-  if (!allJoined) {
-    return bot.sendMessage(chatId,
-      `🚨 *${MANIX_CHANNEL_TEXT}*`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: '📲 MANIX MD 💐 WhatsApp Channel', url: MANIX_CHANNEL_URL }],
-            [{ text: '☎ Contact: 9779807044421', url: 'https://wa.me/9779807044421' }],
-            [{ text: '✅ I have joined', callback_data: 'check_join' }]
-          ]
-        }
-      }
-    );
-  }
-
-  if (/[a-z]/i.test(text)) {
-    return bot.sendMessage(chatId, '❌ Letters are not allowed. Send only numbers.');
-  }
-
-  if (text.startsWith('0')) {
-    return bot.sendMessage(chatId, '❌ Numbers starting with 0 are not allowed.');
-  }
-
-  const countryCode = text.slice(0, 3);
-  if (["252", "201"].includes(countryCode)) {
-    return bot.sendMessage(chatId, '❌ Numbers with this country code are not supported.');
-  }
-
-  const pairingFolder = path.join(__dirname, 'manixmdtimewisher', 'pairing');
-  if (!(await exists(pairingFolder))) {
-    await fs.mkdir(pairingFolder, { recursive: true });
-  }
-
-  const files = await fs.readdir(pairingFolder);
-  const pairedCount = files.filter(f => f.endsWith('@s.whatsapp.net')).length;
-
-  if (pairedCount >= 1000) {
-    return bot.sendMessage(chatId, '❌ Pairing limit reached. Try again later.');
-  }
-
-  try {
-    const startpairing = require('./pair.js');
-    const Xreturn = text + "@s.whatsapp.net";
-
-    await bot.sendMessage(chatId, '⏳ Generating pairing code...');
-
-    await startpairing(Xreturn);
-    await sleep(4000);
-
-    const pairingFile = path.join(pairingFolder, 'pairing.json');
-    const cu = await fs.readFile(pairingFile, 'utf-8');
-    const cuObj = JSON.parse(cu);
-    delete require.cache[require.resolve('./pair.js')];
-
-    return bot.sendMessage(chatId,
-      `🔗 *Pairing Code*\n\n📝 Code: \`${cuObj.code}\`\n\n1. Open WhatsApp\n2. Settings → Linked Devices\n3. Link a Device\n4. Enter this code`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: `📋 Copy: ${cuObj.code}`, callback_data: `copy_code_${cuObj.code}` }]
-          ]
-        }
-      }
-    );
-
-  } catch (error) {
-    console.error('PAIRING ERROR:', error);
-    bot.sendMessage(chatId, '❌ Pairing failed. Try again later.');
   }
 });
 
