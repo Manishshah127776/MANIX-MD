@@ -267,6 +267,66 @@ async function downloadYoutubeAudioFallback(url, options) {
   }
 }
 
+async function downloadYoutubeAudioWithAuthorizedCobalt(url, options) {
+  const apiUrl = String(process.env.COBALT_API_URL || '').trim().replace(/\/$/, '')
+  if (!apiUrl) throw new Error('No authorized COBALT_API_URL is configured')
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-cobalt-audio-'))
+  try {
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent': USER_AGENT
+    }
+    if (process.env.COBALT_API_KEY) headers.Authorization = `Api-Key ${String(process.env.COBALT_API_KEY).trim()}`
+    const response = await axios.post(apiUrl, {
+      url,
+      downloadMode: 'audio',
+      audioFormat: 'mp3',
+      audioBitrate: options.quality === 'best' ? '320' : String(options.quality || '192'),
+      filenameStyle: 'basic'
+    }, { headers, timeout: 60000, validateStatus: status => status >= 200 && status < 500 })
+    const data = response.data || {}
+    if (response.status >= 400 || data.status === 'error') throw new Error(`Authorized Cobalt rejected the request: ${data.error?.code || data.error?.context?.service || response.status}`)
+    const mediaUrls = []
+    if (typeof data.url === 'string') mediaUrls.push(data.url)
+    if (Array.isArray(data.tunnel)) mediaUrls.push(...data.tunnel.filter(value => typeof value === 'string'))
+    const mediaUrl = mediaUrls.find(value => /^https?:\/\//i.test(value))
+    if (!mediaUrl) throw new Error(`Authorized Cobalt returned no playable audio URL for status ${data.status || 'unknown'}`)
+    const media = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      timeout: 90000,
+      maxContentLength: MAX_FILE_BYTES,
+      maxBodyLength: MAX_FILE_BYTES,
+      headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': USER_AGENT },
+      validateStatus: status => status >= 200 && status < 300
+    })
+    const buffer = Buffer.from(media.data || [])
+    const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+    if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) throw new Error('Authorized Cobalt returned invalid audio data')
+    const metadata = data.output?.metadata || {}
+    const fileName = `${titleFromInfo({ title: data.filename || metadata.title }, 'youtube-audio')}_${Date.now()}.mp3`
+    const filePath = path.join(tempDir, fileName)
+    await fs.promises.writeFile(filePath, buffer)
+    return {
+      success: true,
+      path: filePath,
+      fileName,
+      size: buffer.length,
+      type: 'audio',
+      title: metadata.title || data.filename || 'YouTube Audio',
+      platform: 'youtube',
+      thumbnail: null,
+      uploader: metadata.artist || 'YouTube',
+      audioUrl: mediaUrl,
+      videoUrl: url,
+      cleanupDir: tempDir
+    }
+  } catch (error) {
+    await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    throw error
+  }
+}
+
 async function downloadDirectMedia(url, platform, options) {
   const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-direct-'))
   try {
@@ -333,8 +393,13 @@ async function downloadFile(url, retriesOrOptions = 2) {
               try {
                 return await downloadYoutubeAudioFallback(input, options)
               } catch (fallbackError) {
-                fallbackError.previous = compatibleError
-                throw fallbackError
+                try {
+                  return await downloadYoutubeAudioWithAuthorizedCobalt(input, options)
+                } catch (cobaltError) {
+                  cobaltError.previous = fallbackError
+                  fallbackError.previous = compatibleError
+                  throw cobaltError
+                }
               }
             }
           }
@@ -363,7 +428,7 @@ async function handleDownloadCommand(sock, msg, args) {
   if (!url) return sock.sendMessage(chatId, { text: '❌ Please provide a media link.\n\nExample: .download https://www.tiktok.com/@user/video/...' })
   await sock.sendMessage(chatId, { text: '⏳ Downloading with yt-dlp. Please wait...' })
   const result = await downloadFile(url)
-  if (!result.success) return sock.sendMessage(chatId, { text: `❌ Download failed\n\n${result.error}\n\nThe provider rejected this no-cookie request. Try another link and retry shortly.` })
+  if (!result.success) return sock.sendMessage(chatId, { text: `❌ Download failed\n\n${result.error}\n\nYouTube may be blocking anonymous server access. Configure an authorized YT_COOKIES_PATH or COBALT_API_URL, then retry.` })
   try {
     const caption = buildDownloadTemplate(result)
     if (result.type === 'audio') await sock.sendMessage(chatId, { audio: { url: result.path }, mimetype: 'audio/mpeg', fileName: result.fileName, caption })
@@ -374,4 +439,4 @@ async function handleDownloadCommand(sock, msg, args) {
   }
 }
 
-module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadYoutubeAudioWithCompatibleYtdlp, downloadDirectMedia }
+module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadYoutubeAudioWithCompatibleYtdlp, downloadYoutubeAudioWithAuthorizedCobalt, downloadDirectMedia }

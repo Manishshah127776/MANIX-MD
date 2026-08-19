@@ -223,21 +223,49 @@ const areJidsSameUser = (jid1, jid2) => {
   }
 }
 
-const PIPED_API_URLS = String(process.env.PIPED_API_URLS || [
+const DEFAULT_PIPED_API_URLS = [
   'https://pipedapi.kavin.rocks',
+  'https://pipedapi.leptons.xyz',
+  'https://pipedapi.nosebs.ru',
+  'https://pipedapi-libre.kavin.rocks',
+  'https://piped-api.privacy.com.de',
   'https://pipedapi.adminforge.de',
   'https://api.piped.yt',
-  'https://pipedapi.reallyaweso.me',
-  'https://pipedapi.leptons.xyz',
-  'https://pipedapi.r4fo.com',
   'https://pipedapi.drgns.space',
+  'https://pipedapi.owo.si',
   'https://pipedapi.ducks.party',
-  'https://pipedapi-libre.kavin.rocks',
+  'https://piped-api.codespace.cz',
+  'https://pipedapi.reallyaweso.me',
+  'https://api.piped.private.coffee',
+  'https://pipedapi.darkness.services',
   'https://pipedapi.orangenet.cc'
-].join(','))
+]
+const CONFIGURED_PIPED_API_URLS = String(process.env.PIPED_API_URLS || '')
   .split(',')
   .map(value => value.trim().replace(/\/$/, ''))
   .filter(Boolean)
+const PIPED_INSTANCE_SOURCE = 'https://raw.githubusercontent.com/TeamPiped/documentation/main/content/docs/public-instances/index.md'
+let pipedApiUrlsCache = { expiresAt: 0, urls: [] }
+
+async function getPipedApiUrls() {
+  if (CONFIGURED_PIPED_API_URLS.length) return CONFIGURED_PIPED_API_URLS
+  if (pipedApiUrlsCache.expiresAt > Date.now() && pipedApiUrlsCache.urls.length) return pipedApiUrlsCache.urls
+  try {
+    const response = await axios.get(PIPED_INSTANCE_SOURCE, {
+      timeout: 10000,
+      responseType: 'text',
+      headers: { Accept: 'text/plain', 'User-Agent': 'MANI-XMD/1.0' },
+      validateStatus: status => status >= 200 && status < 300
+    })
+    const urls = [...String(response.data || '').matchAll(/\|\s*(https:\/\/[^|\s]+)\s*\|/g)]
+      .map(match => match[1].replace(/\/$/, ''))
+      .filter(url => /piped(?:api|-[^/]+)?\.|api\.piped\./i.test(url))
+    if (urls.length) pipedApiUrlsCache = { expiresAt: Date.now() + 10 * 60 * 1000, urls: [...new Set(urls)] }
+  } catch (error) {
+    console.warn('Piped instance list refresh failed:', error.message)
+  }
+  return pipedApiUrlsCache.urls.length ? pipedApiUrlsCache.urls : DEFAULT_PIPED_API_URLS
+}
 
 function extractYoutubeVideoId(value) {
   try {
@@ -261,8 +289,8 @@ function isYoutubeBotCheckError(error) {
 
 function youtubeRecoveryHint(error) {
   const message = `${error?.message || ''} ${error?.stderr || ''}`.toLowerCase()
-  if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped|invalid audio|html/.test(message)) {
-    return 'YouTube rejected this server request and no playable no-cookie source was available. Try another title or link and retry shortly.'
+  if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped|invalid audio|html|cobalt/.test(message)) {
+    return 'YouTube blocked anonymous server access. Configure an authorized YT_COOKIES_PATH or COBALT_API_URL, then retry; otherwise try another public title or link shortly.'
   }
   return 'Try another title or YouTube link.'
 }
@@ -532,7 +560,7 @@ async function fetchPipedAudio(videoUrl) {
   if (!videoId) throw new Error('Could not identify the YouTube video for the fallback audio service.')
 
   let lastError = null
-  for (const apiBase of PIPED_API_URLS) {
+  for (const apiBase of await getPipedApiUrls()) {
     try {
       const streamResponse = await axios.get(`${apiBase}/streams/${encodeURIComponent(videoId)}`, {
         timeout: 20000,
@@ -613,6 +641,59 @@ async function fetchYtmp3GeAudio(videoUrl) {
     title: data.title || 'YouTube Audio',
     uploader: 'YouTube',
     thumbnail: data.thumbnail || null,
+    sourceUrl: videoUrl
+  }
+}
+
+async function fetchAuthorizedCobaltAudio(videoUrl) {
+  if (!COBALT_API_URL) throw new Error('No authorized COBALT_API_URL is configured')
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'MANI-XMD/1.0'
+  }
+  if (COBALT_API_KEY) headers.Authorization = `Api-Key ${COBALT_API_KEY}`
+  const response = await axios.post(COBALT_API_URL, {
+    url: videoUrl,
+    downloadMode: 'audio',
+    audioFormat: 'mp3',
+    audioBitrate: '192',
+    filenameStyle: 'basic'
+  }, {
+    headers,
+    timeout: 60000,
+    validateStatus: status => status >= 200 && status < 500
+  })
+  const data = response.data || {}
+  if (response.status >= 400 || data.status === 'error') {
+    throw new Error(`Authorized Cobalt rejected the request: ${data.error?.code || data.error?.context?.service || response.status}`)
+  }
+  const mediaUrls = []
+  if (typeof data.url === 'string') mediaUrls.push(data.url)
+  if (Array.isArray(data.tunnel)) mediaUrls.push(...data.tunnel.filter(url => typeof url === 'string'))
+  const mediaUrl = mediaUrls.find(url => /^https?:\/\//i.test(url))
+  if (!mediaUrl) throw new Error(`Authorized Cobalt returned no playable audio URL for status ${data.status || 'unknown'}`)
+  const media = await axios.get(mediaUrl, {
+    responseType: 'arraybuffer',
+    timeout: 90000,
+    maxContentLength: 80 * 1024 * 1024,
+    maxBodyLength: 80 * 1024 * 1024,
+    headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+    validateStatus: status => status >= 200 && status < 300
+  })
+  const buffer = Buffer.from(media.data || [])
+  const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+  if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) {
+    throw new Error('Authorized Cobalt returned invalid audio data')
+  }
+  const metadata = data.output?.metadata || {}
+  return {
+    buffer,
+    mimetype: 'audio/mpeg',
+    fileName: `${String(data.filename || metadata.title || 'manix-xmd-audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80) || 'manix-xmd-audio'}.mp3`,
+    title: metadata.title || data.filename || 'YouTube Audio',
+    uploader: metadata.artist || 'YouTube',
+    thumbnail: null,
     sourceUrl: videoUrl
   }
 }
@@ -7122,7 +7203,12 @@ case 'song': {
           fallback = await fetchYtmp3GeAudio(video.url)
         } catch (ytmp3FallbackError) {
           console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
-          fallback = await fetchPipedAudio(video.url)
+          try {
+            fallback = await fetchAuthorizedCobaltAudio(video.url)
+          } catch (cobaltError) {
+            console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
+            fallback = await fetchPipedAudio(video.url)
+          }
         }
       }
       if (!isUsableAudioBuffer(fallback.buffer)) throw new Error('Audio fallback returned invalid data')
@@ -7715,7 +7801,12 @@ case 'ytaudio': {
           fallback = await fetchYtmp3GeAudio(text)
         } catch (ytmp3FallbackError) {
           console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
-          fallback = await fetchPipedAudio(text)
+          try {
+            fallback = await fetchAuthorizedCobaltAudio(text)
+          } catch (cobaltError) {
+            console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
+            fallback = await fetchPipedAudio(text)
+          }
         }
       }
       if (!isUsableAudioBuffer(fallback.buffer)) throw new Error('Audio fallback returned invalid data')
@@ -14204,6 +14295,7 @@ module.exports.commandCharMap = COMMAND_CHAR_MAP;
 module.exports.mediaHelpers = {
   fetchPipedAudio,
   fetchYtmp3GeAudio,
+  fetchAuthorizedCobaltAudio,
   extractTikTokVideoId,
   parseTikTokEmbedState,
   findTikTokItemInfo,
