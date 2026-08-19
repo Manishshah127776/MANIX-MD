@@ -669,14 +669,17 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             if (reason === 405) {
                 console.log(chalk.red.bold(`❌ Error 405 for ${manixmdNumber}: Session logged out or invalid`));
                 console.log(chalk.yellow(`🗑️ Force cleaning session for ${manixmdNumber}...`));
-                
+
                 forceCleanupSession(manixmdNumber);
-                
-            tracker.disconnected = true;
-            tracker.connection = null;
-            tracker.eventListenersAttached = false;
-                
-                console.log(chalk.red(`🚫 ${manixmdNumber} will NOT reconnect. User must re-pair.`));
+                tracker.disconnected = false;
+                tracker.connection = null;
+                tracker.eventListenersAttached = false;
+
+                // Render may start with an empty or non-persistent auth directory. After
+                // cleanup, keep the dashboard usable by generating a fresh QR automatically.
+                console.log(chalk.cyan(`📱 Re-queueing ${manixmdNumber} for a fresh WhatsApp Web QR.`));
+                await sleep(1500);
+                queuePairing(manixmdNumber, pairingIo);
                 return;
             } else if (reason === 440) {
                 if (tracker.retryCount < MAX_RETRIES_440) {
