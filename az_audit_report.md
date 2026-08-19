@@ -3,7 +3,7 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed runtime commit:** `4479f643`
+**Latest deployed runtime commit:** `5115845e`
 **Pairing-code feature commit:** `78cdbe2d`  
 **405 compatibility commit:** `4479f643`
 **Report author:** **Manus AI**  
@@ -28,6 +28,7 @@ The earlier production blocker was upstream WhatsApp registration: Baileys was r
 | `a811743e` | Gate pairing-code requests on registration readiness and protect stale reconnect events | Pushed to `main`; Render deployed |
 | `4f65dfcf` | Update the protocol tuple to `2,3000,1034074495` | Pushed to `main`; Render deployed |
 | `4479f643` | Upgrade Baileys to rc14 and apply the guarded MACOS platform compatibility patch | Pushed to `main`; Render deployed |
+| `5115845e` | Harden YouTube bot-check fallback, add optional cookie authentication, and retry the connected confirmation message | Pushed to `main`; Render deployed |
 | `78cdbe2d` | Add optional phone-number pairing-code API, dashboard controls, Socket.IO events, Telegram instructions, and README documentation | Pushed to `main`; Render deployed |
 | `b211eb65` | Return HTTP 400 for malformed pairing-code phone numbers instead of HTTP 503 | Pushed to `main`; Render deployed |
 
@@ -133,4 +134,4 @@ After the initial audit, the music path received an additional resilience update
 
 The WhatsApp connected confirmation now logs its targets and retries up to three times after the socket opens. It prefers the authenticated account JID and falls back to `OWNER_NUMBER` or `MANIX_CONTACT_NUMBER`, preventing transient post-auth send failures from silently losing the notice. The command inventory remains 723 unique labels with zero duplicates after this patch.
 
-The current release candidate still requires a new Render deployment for these post-audit changes. After deployment, validate `.play`/`.song` with a public video and confirm the single connected notice after QR or pairing-code linking.
+The post-audit reliability patch is deployed in `5115845e`. Validate `.play`/`.song` with a public video after WhatsApp linking; if YouTube still challenges Render’s IP, configure an authorized Netscape cookies file through `YT_COOKIES_PATH`. The connected notice now retries three times after authentication and should be confirmed after the next QR or pairing-code link.
