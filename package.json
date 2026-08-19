@@ -9,7 +9,7 @@
     "bot": "node bot.js",
     "web": "node server.js",
     "test": "node --check index.js",
-    "postinstall": "node scripts/patch-baileys-405.js"
+    "postinstall": "node scripts/patch-baileys-405.js && node scripts/update-ytdlp.js"
   },
   "keywords": [
     "whiskeysockets",

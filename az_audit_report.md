@@ -144,3 +144,11 @@ The dispatcher now normalizes Unicode small-cap and Cyrillic-stylized command sp
 Two dedicated owner/utility handlers were added without removing any original command: `.fixowner` refreshes the owner allowlist using the authenticated sender, and `.enc <text>` returns a Base64 encoding. Valid-prefix commands that do not resolve now receive a formatted command-not-found response pointing users to `.menu`; command execution failures receive a single user-facing recovery message, with the duplicate-reply guard preserved.
 
 Startup now emits a `[COMMAND AUDIT]` block covering the loaded dispatcher count, alias count, duplicate labels, missing dependencies, failed modules, and broken-command status. The deterministic audit scripts report **725 source labels, 725 unique labels, zero duplicates, and no inventory mismatch**. Menu comparison reports no unresolved command names; `0*` and `runway<prompt>` are retained as display-only menu artifacts.
+
+## Media and bugmenu repair release
+
+The TikTok path was repaired after Render reported `Unexpected response from webpage request`. The bot now passes a Chrome-compatible user-agent and authorized cookies when configured, uses the current stable yt-dlp binary, downloads through yt-dlp itself so extractor-specific CDN headers are preserved, and falls back to TikTok’s official embed state when the primary extractor cannot complete. The current bundled binary reports `2026.07.04`, and the Render postinstall now runs `yt-dlp -U` through `scripts/update-ytdlp.js`; failures are non-fatal so a temporary updater outage cannot prevent deployment.
+
+The missing `.bugmenu` dispatcher case was added as a reliable text-only diagnostic menu advertising only real handlers: `.ping`, `.speed`, `.runtime`, `.debug`, `.admincheck`, `.glitch`, `.glitchtext`, and `.menu`. This avoids image-payload failures and prevents the command from falling through to the unknown-command response.
+
+Local verification passed with a public TikTok video: yt-dlp downloaded a valid 4,172,714-byte MP4, with title and uploader metadata returned. The final dispatcher inventory is now **726 labels, 726 unique labels, and zero duplicates**, reflecting the original 723 labels plus `.fixowner`, `.enc`, and `.bugmenu`.

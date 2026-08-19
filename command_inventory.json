@@ -1,6 +1,6 @@
 {
-  "totalLabels": 725,
-  "uniqueLabels": 725,
+  "totalLabels": 726,
+  "uniqueLabels": 726,
   "duplicateLabels": [],
   "labels": [
     "allmenu",
@@ -8,6 +8,7 @@
     "menu2",
     "menu",
     "listmenu",
+    "bugmenu",
     "ownermenu",
     "mymenu",
     "groupmenu",

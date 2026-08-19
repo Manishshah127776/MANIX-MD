@@ -306,6 +306,149 @@ async function fetchPipedAudio(videoUrl) {
   throw new Error(`YouTube and fallback audio services are unavailable. ${lastError?.message || ''}`.trim())
 }
 
+const DEFAULT_TIKTOK_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+function getTikTokUserAgent() {
+  return String(process.env.TIKTOK_USER_AGENT || DEFAULT_TIKTOK_USER_AGENT).trim() || DEFAULT_TIKTOK_USER_AGENT
+}
+function extractTikTokVideoId(input) {
+  const value = String(input || '').trim()
+  const direct = value.match(/(?:video|item_id|embed\/v2)[^0-9]{0,20}(\d{15,25})/i)
+  if (direct) return direct[1]
+  try {
+    const parsed = new URL(value)
+    const pathMatch = parsed.pathname.match(/(?:video|embed\/v2)\/(\d{15,25})/i)
+    if (pathMatch) return pathMatch[1]
+    const anyId = parsed.pathname.match(/(\d{15,25})/)
+    return anyId ? anyId[1] : null
+  } catch {
+    return null
+  }
+}
+function findTikTokItemInfo(value, seen = new Set()) {
+  if (!value || typeof value !== 'object' || seen.has(value)) return null
+  seen.add(value)
+  if (value.video && Array.isArray(value.video.urls) && value.video.urls.length) return value
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findTikTokItemInfo(item, seen)
+      if (found) return found
+    }
+    return null
+  }
+  for (const item of Object.values(value)) {
+    const found = findTikTokItemInfo(item, seen)
+    if (found) return found
+  }
+  return null
+}
+function parseTikTokEmbedState(html) {
+  const match = String(html || '').match(/<script[^>]+id="__FRONTITY_CONNECT_STATE__"[^>]*>([\s\S]*?)<\/script>/i)
+  if (!match) throw new Error('TikTok official embed state was not found')
+  try {
+    return JSON.parse(match[1])
+  } catch (error) {
+    throw new Error(`TikTok official embed state was invalid: ${error.message}`)
+  }
+}
+function selectTikTokMediaUrl(itemInfo) {
+  const urls = Array.isArray(itemInfo?.video?.urls) ? itemInfo.video.urls : []
+  return urls
+    .map(url => String(url || '').replace(/\\u002F/g, '/').replace(/\\u0026/g, '&'))
+    .find(url => /tiktokcdn|muscdn/i.test(url) && (/\.mp4(?:[?&#]|$)/i.test(url) || /mime_type=video_mp4|video_mp4/i.test(url))) || null
+}
+async function fetchTikTokEmbedVideo(input) {
+  const videoId = extractTikTokVideoId(input)
+  if (!videoId) throw new Error('Could not identify the TikTok video ID')
+  const userAgent = getTikTokUserAgent()
+  const headers = {
+    'user-agent': userAgent,
+    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    referer: 'https://www.tiktok.com/'
+  }
+  const embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`
+  const page = await axios.get(embedUrl, {
+    headers,
+    timeout: 30000,
+    maxContentLength: 12 * 1024 * 1024,
+    maxBodyLength: 12 * 1024 * 1024
+  })
+  const state = parseTikTokEmbedState(page.data)
+  const itemInfo = findTikTokItemInfo(state)
+  const mediaUrl = selectTikTokMediaUrl(itemInfo)
+  if (!mediaUrl) throw new Error('TikTok official embed returned no signed video URL')
+  const media = await axios.get(mediaUrl, {
+    headers: { 'user-agent': userAgent, referer: embedUrl },
+    responseType: 'arraybuffer',
+    timeout: 90000,
+    maxContentLength: 80 * 1024 * 1024,
+    maxBodyLength: 80 * 1024 * 1024
+  })
+  return {
+    buffer: Buffer.from(media.data),
+    title: itemInfo?.desc || itemInfo?.video?.videoMeta?.ratio || 'TikTok video',
+    uploader: itemInfo?.authorInfos?.uniqueId || itemInfo?.authorInfos?.nickName || 'TikTok',
+    sourceUrl: input,
+    mimetype: 'video/mp4'
+  }
+}
+async function fetchTikTokVideo(input) {
+  const ytdlp = require('youtube-dl-exec')
+  const userAgent = getTikTokUserAgent()
+  let ytdlpError = null
+  let tempDir = null
+  try {
+    const options = {
+      noWarnings: true,
+      noCheckCertificates: true,
+      noPlaylist: true,
+      noPart: true,
+      format: 'best[ext=mp4]/best',
+      userAgent,
+      referer: 'https://www.tiktok.com/',
+      ...getYtdlpAuthOptions()
+    }
+    const info = await ytdlp(input, { ...options, dumpSingleJson: true })
+    tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-tiktok-'))
+    await ytdlp(input, {
+      ...options,
+      output: path.join(tempDir, 'video.%(ext)s')
+    })
+    const files = await fs.promises.readdir(tempDir)
+    const mediaFile = files.find(file => /\.(mp4|webm|mov|mkv)$/i.test(file))
+    if (!mediaFile) throw new Error('yt-dlp downloaded no playable TikTok video file')
+    const buffer = await fs.promises.readFile(path.join(tempDir, mediaFile))
+    if (!buffer.length) throw new Error('yt-dlp returned an empty TikTok video file')
+    return {
+      buffer,
+      title: info.title || 'TikTok video',
+      uploader: info.uploader || info.channel || 'TikTok',
+      sourceUrl: input,
+      mimetype: /webm$/i.test(mediaFile) ? 'video/webm' : 'video/mp4'
+    }
+  } catch (error) {
+    ytdlpError = error
+    console.warn('TikTok yt-dlp download failed; trying official embed fallback:', error.stderr || error.message)
+  } finally {
+    if (tempDir) {
+      await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(cleanupError => {
+        console.warn('TikTok temporary directory cleanup failed:', cleanupError.message)
+      })
+    }
+  }
+  try {
+    return await fetchTikTokEmbedVideo(input)
+  } catch (fallbackError) {
+    fallbackError.previous = ytdlpError
+    throw fallbackError
+  }
+}
+function tiktokRecoveryHint(error) {
+  const message = `${error?.message || ''} ${error?.previous?.message || ''}`.toLowerCase()
+  if (/unexpected response|challenge|captcha|embed|signed video|no playable/.test(message)) {
+    return 'TikTok blocked the server response. The bot already retried with the latest yt-dlp, Chrome user-agent, and official embed fallback. Try a public TikTok link or configure YT_COOKIES_PATH.'
+  }
+  return 'Try a public TikTok link again later.'
+}
 const pickRandom = (arr) => {
   if (!Array.isArray(arr) || arr.length === 0) return null
   return arr[Math.floor(Math.random() * arr.length)]
@@ -2227,7 +2370,29 @@ break
 // ═══════════════════════════════════════════════════════════
 // BUG MENU
 // ═══════════════════════════════════════════════════════════
+case 'bugmenu': {
+  const bugMenuText = `
+╭━━〔 🛠️ ʙᴜɢ / ᴅɪᴀɢɴᴏsᴛɪᴄ ᴍᴇɴᴜ 〕━━┈⊷
+┃
+┃ 🔍 ᴄʜᴇᴄᴋs
+┃ ├ ${prefix}ᴘɪɴɢ
+┃ ├ ${prefix}sᴘᴇᴇᴅ
+┃ ├ ${prefix}ʀᴜɴᴛɪᴍᴇ
+┃ ├ ${prefix}ᴅᴇʙᴜɢ
+┃ └ ${prefix}ᴀᴅᴍɪɴᴄʜᴇᴄᴋ
+┃
+┃ 🧪 ᴛᴇsᴛ ᴄᴏᴍᴍᴀɴᴅs
+┃ ├ ${prefix}ɢʟɪᴛᴄʜ <text>
+┃ ├ ${prefix}ɢʟɪᴛᴄʜᴛᴇxᴛ <text>
+┃ └ ${prefix}ᴍᴇɴᴜ
+┃
+┃ If a command fails, send the exact command and error message to the bot owner.
+╰━━━━━━━━━━━━━━━━━━━━━┈⊷
 
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
+  await reply(bugMenuText)
+}
+break
 
 // ═══════════════════════════════════════════════════════════
 // SUB MENUS WITH NEWSLETTER FORWARD
@@ -6675,31 +6840,22 @@ case "tiktok":
 case "tiktok_alt2":
 case "tt": {
     if (!text) return reply(example("https://vt.tiktok.com/xxxxx"));
-    if (!/tiktok\.com\//i.test(text)) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
+    if (!/tiktok(?:v)?\.com\//i.test(text)) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ᴛɪᴋᴛᴏᴋ ʟɪɴᴋ");
 
     try {
         await bad.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
-        const ytdlp = require('youtube-dl-exec');
-        const info = await ytdlp(text, {
-            dumpSingleJson: true,
-            noWarnings: true,
-            noCheckCertificates: true,
-            format: 'best[ext=mp4]/best'
-        });
-        const videoUrl = info?.url || [...(info?.formats || [])].reverse().find(format => format?.url)?.url;
-        if (!videoUrl) throw new Error('No playable TikTok video was returned');
-
-        const caption = `╭━━━〔 *ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮\n\n📝 *ᴛɪᴛʟᴇ:* ${info.title || 'N/A'}\n👤 *ᴀᴜᴛʜᴏʀ:* ${info.uploader || info.channel || 'N/A'}\n\n╰━━━━━━━━━━━━━━━━━╯`;
+        const result = await fetchTikTokVideo(text);
+        const caption = `╭━━━〔 *ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮\n\n📝 *ᴛɪᴛʟᴇ:* ${result.title || 'N/A'}\n👤 *ᴀᴜᴛʜᴏʀ:* ${result.uploader || 'N/A'}\n\n╰━━━━━━━━━━━━━━━━━╯`;
         await bad.sendMessage(m.chat, {
-            video: { url: videoUrl },
+            video: result.buffer,
             caption,
-            mimetype: 'video/mp4'
+            mimetype: result.mimetype || 'video/mp4'
         }, { quoted: m });
         await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
     } catch (error) {
-        console.error('TikTok Error:', error.stderr || error.message);
+        console.error('TikTok Error:', error.stderr || error.message, error.previous?.message || '');
         await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-        return reply(`❌ ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${error.message}`);
+        return reply(`❌ ᴛɪᴋᴛᴏᴋ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${tiktokRecoveryHint(error)}`);
     }
 }
 break;
@@ -13588,6 +13744,14 @@ module.exports.refreshGroupMetadata = refreshGroupMetadata;
 module.exports.checkAdminStatus = checkAdminStatus;
 module.exports.commandAliases = COMMAND_ALIASES;
 module.exports.commandCharMap = COMMAND_CHAR_MAP;
+module.exports.mediaHelpers = {
+  extractTikTokVideoId,
+  parseTikTokEmbedState,
+  findTikTokItemInfo,
+  selectTikTokMediaUrl,
+  fetchTikTokEmbedVideo,
+  fetchTikTokVideo
+};
 // ═══════════════════════════════════════════════════════════
 // FILE WATCHER
 // ═══════════════════════════════════════════════════════════

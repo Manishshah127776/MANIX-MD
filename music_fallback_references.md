@@ -24,3 +24,9 @@ The official Cobalt API documentation supports `POST /` with `audioFormat: mp3`,
 
 - https://github.com/imputnet/cobalt/blob/main/docs/api.md
 - https://github.com/imputnet/cobalt/blob/main/api/README.md
+
+## TikTok extractor issue checked 19 August 2026
+
+Source: https://github.com/yt-dlp/yt-dlp/issues/17403
+
+The current yt-dlp TikTok extractor issue #17403 was closed after a site break affecting current/nightly yt-dlp builds. The issue records two practical workarounds: use a realistic Chrome user-agent, optionally with an authorized cookies file, and resolve the video through TikTok’s official embed page to obtain the signed `tiktokcdn.com` media URL before downloading. The issue links merged PR #17452. This confirms that simply upgrading yt-dlp is necessary but may not be sufficient for TikTok on hosted server IPs. The linked merged PR #17452 fixes the TikTok extractor by removing impersonation from webpage requests, improving blocker-header generation, and randomizing the HTTP header fingerprint. The project’s bundled stable binary reports 2026.07.04, which includes that merged fix.
