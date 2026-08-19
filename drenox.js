@@ -38,6 +38,7 @@ const MANIX_CONTACT_URL = 'wa.me/9779807044421';
 const COBALT_API_URL = String(process.env.COBALT_API_URL || '').trim().replace(/\/$/, '');
 const COBALT_API_KEY = String(process.env.COBALT_API_KEY || '').trim();
 const SAVENOW_API_URL = String(process.env.SAVENOW_API_URL || 'https://p.savenow.to').trim().replace(/\/$/, '');
+const OMINISAVE_API_URL = String(process.env.OMINISAVE_API_URL || 'https://www.ominisave.com').trim().replace(/\/$/, '');
 const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
 const OWNER_SHELL_ENABLED = process.env.ENABLE_OWNER_SHELL === 'true'
 
@@ -654,6 +655,44 @@ async function fetchSaveNowAudio(videoUrl) {
     title: createData.title || 'YouTube Audio',
     uploader: 'YouTube',
     thumbnail: createData.thumbnail_url || createData.thumbnail || null,
+    sourceUrl: videoUrl
+  };
+}
+
+async function fetchOminiSaveAudio(videoUrl) {
+  const response = await axios.get(`${OMINISAVE_API_URL}/api/ytmp3`, {
+    params: { url: String(videoUrl) },
+    timeout: 60000,
+    headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
+    validateStatus: status => status >= 200 && status < 500
+  });
+  const body = response.data && typeof response.data === 'object' ? response.data : {};
+  const result = body.result && typeof body.result === 'object' ? body.result : body;
+  const mediaUrl = result.downloadURL || result.downloadUrl || result.url || body.downloadURL || body.downloadUrl || body.url;
+  if (response.status >= 400 || body.status === false || !/^https?:\/\//i.test(String(mediaUrl || ''))) {
+    throw new Error(`OminiSave conversion failed: HTTP ${response.status}`);
+  }
+  const media = await axios.get(mediaUrl, {
+    responseType: 'arraybuffer',
+    timeout: 120000,
+    headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+    maxContentLength: 100 * 1024 * 1024,
+    maxBodyLength: 100 * 1024 * 1024,
+    validateStatus: status => status >= 200 && status < 300
+  });
+  const buffer = Buffer.from(media.data || []);
+  const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase();
+  if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) {
+    throw new Error('OminiSave returned invalid audio data instead of an MP3 file');
+  }
+  const title = result.title || body.title || 'YouTube Audio';
+  return {
+    buffer,
+    mimetype: contentType.startsWith('audio/') ? contentType : 'audio/mpeg',
+    fileName: `${String(title).replace(/[\\/:*?"<>|]/g, '').slice(0, 80) || 'manix-xmd-audio'}.mp3`,
+    title,
+    uploader: result.author || result.channel || result.uploader || 'YouTube',
+    thumbnail: result.thumbnail || result.thumbnailUrl || result.thumbnail_url || null,
     sourceUrl: videoUrl
   };
 }
@@ -7206,6 +7245,19 @@ case 'song': {
     }
 
     video = search.videos[0]
+    const directVideoId = String(video.url || '').match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{6,})/i)?.[1]
+    const previewThumbnail = video.thumbnail || (directVideoId ? `https://i.ytimg.com/vi/${directVideoId}/hqdefault.jpg` : null)
+    const detailsCaption = `╭━━〔 🎵 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴍᴜsɪᴄ 〕━━┈⊷\n┃ 🎼 *ᴛɪᴛʟᴇ:* ${video.title || 'Unknown'}\n┃ 👤 *ᴄʜᴀɴɴᴇʟ:* ${video.author?.name || 'YouTube'}\n┃ ⏱️ *ᴅᴜʀᴀᴛɪᴏɴ:* ${video.timestamp || '—'}\n┃ 👁️ *ᴠɪᴇᴡs:* ${video.views || '—'}\n┃\n┃ ⬇️ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴀᴜᴅɪᴏ, ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ...\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
+    try {
+      if (previewThumbnail) {
+        await bad.sendMessage(m.chat, { image: { url: previewThumbnail }, caption: detailsCaption }, { quoted: m })
+      } else {
+        await reply(detailsCaption)
+      }
+    } catch (previewError) {
+      console.warn('Song preview send failed; continuing audio download:', previewError.message)
+    }
+    await bad.sendMessage(m.chat, { react: { text: '⬇️', key: m.key } })
     safeTitle = String(video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
     const outputBase = path.join(os.tmpdir(), `manix-xmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     audioPath = `${outputBase}.mp3`
@@ -7248,22 +7300,27 @@ case 'song': {
       console.warn('yt-dlp YouTube media download failed; trying compatible no-cookie audio fallbacks.')
       let fallback
       try {
-        fallback = await fetchYtdlpCompatibleAudio(video.url)
-      } catch (compatibleError) {
-        console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
+        fallback = await fetchOminiSaveAudio(video.url)
+      } catch (ominiSaveError) {
+        console.warn('OminiSave audio fallback failed:', ominiSaveError.message)
         try {
-          fallback = await fetchSaveNowAudio(video.url)
-        } catch (saveNowError) {
-          console.warn('SaveNow audio fallback failed:', saveNowError.message)
+          fallback = await fetchYtdlpCompatibleAudio(video.url)
+        } catch (compatibleError) {
+          console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
           try {
-            fallback = await fetchYtmp3GeAudio(video.url)
-          } catch (ytmp3FallbackError) {
-            console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+            fallback = await fetchSaveNowAudio(video.url)
+          } catch (saveNowError) {
+            console.warn('SaveNow audio fallback failed:', saveNowError.message)
             try {
-              fallback = await fetchAuthorizedCobaltAudio(video.url)
-            } catch (cobaltError) {
-              console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
-              fallback = await fetchPipedAudio(video.url)
+              fallback = await fetchYtmp3GeAudio(video.url)
+            } catch (ytmp3FallbackError) {
+              console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+              try {
+                fallback = await fetchAuthorizedCobaltAudio(video.url)
+              } catch (cobaltError) {
+                console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
+                fallback = await fetchPipedAudio(video.url)
+              }
             }
           }
         }
@@ -7297,7 +7354,7 @@ case 'song': {
         externalAdReply: {
           title: info.title || video.title || 'YouTube Audio',
           body: info.uploader || video.author?.name || 'YouTube',
-          thumbnailUrl: info.thumbnail || video.thumbnail,
+          thumbnailUrl: info.thumbnail || video.thumbnail || previewThumbnail,
           sourceUrl: info.webpage_url || video.url,
           mediaType: 1,
           renderLargerThumbnail: true
@@ -14357,6 +14414,7 @@ module.exports.commandCharMap = COMMAND_CHAR_MAP;
 module.exports.mediaHelpers = {
   fetchPipedAudio,
   fetchSaveNowAudio,
+  fetchOminiSaveAudio,
   fetchYtmp3GeAudio,
   fetchAuthorizedCobaltAudio,
   extractTikTokVideoId,
