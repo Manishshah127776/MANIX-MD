@@ -37,6 +37,7 @@ const DEFAULT_MANIX_CHANNEL_URL = String(process.env.WHATSAPP_CHANNEL_URL || 'ht
 const MANIX_CONTACT_URL = 'wa.me/9779807044421';
 const COBALT_API_URL = String(process.env.COBALT_API_URL || '').trim().replace(/\/$/, '');
 const COBALT_API_KEY = String(process.env.COBALT_API_KEY || '').trim();
+const SAVENOW_API_URL = String(process.env.SAVENOW_API_URL || 'https://p.savenow.to').trim().replace(/\/$/, '');
 const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
 const OWNER_SHELL_ENABLED = process.env.ENABLE_OWNER_SHELL === 'true'
 
@@ -604,6 +605,57 @@ async function fetchPipedAudio(videoUrl) {
     }
   }
   throw new Error(`YouTube and fallback audio services are unavailable. ${lastError?.message || ''}`.trim())
+}
+
+async function fetchSaveNowAudio(videoUrl) {
+  const createResponse = await axios.get(`${SAVENOW_API_URL}/api/v2/download`, {
+    params: { format: 'mp3', url: String(videoUrl) },
+    timeout: 45000,
+    headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
+    validateStatus: status => status >= 200 && status < 500
+  });
+  const createData = createResponse.data || {};
+  if (createResponse.status >= 400 || !createData.progress_url) {
+    throw new Error(`SaveNow conversion request failed: HTTP ${createResponse.status}`);
+  }
+  let finished = null;
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    const progressResponse = await axios.get(createData.progress_url, {
+      timeout: 30000,
+      headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
+      validateStatus: status => status >= 200 && status < 500
+    });
+    const progress = progressResponse.data || {};
+    finished = progress;
+    if (progressResponse.status >= 400) throw new Error(`SaveNow progress failed: HTTP ${progressResponse.status}`);
+    if (progress.url || progress.download_url || progress.downloadUrl) break;
+    if (progress.success === false || progress.error) throw new Error(`SaveNow conversion failed: ${progress.error || progress.text || 'provider rejected the request'}`);
+  }
+  const mediaUrl = finished?.url || finished?.download_url || finished?.downloadUrl;
+  if (!/^https?:\/\//i.test(String(mediaUrl || ''))) throw new Error('SaveNow did not return a playable media URL');
+  const media = await axios.get(mediaUrl, {
+    responseType: 'arraybuffer',
+    timeout: 120000,
+    headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+    maxContentLength: 100 * 1024 * 1024,
+    maxBodyLength: 100 * 1024 * 1024,
+    validateStatus: status => status >= 200 && status < 300
+  });
+  const buffer = Buffer.from(media.data || []);
+  const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase();
+  if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) {
+    throw new Error('SaveNow returned invalid audio data instead of an MP3 file');
+  }
+  return {
+    buffer,
+    mimetype: 'audio/mpeg',
+    fileName: `${String(createData.title || 'manix-xmd-audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80) || 'manix-xmd-audio'}.mp3`,
+    title: createData.title || 'YouTube Audio',
+    uploader: 'YouTube',
+    thumbnail: createData.thumbnail_url || createData.thumbnail || null,
+    sourceUrl: videoUrl
+  };
 }
 
 async function fetchYtmp3GeAudio(videoUrl) {
@@ -7200,14 +7252,19 @@ case 'song': {
       } catch (compatibleError) {
         console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
         try {
-          fallback = await fetchYtmp3GeAudio(video.url)
-        } catch (ytmp3FallbackError) {
-          console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+          fallback = await fetchSaveNowAudio(video.url)
+        } catch (saveNowError) {
+          console.warn('SaveNow audio fallback failed:', saveNowError.message)
           try {
-            fallback = await fetchAuthorizedCobaltAudio(video.url)
-          } catch (cobaltError) {
-            console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
-            fallback = await fetchPipedAudio(video.url)
+            fallback = await fetchYtmp3GeAudio(video.url)
+          } catch (ytmp3FallbackError) {
+            console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+            try {
+              fallback = await fetchAuthorizedCobaltAudio(video.url)
+            } catch (cobaltError) {
+              console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
+              fallback = await fetchPipedAudio(video.url)
+            }
           }
         }
       }
@@ -7798,14 +7855,19 @@ case 'ytaudio': {
       } catch (compatibleError) {
         console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
         try {
-          fallback = await fetchYtmp3GeAudio(text)
-        } catch (ytmp3FallbackError) {
-          console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+          fallback = await fetchSaveNowAudio(text)
+        } catch (saveNowError) {
+          console.warn('SaveNow audio fallback failed:', saveNowError.message)
           try {
-            fallback = await fetchAuthorizedCobaltAudio(text)
-          } catch (cobaltError) {
-            console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
-            fallback = await fetchPipedAudio(text)
+            fallback = await fetchYtmp3GeAudio(text)
+          } catch (ytmp3FallbackError) {
+            console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+            try {
+              fallback = await fetchAuthorizedCobaltAudio(text)
+            } catch (cobaltError) {
+              console.warn('Authorized Cobalt audio fallback failed:', cobaltError.message)
+              fallback = await fetchPipedAudio(text)
+            }
           }
         }
       }
@@ -14294,6 +14356,7 @@ module.exports.commandAliases = COMMAND_ALIASES;
 module.exports.commandCharMap = COMMAND_CHAR_MAP;
 module.exports.mediaHelpers = {
   fetchPipedAudio,
+  fetchSaveNowAudio,
   fetchYtmp3GeAudio,
   fetchAuthorizedCobaltAudio,
   extractTikTokVideoId,

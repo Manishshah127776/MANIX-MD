@@ -5,6 +5,7 @@ const axios = require('axios')
 const ytdlp = require('youtube-dl-exec')
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
+const SAVENOW_API_URL = String(process.env.SAVENOW_API_URL || 'https://p.savenow.to').trim().replace(/\/$/, '')
 const MANIX_CHANNEL_URL = String(process.env.WHATSAPP_CHANNEL_URL || 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f').trim()
 const MANIX_CONTACT_URL = 'wa.me/9779807044421'
 const MAX_FILE_BYTES = 100 * 1024 * 1024
@@ -220,6 +221,66 @@ async function downloadYoutubeAudioWithCompatibleYtdlp(url, options) {
   }
 }
 
+async function downloadYoutubeAudioWithSaveNow(url) {
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-savenow-audio-'))
+  try {
+    const createResponse = await axios.get(`${SAVENOW_API_URL}/api/v2/download`, {
+      params: { format: 'mp3', url: String(url) },
+      timeout: 45000,
+      headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
+      validateStatus: status => status >= 200 && status < 500
+    })
+    const createData = createResponse.data || {}
+    if (createResponse.status >= 400 || !createData.progress_url) throw new Error(`SaveNow conversion request failed: HTTP ${createResponse.status}`)
+    let finished = null
+    for (let attempt = 1; attempt <= 30; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 2500))
+      const progressResponse = await axios.get(createData.progress_url, {
+        timeout: 30000,
+        headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
+        validateStatus: status => status >= 200 && status < 500
+      })
+      const progress = progressResponse.data || {}
+      finished = progress
+      if (progressResponse.status >= 400) throw new Error(`SaveNow progress failed: HTTP ${progressResponse.status}`)
+      if (progress.url || progress.download_url || progress.downloadUrl) break
+      if (progress.success === false || progress.error) throw new Error(`SaveNow conversion failed: ${progress.error || progress.text || 'provider rejected the request'}`)
+    }
+    const mediaUrl = finished?.url || finished?.download_url || finished?.downloadUrl
+    if (!/^https?:\/\//i.test(String(mediaUrl || ''))) throw new Error('SaveNow did not return a playable media URL')
+    const media = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      timeout: 120000,
+      headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
+      maxContentLength: MAX_FILE_BYTES,
+      maxBodyLength: MAX_FILE_BYTES,
+      validateStatus: status => status >= 200 && status < 300
+    })
+    const buffer = Buffer.from(media.data || [])
+    const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+    if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) throw new Error('SaveNow returned invalid audio data instead of an MP3 file')
+    const fileName = `${titleFromInfo({ title: createData.title }, 'youtube-audio')}_${Date.now()}.mp3`
+    const filePath = path.join(tempDir, fileName)
+    await fs.promises.writeFile(filePath, buffer)
+    return {
+      success: true,
+      path: filePath,
+      fileName,
+      size: buffer.length,
+      type: 'audio',
+      title: createData.title || 'YouTube Audio',
+      platform: 'youtube',
+      thumbnail: createData.thumbnail_url || createData.thumbnail || null,
+      audioUrl: mediaUrl,
+      videoUrl: url,
+      cleanupDir: tempDir
+    }
+  } catch (error) {
+    await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    throw error
+  }
+}
+
 async function downloadYoutubeAudioFallback(url, options) {
   const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-ytaudio-'))
   try {
@@ -391,14 +452,19 @@ async function downloadFile(url, retriesOrOptions = 2) {
               return await downloadYoutubeAudioWithCompatibleYtdlp(input, options)
             } catch (compatibleError) {
               try {
-                return await downloadYoutubeAudioFallback(input, options)
-              } catch (fallbackError) {
+                return await downloadYoutubeAudioWithSaveNow(input)
+              } catch (saveNowError) {
                 try {
-                  return await downloadYoutubeAudioWithAuthorizedCobalt(input, options)
-                } catch (cobaltError) {
-                  cobaltError.previous = fallbackError
-                  fallbackError.previous = compatibleError
-                  throw cobaltError
+                  return await downloadYoutubeAudioFallback(input, options)
+                } catch (fallbackError) {
+                  try {
+                    return await downloadYoutubeAudioWithAuthorizedCobalt(input, options)
+                  } catch (cobaltError) {
+                    cobaltError.previous = fallbackError
+                    fallbackError.previous = saveNowError
+                    fallbackError.previous.previous = compatibleError
+                    throw cobaltError
+                  }
                 }
               }
             }
@@ -439,4 +505,4 @@ async function handleDownloadCommand(sock, msg, args) {
   }
 }
 
-module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadYoutubeAudioWithCompatibleYtdlp, downloadYoutubeAudioWithAuthorizedCobalt, downloadDirectMedia }
+module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadYoutubeAudioWithCompatibleYtdlp, downloadYoutubeAudioWithSaveNow, downloadYoutubeAudioWithAuthorizedCobalt, downloadDirectMedia }
