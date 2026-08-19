@@ -69,7 +69,8 @@ function startHealthServer() {
             return res.json({ ok: true, code, expiresInSeconds: 120, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
         } catch (error) {
             console.error(`Pairing-code request failed: ${error.message}`);
-            return res.status(503).json({ ok: false, error: error.message || 'WhatsApp pairing code is currently unavailable.' });
+            const isInputError = /WhatsApp number with country code/i.test(error.message || '');
+            return res.status(isInputError ? 400 : 503).json({ ok: false, error: error.message || 'WhatsApp pairing code is currently unavailable.' });
         }
     });
 
