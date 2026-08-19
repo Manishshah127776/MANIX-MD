@@ -34,6 +34,7 @@ const API_BASE = 'https://api.nexoracle.com/stalking';
 const NEXORACLE_API = 'https://api.nexoracle.com/';
 const NEXORACLE_KEY = process.env.NEXORACLE_API_KEY || process.env.NEXORACLE_KEY || '';
 const DEFAULT_MANIX_CHANNEL_URL = String(process.env.WHATSAPP_CHANNEL_URL || 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f').trim();
+const MANIX_CONTACT_URL = 'wa.me/9779807044421';
 const COBALT_API_URL = String(process.env.COBALT_API_URL || '').trim().replace(/\/$/, '');
 const COBALT_API_KEY = String(process.env.COBALT_API_KEY || '').trim();
 const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
@@ -260,10 +261,44 @@ function isYoutubeBotCheckError(error) {
 
 function youtubeRecoveryHint(error) {
   const message = `${error?.message || ''} ${error?.stderr || ''}`.toLowerCase()
-  if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped/.test(message)) {
-    return 'YouTube rejected the server request and the no-cookie audio fallbacks were unavailable. Try another song or link and retry shortly.'
+  if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped|invalid audio|html/.test(message)) {
+    return 'YouTube rejected this server request and no playable no-cookie source was available. Try another title or link and retry shortly.'
   }
   return 'Try another title or YouTube link.'
+}
+
+function isUsableAudioBuffer(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 1024) return false
+  const prefix = buffer.subarray(0, 96).toString('utf8').trim().toLowerCase()
+  if (prefix.startsWith('<!doctype') || prefix.startsWith('<html') || prefix.startsWith('{"') || prefix.startsWith('{')) return false
+  const startsWithId3 = buffer.subarray(0, 3).toString('ascii') === 'ID3'
+  const startsWithMpegFrame = buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0
+  const isMp4Container = buffer.subarray(4, 8).toString('ascii') === 'ftyp'
+  const isOgg = buffer.subarray(0, 4).toString('ascii') === 'OggS'
+  return startsWithId3 || startsWithMpegFrame || isMp4Container || isOgg
+}
+
+function buildManixMusicTemplate({ title, sourceUrl, uploader, status, detail }) {
+  const safeTitle = String(title || 'YouTube audio').replace(/[\n\r]/g, ' ').trim()
+  const safeDetail = String(detail || '').replace(/[\n\r]/g, ' ').trim()
+  const safeUploader = String(uploader || 'YouTube').replace(/[\n\r]/g, ' ').trim()
+  return `╭━━〔 🎵 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴍᴜsɪᴄ 〕━━┈⊷
+┃
+┃ 🎼 *ᴛɪᴛʟᴇ:* ${safeTitle}
+┃ 👤 *ᴀʀᴛɪsᴛ:* ${safeUploader}
+┃ ${status === 'ready' ? '✅' : '⚠️'} *sᴛᴀᴛᴜs:* ${status === 'ready' ? 'ʀᴇᴀᴅʏ' : 'ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ'}${safeDetail ? `\n┃ ℹ️ ${safeDetail}` : ''}
+┃${sourceUrl ? `\n┃ 🔗 *sᴏᴜʀᴄᴇ:* ${sourceUrl}` : ''}
+┃
+╰━━━━━━━━━━━━━━━━━━━━━┈⊷
+
+╭━━━━━━━━━━━━━━━━━━━━━╮
+┃ 📢 Follow the MANIX MD 💐 channel:
+┃ ${DEFAULT_MANIX_CHANNEL_URL}
+┃
+┃ ☎ Contact: ${MANIX_CONTACT_URL}
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
 }
 
 function decodeBasicHtml(value) {
@@ -442,6 +477,56 @@ function getYtdlpAuthOptions() {
   return { cookies: cookiePath }
 }
 
+async function fetchYtdlpCompatibleAudio(videoUrl) {
+  const ytdlp = require('youtube-dl-exec')
+  const clients = [
+    ['android_vr', 'web_safari', 'tv'],
+    ['mweb'],
+    ['web_embedded']
+  ]
+  let lastError = null
+  for (const playerClient of clients) {
+    const outputBase = path.join(os.tmpdir(), `manix-xmd-compatible-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    const outputPath = `${outputBase}.mp3`
+    try {
+      await ytdlp(videoUrl, {
+        noPlaylist: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        noPart: true,
+        format: '96/18/best[ext=mp4]/best',
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: '5',
+        output: `${outputBase}.%(ext)s`,
+        jsRuntime: 'node',
+        remoteComponents: 'ejs:github',
+        extractorArgs: { youtube: { player_client: playerClient } },
+        ...getYtdlpAuthOptions()
+      })
+      if (!fs.existsSync(outputPath)) throw new Error('Compatible yt-dlp fallback created no MP3 file')
+      const buffer = fs.readFileSync(outputPath)
+      if (!isUsableAudioBuffer(buffer)) throw new Error('Compatible yt-dlp fallback created invalid audio data')
+      return {
+        buffer,
+        mimetype: 'audio/mpeg',
+        fileName: `manix-xmd-audio-${Date.now()}.mp3`,
+        title: 'YouTube Audio',
+        uploader: 'YouTube',
+        thumbnail: null,
+        sourceUrl: videoUrl
+      }
+    } catch (error) {
+      lastError = error
+      console.warn(`Compatible yt-dlp audio fallback failed for ${playerClient.join(',')}:`, error.stderr || error.message)
+    } finally {
+      try { fs.rmSync(outputBase, { recursive: true, force: true }) } catch {}
+      try { fs.rmSync(outputPath, { force: true }) } catch {}
+    }
+  }
+  throw lastError || new Error('No compatible yt-dlp audio fallback was available')
+}
+
 async function fetchPipedAudio(videoUrl) {
   const videoId = extractYoutubeVideoId(videoUrl)
   if (!videoId) throw new Error('Could not identify the YouTube video for the fallback audio service.')
@@ -472,7 +557,8 @@ async function fetchPipedAudio(videoUrl) {
         validateStatus: status => status >= 200 && status < 300
       })
       const audioBuffer = Buffer.from(audioResponse.data || [])
-      if (!audioBuffer.length) throw new Error('Piped returned an empty audio response')
+      const contentType = String(audioResponse.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+      if (!isUsableAudioBuffer(audioBuffer) || contentType.includes('text/html') || contentType.includes('application/json')) throw new Error('Piped returned invalid audio data')
       const mimeType = String(selected.mimeType || 'audio/mp4').split(';')[0]
       const extension = /mpeg|mp3/i.test(mimeType) ? 'mp3' : /webm/i.test(mimeType) ? 'webm' : 'm4a'
       return {
@@ -518,7 +604,8 @@ async function fetchYtmp3GeAudio(videoUrl) {
     validateStatus: status => status >= 200 && status < 300
   })
   const buffer = Buffer.from(media.data || [])
-  if (!buffer.length) throw new Error('YTMP3.GE returned an empty audio file')
+  const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+  if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) throw new Error('YTMP3.GE returned invalid audio data instead of an MP3 file')
   return {
     buffer,
     mimetype: 'audio/mpeg',
@@ -6971,6 +7058,8 @@ case 'play':
 case 'song': {
   if (!text) return reply(`🎵 Usage: ${prefix}${command} <song name or YouTube URL>`)
   let audioPath = null
+  let video = null
+  let safeTitle = 'audio'
   try {
     await bad.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
     const yts = require('yt-search')
@@ -6983,8 +7072,8 @@ case 'song': {
       return reply('❌ No results found')
     }
 
-    const video = search.videos[0]
-    const safeTitle = String(video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
+    video = search.videos[0]
+    safeTitle = String(video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
     const outputBase = path.join(os.tmpdir(), `manix-xmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     audioPath = `${outputBase}.mp3`
     let audioBuffer = null
@@ -7009,6 +7098,7 @@ case 'song': {
       })
       if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
       audioBuffer = fs.readFileSync(audioPath)
+      if (!isUsableAudioBuffer(audioBuffer)) throw new Error('yt-dlp created invalid audio data')
       info = await ytdlp(video.url, {
         dumpSingleJson: true,
         noWarnings: true,
@@ -7020,23 +7110,30 @@ case 'song': {
         ...getYtdlpAuthOptions()
       }).catch(() => ({}))
     } catch (downloadError) {
-      if (!isYoutubeBotCheckError(downloadError)) throw downloadError
-      console.warn('yt-dlp YouTube media download failed; trying no-cookie audio fallbacks.')
+      const downloadMessage = `${downloadError?.message || ''} ${downloadError?.stderr || ''}`.toLowerCase()
+      if (!isYoutubeBotCheckError(downloadError) && !/audio file was not created|invalid audio/.test(downloadMessage)) throw downloadError
+      console.warn('yt-dlp YouTube media download failed; trying compatible no-cookie audio fallbacks.')
       let fallback
       try {
-        fallback = await fetchYtmp3GeAudio(video.url)
-      } catch (ytmp3FallbackError) {
-        console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
-        fallback = await fetchPipedAudio(video.url)
+        fallback = await fetchYtdlpCompatibleAudio(video.url)
+      } catch (compatibleError) {
+        console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
+        try {
+          fallback = await fetchYtmp3GeAudio(video.url)
+        } catch (ytmp3FallbackError) {
+          console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+          fallback = await fetchPipedAudio(video.url)
+        }
       }
+      if (!isUsableAudioBuffer(fallback.buffer)) throw new Error('Audio fallback returned invalid data')
       audioBuffer = fallback.buffer
-      audioMimetype = fallback.mimetype
+      audioMimetype = fallback.mimetype || 'audio/mpeg'
       audioFileName = fallback.fileName || `${safeTitle || 'manix-xmd-audio'}.mp3`
       info = {
-        title: fallback.title,
-        uploader: fallback.uploader,
+        title: fallback.title || video.title,
+        uploader: fallback.uploader || video.author?.name || 'YouTube',
         thumbnail: fallback.thumbnail,
-        webpage_url: fallback.sourceUrl
+        webpage_url: fallback.sourceUrl || video.url
       }
     }
 
@@ -7044,7 +7141,15 @@ case 'song': {
     await bad.sendMessage(m.chat, {
       audio: audioBuffer,
       mimetype: audioMimetype,
+      ptt: false,
       fileName: audioFileName,
+      caption: buildManixMusicTemplate({
+        title: info.title || video.title,
+        sourceUrl: info.webpage_url || video.url,
+        uploader: info.uploader || video.author?.name || 'YouTube',
+        status: 'ready',
+        detail: 'ᴘʟᴀʏᴀʙʟᴇ ᴀᴜᴅɪᴏ ʀᴇᴀᴅʏ'
+      }),
       contextInfo: {
         externalAdReply: {
           title: info.title || video.title || 'YouTube Audio',
@@ -7060,7 +7165,13 @@ case 'song': {
   } catch (e) {
     console.error('Play command error:', e.stderr || e.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    return reply(`⚠️ Could not fetch that song right now. ${youtubeRecoveryHint(e)}`)
+    return reply(buildManixMusicTemplate({
+      title: video?.title || text,
+      sourceUrl: video?.url,
+      uploader: video?.author?.name || 'YouTube',
+      status: 'failed',
+      detail: youtubeRecoveryHint(e)
+    }))
   } finally {
     if (audioPath) {
       try { fs.unlinkSync(audioPath) } catch (cleanupError) {
@@ -7590,31 +7701,53 @@ case 'ytaudio': {
       })
       if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
       audioBuffer = fs.readFileSync(audioPath)
+      if (!isUsableAudioBuffer(audioBuffer)) throw new Error('yt-dlp created invalid audio data')
     } catch (downloadError) {
-      if (!isYoutubeBotCheckError(downloadError)) throw downloadError
-      console.warn('yt-dlp YouTube audio download failed; trying no-cookie audio fallbacks.')
+      const downloadMessage = `${downloadError?.message || ''} ${downloadError?.stderr || ''}`.toLowerCase()
+      if (!isYoutubeBotCheckError(downloadError) && !/audio file was not created|invalid audio/.test(downloadMessage)) throw downloadError
+      console.warn('yt-dlp YouTube audio download failed; trying compatible no-cookie audio fallbacks.')
       let fallback
       try {
-        fallback = await fetchYtmp3GeAudio(text)
-      } catch (ytmp3FallbackError) {
-        console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
-        fallback = await fetchPipedAudio(text)
+        fallback = await fetchYtdlpCompatibleAudio(text)
+      } catch (compatibleError) {
+        console.warn('Compatible yt-dlp audio fallback failed:', compatibleError.message)
+        try {
+          fallback = await fetchYtmp3GeAudio(text)
+        } catch (ytmp3FallbackError) {
+          console.warn('YTMP3.GE audio fallback failed:', ytmp3FallbackError.message)
+          fallback = await fetchPipedAudio(text)
+        }
       }
+      if (!isUsableAudioBuffer(fallback.buffer)) throw new Error('Audio fallback returned invalid data')
       audioBuffer = fallback.buffer
-      audioMimetype = fallback.mimetype
+      audioMimetype = fallback.mimetype || 'audio/mpeg'
       audioFileName = fallback.fileName || 'manix-xmd-audio.mp3'
     }
-    if (!audioBuffer) throw new Error('Audio data was not created')
+    if (!audioBuffer || !isUsableAudioBuffer(audioBuffer)) throw new Error('Audio data was not created or is invalid')
     await bad.sendMessage(m.chat, {
       audio: audioBuffer,
       mimetype: audioMimetype,
-      fileName: audioFileName
+      ptt: false,
+      fileName: audioFileName,
+      caption: buildManixMusicTemplate({
+        title: text,
+        sourceUrl: text,
+        uploader: 'YouTube',
+        status: 'ready',
+        detail: 'ᴘʟᴀʏᴀʙʟᴇ ᴀᴜᴅɪᴏ ʀᴇᴀᴅʏ'
+      })
     }, { quoted: m })
     await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
   } catch (err) {
     console.error('YouTube audio error:', err.stderr || err.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    return reply(`❌ Failed to download audio. ${youtubeRecoveryHint(err)}`)
+    return reply(buildManixMusicTemplate({
+      title: text,
+      sourceUrl: text,
+      uploader: 'YouTube',
+      status: 'failed',
+      detail: youtubeRecoveryHint(err)
+    }))
   } finally {
     if (audioPath) {
       try { fs.unlinkSync(audioPath) } catch (cleanupError) {

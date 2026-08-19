@@ -5,6 +5,8 @@ const axios = require('axios')
 const ytdlp = require('youtube-dl-exec')
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
+const MANIX_CHANNEL_URL = String(process.env.WHATSAPP_CHANNEL_URL || 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f').trim()
+const MANIX_CONTACT_URL = 'wa.me/9779807044421'
 const MAX_FILE_BYTES = 100 * 1024 * 1024
 const YOUTUBE_HOSTS = /(?:youtube\.com|youtu\.be|music\.youtube\.com)/i
 const DIRECT_MEDIA_EXTENSIONS = /\.(mp4|m4v|webm|mov|mkv|avi|3gp|mp3|m4a|aac|wav|ogg|opus|jpg|jpeg|png|gif|webp)(?:[?#].*)?$/i
@@ -87,6 +89,36 @@ function titleFromInfo(info, platform) {
     .slice(0, 100) || `${platform}-download`
 }
 
+function isUsableAudioBuffer(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 1024) return false
+  const prefix = buffer.subarray(0, 96).toString('utf8').trim().toLowerCase()
+  if (prefix.startsWith('<!doctype') || prefix.startsWith('<html') || prefix.startsWith('{')) return false
+  return buffer.subarray(0, 3).toString('ascii') === 'ID3' ||
+    (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) ||
+    buffer.subarray(4, 8).toString('ascii') === 'ftyp' ||
+    buffer.subarray(0, 4).toString('ascii') === 'OggS'
+}
+
+function buildDownloadTemplate(result) {
+  return `╭━━〔 📥 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ᴅᴏᴡɴʟᴏᴀᴅ 〕━━┈⊷
+┃
+┃ 📁 *ғɪʟᴇ:* ${result.fileName}
+┃ 📊 *sɪᴢᴇ:* ${(result.size / 1024 / 1024).toFixed(2)} MB
+┃ 📱 *sᴏᴜʀᴄᴇ:* ${result.platform}
+┃ 🎵 *ᴛɪᴛʟᴇ:* ${result.title}
+┃
+╰━━━━━━━━━━━━━━━━━━━━━┈⊷
+
+╭━━━━━━━━━━━━━━━━━━━━━╮
+┃ 📢 Follow the MANIX MD 💐 channel:
+┃ ${MANIX_CHANNEL_URL}
+┃
+┃ ☎ Contact: ${MANIX_CONTACT_URL}
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☠︎︎`
+}
+
 function mediaTypeFromFile(filePath, info, audioOnly) {
   const ext = path.extname(filePath).toLowerCase()
   if (audioOnly || /\.(mp3|m4a|aac|wav|ogg|opus)$/i.test(ext)) return 'audio'
@@ -116,6 +148,7 @@ async function downloadWithYtdlp(url, platform, options) {
     await fs.promises.rename(sourcePath, finalPath)
     const stat = await fs.promises.stat(finalPath)
     if (!stat.size || stat.size > MAX_FILE_BYTES) throw new Error('Downloaded media is empty or exceeds the 100 MB limit')
+    if (options.audioOnly && !isUsableAudioBuffer(await fs.promises.readFile(finalPath))) throw new Error('yt-dlp returned invalid audio data')
     return {
       success: true,
       path: finalPath,
@@ -131,6 +164,56 @@ async function downloadWithYtdlp(url, platform, options) {
       raw: info,
       cleanupDir: tempDir
     }
+  } catch (error) {
+    await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    throw error
+  }
+}
+
+async function downloadYoutubeAudioWithCompatibleYtdlp(url, options) {
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-download-compatible-audio-'))
+  const clients = [
+    ['android_vr', 'web_safari', 'tv'],
+    ['mweb'],
+    ['web_embedded']
+  ]
+  let lastError = null
+  try {
+    for (const playerClient of clients) {
+      try {
+        const ytdlpOptions = {
+          noPlaylist: true,
+          noWarnings: true,
+          noCheckCertificates: true,
+          noPart: true,
+          format: '96/18/best[ext=mp4]/best',
+          extractAudio: true,
+          audioFormat: 'mp3',
+          audioQuality: options.quality === 'best' ? '5' : String(options.quality || '5'),
+          output: path.join(tempDir, 'media.%(ext)s'),
+          jsRuntime: 'node',
+          remoteComponents: 'ejs:github',
+          userAgent: USER_AGENT,
+          extractorArgs: { youtube: { player_client: playerClient } },
+          ...cookieOptions('youtube')
+        }
+        const info = await ytdlp(url, { ...ytdlpOptions, dumpSingleJson: true, skipDownload: true })
+        await ytdlp(url, ytdlpOptions)
+        const files = await listMediaFiles(tempDir)
+        const sourcePath = files.find(file => /\.(mp3|m4a|aac|wav|ogg|opus)$/i.test(file))
+        if (!sourcePath) throw new Error('Compatible yt-dlp fallback created no audio file')
+        const buffer = await fs.promises.readFile(sourcePath)
+        if (!isUsableAudioBuffer(buffer)) throw new Error('Compatible yt-dlp fallback created invalid audio data')
+        const fileName = `${titleFromInfo(info, 'youtube-audio')}_${Date.now()}.mp3`
+        const finalPath = path.join(tempDir, fileName)
+        await fs.promises.rename(sourcePath, finalPath)
+        const stat = await fs.promises.stat(finalPath)
+        return { success: true, path: finalPath, fileName, size: stat.size, type: 'audio', title: info?.title || 'YouTube Audio', platform: 'youtube', thumbnail: info?.thumbnail || null, uploader: info?.uploader || info?.channel || null, audioUrl: null, videoUrl: url, raw: info, cleanupDir: tempDir }
+      } catch (error) {
+        lastError = error
+      }
+    }
+    throw lastError || new Error('No compatible yt-dlp audio fallback was available')
   } catch (error) {
     await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {})
     throw error
@@ -153,26 +236,18 @@ async function downloadYoutubeAudioFallback(url, options) {
     const fileName = `${titleFromInfo({ title: data.title }, 'youtube-audio')}_${Date.now()}.mp3`
     const filePath = path.join(tempDir, fileName)
     const media = await axios.get(data.downloadUrl, {
-      responseType: 'stream',
+      responseType: 'arraybuffer',
       timeout: 90000,
       maxContentLength: MAX_FILE_BYTES,
       maxBodyLength: MAX_FILE_BYTES,
       headers: { Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8', 'User-Agent': 'MANI-XMD/1.0' },
       validateStatus: status => status >= 200 && status < 300
     })
-    const writer = fs.createWriteStream(filePath)
-    let received = 0
-    media.data.on('data', chunk => {
-      received += chunk.length
-      if (received > MAX_FILE_BYTES) media.data.destroy(new Error('Audio exceeds the 100 MB limit'))
-    })
-    media.data.pipe(writer)
-    await new Promise((resolve, reject) => {
-      writer.once('finish', resolve)
-      writer.once('error', reject)
-      media.data.once('error', reject)
-    })
-    if (!received) throw new Error('YTMP3.GE returned an empty audio file')
+    const buffer = Buffer.from(media.data || [])
+    const contentType = String(media.headers?.['content-type'] || '').split(';')[0].toLowerCase()
+    if (!isUsableAudioBuffer(buffer) || contentType.includes('text/html') || contentType.includes('application/json')) throw new Error('YTMP3.GE returned invalid audio data instead of an MP3 file')
+    await fs.promises.writeFile(filePath, buffer)
+    const received = buffer.length
     return {
       success: true,
       path: filePath,
@@ -251,7 +326,18 @@ async function downloadFile(url, retriesOrOptions = 2) {
         try {
           return await downloadWithYtdlp(input, platform, options)
         } catch (error) {
-          if (platform === 'youtube' && options.audioOnly) return await downloadYoutubeAudioFallback(input, options)
+          if (platform === 'youtube' && options.audioOnly) {
+            try {
+              return await downloadYoutubeAudioWithCompatibleYtdlp(input, options)
+            } catch (compatibleError) {
+              try {
+                return await downloadYoutubeAudioFallback(input, options)
+              } catch (fallbackError) {
+                fallbackError.previous = compatibleError
+                throw fallbackError
+              }
+            }
+          }
           throw error
         }
       }
@@ -279,7 +365,7 @@ async function handleDownloadCommand(sock, msg, args) {
   const result = await downloadFile(url)
   if (!result.success) return sock.sendMessage(chatId, { text: `❌ Download failed\n\n${result.error}\n\nThe provider rejected this no-cookie request. Try another link and retry shortly.` })
   try {
-    const caption = `📥 *MANI XMD DOWNLOAD COMPLETE*\n\n📁 ${result.fileName}\n📊 ${(result.size / 1024 / 1024).toFixed(2)} MB\n📱 ${result.platform}\n🎵 ${result.title}`
+    const caption = buildDownloadTemplate(result)
     if (result.type === 'audio') await sock.sendMessage(chatId, { audio: { url: result.path }, mimetype: 'audio/mpeg', fileName: result.fileName, caption })
     else if (result.type === 'image') await sock.sendMessage(chatId, { image: { url: result.path }, caption })
     else await sock.sendMessage(chatId, { video: { url: result.path }, caption })
@@ -288,4 +374,4 @@ async function handleDownloadCommand(sock, msg, args) {
   }
 }
 
-module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadDirectMedia }
+module.exports = { downloadFile, handleDownloadCommand, cleanup, detectPlatform, downloadWithYtdlp, downloadYoutubeAudioFallback, downloadYoutubeAudioWithCompatibleYtdlp, downloadDirectMedia }
