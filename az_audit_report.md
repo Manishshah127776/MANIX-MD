@@ -3,7 +3,7 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed runtime commit:** `4d3db53c`
+**Latest deployed runtime commit:** `f778b22e`
 **Pairing-code feature commit:** `78cdbe2d`  
 **405 compatibility commit:** `4479f643`
 **Report author:** **Manus AI**  
@@ -35,6 +35,7 @@ The earlier production blocker was upstream WhatsApp registration: Baileys was r
 | `53f91a26` | Repair TikTok downloads with current yt-dlp and official-embed fallback, add automatic stable yt-dlp refresh, and restore `.bugmenu` routing | Pushed to `main`; Render deployed |
 | `e7d7f78c` | Harden YouTube and Instagram fallbacks, add `.cinfo` and owner-only channel forwarding, persist forwarding settings, add newsletter deduplication, and update the 730-label inventory | Pushed to `main`; Render deployed |
 | `4d3db53c` | Route `.play`, `.song`, `.ytmp3`, `.ytaudio`, `.ytvideo`, `.ytmp4`, and alternate YouTube download labels through yt-dlp with cookies and current player clients; add deterministic route validation | Pushed to `main`; Render deployed |
+| `f778b22e` | Add no-cookie YTMP3.GE audio fallback after yt-dlp media-delivery failure, apply it to `.play`, `.song`, `.ytmp3`, `.ytaudio`, and `download.js`, and remove misleading cookies-required wording | Pushed to `main`; Render deployed |
 
 Render accepted the latest deploy hook with HTTP 202. The service endpoint confirms that the deployed application is online.
 
