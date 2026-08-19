@@ -3,7 +3,7 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed runtime commit:** `e7d7f78c`
+**Latest deployed runtime commit:** `4d3db53c`
 **Pairing-code feature commit:** `78cdbe2d`  
 **405 compatibility commit:** `4479f643`
 **Report author:** **Manus AI**  
@@ -34,6 +34,7 @@ The earlier production blocker was upstream WhatsApp registration: Baileys was r
 | `83205282` | Add Unicode command normalization, 20 compatibility aliases, `.fixowner`/`.enc`, unknown-command recovery, startup command audit, and the reconciled 725-label inventory | Pushed to `main`; Render deployed |
 | `53f91a26` | Repair TikTok downloads with current yt-dlp and official-embed fallback, add automatic stable yt-dlp refresh, and restore `.bugmenu` routing | Pushed to `main`; Render deployed |
 | `e7d7f78c` | Harden YouTube and Instagram fallbacks, add `.cinfo` and owner-only channel forwarding, persist forwarding settings, add newsletter deduplication, and update the 730-label inventory | Pushed to `main`; Render deployed |
+| `4d3db53c` | Route `.play`, `.song`, `.ytmp3`, `.ytaudio`, `.ytvideo`, `.ytmp4`, and alternate YouTube download labels through yt-dlp with cookies and current player clients; add deterministic route validation | Pushed to `main`; Render deployed |
 
 Render accepted the latest deploy hook with HTTP 202. The service endpoint confirms that the deployed application is online.
 
@@ -156,6 +157,8 @@ The missing `.bugmenu` dispatcher case was added as a reliable text-only diagnos
 Local verification passed with a public TikTok video: yt-dlp downloaded a valid 4,172,714-byte MP4, with title and uploader metadata returned. The final dispatcher inventory is now **730 labels, 730 unique labels, and zero duplicates**, reflecting the original command set plus the compatibility, diagnostics, channel-information, and channel-forwarding additions.
 
 ## YouTube, Instagram, cinfo, and channel-forwarder repair release
+
+The final YouTube command-routing patch is deployed in `4d3db53c`. Every requested YouTube play/download route now calls `youtube-dl-exec` directly: `.play`, `.song`, `.ytmp3`, `.ytaudio`, `.ytvideo`, `.ytmp4`, `.ytmp4_alt2`, and `.ytvideo_alt2`. The alternate video route no longer calls the NexOracle `downloader/ytmp4` endpoint. All routes use the current YouTube player clients, EJS remote components, and `YT_COOKIES_PATH` when configured. A deterministic source test confirms all four grouped route families are yt-dlp-backed, and the dispatcher audit remains at 730 unique labels with zero duplicates.
 
 The YouTube recovery path was hardened again. The primary yt-dlp calls now use the current EJS remote components and explicit `android_vr`, `web_safari`, and `tv` player clients before trying the expanded, JSON-validated Piped instance list. Piped responses that return an HTML error page with HTTP 200 are rejected instead of being treated as stream metadata. Downloaded audio is checked for non-empty bytes, and the final user-facing message distinguishes an upstream YouTube server block from a local command failure.
 
