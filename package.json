@@ -8,7 +8,8 @@
     "dev": "nodemon index.js",
     "bot": "node bot.js",
     "web": "node server.js",
-    "test": "node --check index.js"
+    "test": "node --check index.js",
+    "postinstall": "node scripts/patch-baileys-405.js"
   },
   "keywords": [
     "whiskeysockets",
@@ -29,7 +30,7 @@
     "@distube/ytdl-core": "^4.14.4",
     "@hapi/boom": "^10.0.0",
     "@vitalets/google-translate-api": "^9.2.0",
-    "@whiskeysockets/baileys": "7.0.0-rc13",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
     "api-dylux": "^1.4.4",
     "awesome-phonenumber": "^2.64.0",
     "axios": "^1.7.7",
