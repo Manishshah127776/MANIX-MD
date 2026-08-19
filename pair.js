@@ -149,11 +149,20 @@ async function requestPairingCode(manixmdNumber, phoneNumber, pairingIo = null) 
         tracker = rentbotTracker.get(manixmdNumber);
     }
 
-    if (!socket || typeof socket.requestPairingCode !== 'function') {
+    if (!socket || typeof socket.requestPairingCode !== 'function' || !tracker) {
         throw new Error('The WhatsApp pairing socket is not ready. Please try again.');
     }
+    if (socket.authState?.creds?.registered) {
+        throw new Error('This WhatsApp session is already registered. Use the connected session instead.');
+    }
 
-    if (typeof socket.waitForSocketOpen === 'function') {
+    const registrationReady = tracker.registrationReadyPromise;
+    if (registrationReady) {
+        await Promise.race([
+            registrationReady,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('WhatsApp did not reach the pairing stage in time. Please try QR pairing or retry later.')), 20000))
+        ]);
+    } else if (typeof socket.waitForSocketOpen === 'function') {
         await Promise.race([
             socket.waitForSocketOpen(),
             new Promise((_, reject) => setTimeout(() => reject(new Error('WhatsApp socket did not become ready in time.')), 20000))
@@ -308,6 +317,17 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     tracker.retryCount++;
     tracker.disconnected = false;
     tracker.lastActivity = Date.now();
+    let resolveRegistrationReady;
+    let rejectRegistrationReady;
+    tracker.registrationReadyPromise = new Promise((resolve, reject) => {
+        resolveRegistrationReady = resolve;
+        rejectRegistrationReady = reject;
+    });
+    // A rejected gate may be intentionally consumed by a dashboard request; attach a
+    // no-op rejection handler so a failed reconnect does not create an unhandled rejection.
+    tracker.registrationReadyPromise.catch(() => {});
+    tracker.resolveRegistrationReady = resolveRegistrationReady;
+    tracker.rejectRegistrationReady = rejectRegistrationReady;
     if (pairingIo) {
         pairingIo.currentQr = null;
         pairingIo.currentPairingCode = null;
@@ -351,6 +371,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         syncFullHistory: true,
         markOnlineOnConnect: true,
     })
+    // Expose the auth state for the pairing-code guard without changing Baileys internals.
+    bad.authState = state;
     
     tracker.connection = bad;
     tracker.eventListenersAttached = false;
@@ -689,7 +711,14 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     // 🔥 ENHANCED CONNECTION HANDLER WITH KEEP-ALIVE
     bad.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect, qr } = update;
+        const tracker = rentbotTracker.get(manixmdNumber);
+        if (!tracker) return;
 
+        if (qr) {
+            tracker.resolveRegistrationReady?.(true);
+            tracker.resolveRegistrationReady = null;
+            tracker.rejectRegistrationReady = null;
+        }
         if (qr && pairingIo) {
             try {
                 const QRCode = require('qrcode');
@@ -705,8 +734,6 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 console.log(chalk.red(`❌ Could not render WhatsApp Web QR code: ${error.message}`));
             }
         }
-        const tracker = rentbotTracker.get(manixmdNumber);
-
         if (connection === "close") {
             if (tracker.keepAliveInterval) {
                 clearInterval(tracker.keepAliveInterval);
@@ -723,6 +750,9 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 pairingIo.emit('connected', false);
             }
             console.log(chalk.yellow(`🔌 Connection closed for ${manixmdNumber}, reason: ${reason}`));
+            tracker.rejectRegistrationReady?.(new Error(`WhatsApp connection closed before pairing became ready (code ${reason}).`));
+            tracker.resolveRegistrationReady = null;
+            tracker.rejectRegistrationReady = null;
 
             if (reason === 405) {
                 console.log(chalk.red.bold(`❌ Error 405 for ${manixmdNumber}: Session logged out or invalid`));
