@@ -28,12 +28,14 @@ const { promisify } = require('util')
 const { execFile } = require('child_process')
 const execFileAsync = promisify(execFile)
 
-// Keep the WhatsApp protocol version aligned with the pinned Baileys release.
-// Override with BAILEYS_VERSION="major,minor,patch" only when deliberately
-// upgrading the dependency and testing the new protocol tuple.
-const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1035194821')
+// WhatsApp has recently rejected several otherwise-valid Baileys handshakes with
+// HTTP 405. Keep the currently reported working tuple configurable for recovery.
+const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1033893291')
     .split(',')
     .map(value => Number.parseInt(value.trim(), 10))
+const BAILEYS_BROWSER = (process.env.BAILEYS_BROWSER || 'MANI XMD,Chrome,145.0.0')
+    .split(',')
+    .map(value => value.trim())
 
 // Use a configurable auth root so Render Persistent Disk (for example /var/data)
 // can retain WhatsApp credentials across restarts and redeploys.
@@ -275,7 +277,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         printQRInTerminal: false,
         auth: state,
         version: BAILEYS_VERSION,
-        browser: Browsers.ubuntu("Edge"),
+        browser: BAILEYS_BROWSER,
         getMessage: async key => {
             if (!store) return { conversation: '' };
             const jid = key.remoteJid;
