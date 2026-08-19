@@ -35,6 +35,42 @@ const NEXORACLE_KEY = process.env.NEXORACLE_API_KEY || process.env.NEXORACLE_KEY
 const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
 const OWNER_SHELL_ENABLED = process.env.ENABLE_OWNER_SHELL === 'true'
 
+const COMMAND_CHAR_MAP = {
+  'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ғ': 'f', 'ꜰ': 'f', 'ɢ': 'g',
+  'ʜ': 'h', 'ɪ': 'i', 'ᴊ': 'j', 'ᴋ': 'k', 'ʟ': 'l', 'ᴍ': 'm', 'ɴ': 'n',
+  'ᴏ': 'o', 'ᴘ': 'p', 'ǫ': 'q', 'ʀ': 'r', 'ꜱ': 's', 'ᴛ': 't', 'ᴜ': 'u',
+  'ᴠ': 'v', 'ᴡ': 'w', 'ʏ': 'y', 'ᴢ': 'z'
+};
+const COMMAND_ALIASES = Object.freeze({
+  ai: 'gpt',
+  chatgpt: 'gpt',
+  llama: 'gpt',
+  antidelete: 'antideletedm',
+  closegroup: 'close',
+  greatcheck: 'greatcheckcase',
+  kickadmins: 'kickadmin',
+  maid: 'maid-pic',
+  nwaifu: 'waifu',
+  opengroup: 'open',
+  protect: 'addprotect',
+  rwaifu: 'waifu',
+  s: 'sticker',
+  script: 'gpt',
+  setppbot: 'setprofile',
+  setprefix: 'setix',
+  tr: 'truth',
+  vv2: 'vv',
+  welcomecard: 'welcome',
+  whoami: 'owner'
+});
+const normalizeCommandName = (value) => String(value || '')
+  .normalize('NFKC')
+  .split('')
+  .map(char => COMMAND_CHAR_MAP[char] || char)
+  .join('')
+  .toLowerCase()
+  .replace(/<[^>]*>$/g, '');
+
 // Download media helper
 async function downloadMedia(message, type) {
     try {
@@ -940,7 +976,8 @@ for (let p of allowedPrefixes) {
 
 // ✅ Args & command
 const args = commandBody.slice(prefix.length).trim().split(/ +/);
-const command = args[0]?.toLowerCase() || '';
+const requestedCommand = normalizeCommandName(args[0] || '');
+const command = COMMAND_ALIASES[requestedCommand] || requestedCommand;
 const text = args.slice(1).join(" ").trim();
 const q = text;
 
@@ -1037,16 +1074,24 @@ if (global.autobio) {
   bad.updateProfileStatus(`𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 | ᴜᴘᴛɪᴍᴇ: ${runtime(process.uptime())}`).catch(_ => _)
 }
 
+    let commandReplySent = false
     const reply = async (teks) => {
   try {
     await bad.sendMessage(from, {
       text: teks,
       mentions: [sender]
     });
+    commandReplySent = true
   } catch (error) {
-    await bad.sendMessage(from, {
-      text: teks
-    });
+    try {
+      await bad.sendMessage(from, {
+        text: teks
+      });
+      commandReplySent = true
+    } catch (fallbackError) {
+      console.error('Reply send error:', fallbackError.message)
+      throw fallbackError
+    }
   }
 };
 
@@ -3083,6 +3128,36 @@ case 'public': {
   } catch (e) {}
 
   reply('✅ Publiç mode ON')
+}
+break
+
+case 'fixowner': {
+  if (!isCreator) return reply('❌ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
+  try {
+    const ownerJid = jidNormalizedUser(m.sender)
+    const botOwnerFile = path.join(PROJECT_ROOT, 'allfunc', 'botowner.txt')
+    fs.mkdirSync(path.dirname(botOwnerFile), { recursive: true })
+    fs.writeFileSync(botOwnerFile, ownerJid)
+    if (!owner.some(item => isSameUser(item, ownerJid))) {
+      owner.push(ownerJid)
+      fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'owner.json'), JSON.stringify(owner, null, 2))
+    }
+    if (!premium.some(item => isSameUser(item, ownerJid))) {
+      premium.push(ownerJid)
+      fs.writeFileSync(path.join(PROJECT_ROOT, 'allfunc', 'premium.json'), JSON.stringify(premium, null, 2))
+    }
+    return reply(`✅ ᴏᴡɴᴇʀ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ ʀᴇғʀᴇsʜᴇᴅ ғᴏʀ @${ownerJid.split('@')[0]}`)
+  } catch (error) {
+    console.error('fixowner error:', error)
+    return reply('❌ ᴏᴡɴᴇʀ ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ʀᴇғʀᴇsʜᴇᴅ.')
+  }
+}
+break
+
+case 'enc': {
+  if (!text) return reply(`ᴜsᴀɢᴇ: ${prefix}enc <text>`)
+  const encoded = Buffer.from(text, 'utf8').toString('base64')
+  return reply(`✅ ʙᴀsᴇ64 ᴇɴᴄᴏᴅᴇᴅ ᴛᴇxᴛ:\n${encoded}`)
 }
 break
 
@@ -12766,10 +12841,21 @@ default:
           })
         }
 
+        if (isCmd && command) {
+          await reply(`╭━━〔 ❌ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 〕━━┈⊷\n┃ ᴄᴏᴍᴍᴀɴᴅ ɴᴏᴛ ꜰᴏᴜɴᴅ\n┃ ᴛʏᴘᴇ ${prefix}menu ᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+        }
+
     } // End of switch
 
   } catch (err) {
-    console.error('Command execution error:', err)
+    console.error(`[COMMAND ERROR] ${command || 'unknown'}`, err)
+    if (isCmd && command && !commandReplySent) {
+      try {
+        await reply('❌ ᴄᴏᴍᴍᴀɴᴅ ғᴀɪʟᴇᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.')
+      } catch (replyError) {
+        console.error(`[COMMAND REPLY ERROR] ${command}`, replyError)
+      }
+    }
   }
 } // End of command handler
 const commandHandler = handleMessage
@@ -13500,6 +13586,8 @@ module.exports.setupEventListeners = setupEventListeners;
 module.exports.groupMetadataCache = groupMetadataCache;
 module.exports.refreshGroupMetadata = refreshGroupMetadata;
 module.exports.checkAdminStatus = checkAdminStatus;
+module.exports.commandAliases = COMMAND_ALIASES;
+module.exports.commandCharMap = COMMAND_CHAR_MAP;
 // ═══════════════════════════════════════════════════════════
 // FILE WATCHER
 // ═══════════════════════════════════════════════════════════

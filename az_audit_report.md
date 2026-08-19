@@ -13,7 +13,7 @@
 
 The MANI XMD source audit, branding migration, command-dispatch repair, media repair, security hardening, and Render deployment work has been completed and pushed to the selected GitHub repository. The production service is live: `/healthz` returns HTTP 200 with `ok`, the dashboard is reachable, the required artwork returns HTTP 200, and the live HTML contains the exact MANI XMD branding, WhatsApp channel, and contact number.
 
-The source-level command inventory now reconciles exactly: **723 case labels, 723 unique labels, zero duplicates, no labels missing from the generated inventory, and no extra labels**. The original dispatcher was preserved; duplicate switch labels were renamed rather than deleting commands.
+The source-level command inventory now reconciles exactly: **725 case labels, 725 unique labels, zero duplicates, no labels missing from the generated inventory, and no extra labels**. The original 723-command dispatcher was preserved; the two additional labels are dedicated compatibility handlers for `.fixowner` and `.enc`. Duplicate switch labels were renamed rather than deleting commands.
 
 The earlier production blocker was upstream WhatsApp registration: Baileys was rejected with **disconnect code 405 before a QR or pairing code was emitted**. The deployed fix upgrades Baileys to rc14, uses the currently reported protocol tuple, and applies a guarded MACOS platform compatibility patch during installation. After rollout, `/status` changed to `WhatsApp is waiting for a fresh QR scan` with `qrAvailable: true`. The service is ready for linking, but it must not be described as WhatsApp-connected until the user scans the QR or completes pairing-code linking.
 
@@ -40,10 +40,10 @@ The dispatcher was audited without removing the original command set. A determin
 
 | Check | Result |
 |---|---:|
-| Source labels | **723** |
-| Unique source labels | **723** |
+| Source labels | **725** |
+| Unique source labels | **725** |
 | Duplicate source labels | **0** |
-| Inventory labels | **723** |
+| Inventory labels | **725** |
 | Missing inventory labels | **0** |
 | Extra source labels | **0** |
 | Syntax checks for `drenox.js`, `pair.js`, `index.js`, `bot.js`, `setting/config.js`, and `autoload.js` | **Passed** |
@@ -132,6 +132,14 @@ The code-405 condition was upstream of the Express dashboard and was addressed w
 
 After the initial audit, the music path received an additional resilience update. `.play`, `.song`, `.ytmp3`, and `.ytaudio` retain local `yt-dlp` as the primary extractor, optionally use a Netscape cookies file through `YT_COOKIES_PATH`, detect YouTube bot-check failures, and attempt configured Piped audio instances before returning a concise recovery hint. Public fallback services remain best-effort; an authorized cookies file is the reliable Render-side solution when YouTube challenges the hosting IP.
 
-The WhatsApp connected confirmation now logs its targets and retries up to three times after the socket opens. It prefers the authenticated account JID and falls back to `OWNER_NUMBER` or `MANIX_CONTACT_NUMBER`, preventing transient post-auth send failures from silently losing the notice. The command inventory remains 723 unique labels with zero duplicates after this patch.
+The WhatsApp connected confirmation now logs its targets and retries up to three times after the socket opens. It prefers the authenticated account JID and falls back to `OWNER_NUMBER` or `MANIX_CONTACT_NUMBER`, preventing transient post-auth send failures from silently losing the notice. The command inventory now contains 725 unique labels with zero duplicates: the original 723 labels plus dedicated `.fixowner` and `.enc` handlers.
 
 The post-audit reliability patch is deployed in `5115845e`. Validate `.play`/`.song` with a public video after WhatsApp linking; if YouTube still challenges Render’s IP, configure an authorized Netscape cookies file through `YT_COOKIES_PATH`. The connected notice now retries three times after authentication and should be confirmed after the next QR or pairing-code link.
+
+## Current command-resolution patch
+
+The dispatcher now normalizes Unicode small-cap and Cyrillic-stylized command spellings before routing them, so menu forms such as `.ᴀʟʟᴍᴇɴᴜ`, `.spotiғy`, and `.ғlux` resolve to their ASCII handlers. A frozen compatibility table covers 20 legacy or stylized names, including `.ai`, `.chatgpt`, `.antidelete`, `.closegroup`, `.opengroup`, `.s`, `.tr`, `.vv2`, `.whoami`, `.setppbot`, `.setprefix`, `.welcomecard`, `.protect`, `.kickadmins`, `.maid`, `.nwaifu`, `.rwaifu`, `.script`, `.llama`, and `.greatcheck`.
+
+Two dedicated owner/utility handlers were added without removing any original command: `.fixowner` refreshes the owner allowlist using the authenticated sender, and `.enc <text>` returns a Base64 encoding. Valid-prefix commands that do not resolve now receive a formatted command-not-found response pointing users to `.menu`; command execution failures receive a single user-facing recovery message, with the duplicate-reply guard preserved.
+
+Startup now emits a `[COMMAND AUDIT]` block covering the loaded dispatcher count, alias count, duplicate labels, missing dependencies, failed modules, and broken-command status. The deterministic audit scripts report **725 source labels, 725 unique labels, zero duplicates, and no inventory mismatch**. Menu comparison reports no unresolved command names; `0*` and `runway<prompt>` are retained as display-only menu artifacts.

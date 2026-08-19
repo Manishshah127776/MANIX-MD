@@ -22,6 +22,41 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const PORT = Number.parseInt(process.env.PORT || '10000', 10);
 
+function logCommandAudit(drenoxModule) {
+    const sourcePath = path.join(__dirname, 'drenox.js');
+    let labels = [];
+    let sourceError = null;
+    try {
+        const source = fs.readFileSync(sourcePath, 'utf8');
+        labels = [...source.matchAll(/\bcase\s+(['\"])([^'\"]+)\1\s*:/g)].map(match => match[2]);
+    } catch (error) {
+        sourceError = error;
+    }
+    const duplicateLabels = [...new Set(labels.filter((label, index) => labels.indexOf(label) !== index))];
+    const aliases = drenoxModule?.commandAliases || {};
+    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+    const dependencyNames = Object.keys(packageJson.dependencies || {});
+    const missingDependencies = dependencyNames.filter(name => {
+        try {
+            require.resolve(name, { paths: [__dirname] });
+            return false;
+        } catch {
+            return true;
+        }
+    });
+    const failedModules = sourceError ? [{ file: 'drenox.js', error: sourceError.message }] : [];
+    const brokenCommands = sourceError || duplicateLabels.length ? labels.length : 0;
+
+    console.log('[COMMAND AUDIT]');
+    console.log(`✓ Loaded commands: ${labels.length}`);
+    console.log(`✓ Registered aliases: ${Object.keys(aliases).length}`);
+    console.log(`${duplicateLabels.length ? '⚠' : '✓'} Duplicate commands: ${duplicateLabels.length}${duplicateLabels.length ? ` (${duplicateLabels.join(', ')})` : ''}`);
+    console.log(`${failedModules.length ? '⚠' : '✓'} Failed command modules: ${failedModules.length}${failedModules.length ? ` (${failedModules.map(item => `${item.file}: ${item.error}`).join('; ')})` : ' (monolithic dispatcher loaded)'}`);
+    console.log(`${missingDependencies.length ? '⚠' : '✓'} Missing dependencies: ${missingDependencies.length}${missingDependencies.length ? ` (${missingDependencies.join(', ')})` : ''}`);
+    console.log(`${brokenCommands ? '✗' : '✓'} Broken commands: ${brokenCommands}`);
+    return { labels, aliases, duplicateLabels, missingDependencies, failedModules, brokenCommands };
+}
+
 function startHealthServer() {
     const app = express();
     const server = http.createServer(app);
@@ -203,6 +238,7 @@ function launchBot() {
             console.log(chalk.blue('💬 Loading WhatsApp commands system...'));
             const drenoxModule = require('./drenox');
             whatsappLoaded = true;
+            logCommandAudit(drenoxModule);
             console.log(chalk.green('✅ WhatsApp commands loaded successfully!'));
             
         } catch (error) {
