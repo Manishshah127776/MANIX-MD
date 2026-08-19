@@ -178,3 +178,14 @@ The current release candidate has **730 dispatcher labels, 730 unique labels, ze
 | Instagram `.instagram` / `.ig` / `.igdl` | `INSTAGRAM_COOKIES_PATH` for login/rate-limited posts, or an authorized `COBALT_API_URL` and optional `COBALT_API_KEY` |
 | Channel forwarding | Owner runs `.channelforward <source channel link> [destination JID]`; destination defaults to the current chat |
 | Channel information | Any user can run `.cinfo <channel link>` after WhatsApp is connected |
+
+
+## Screenshot-confirmed cinfo fallback repair
+
+The screenshot showed `.cinfo` reaching the command handler but failing inside Baileys newsletter metadata parsing with `Unexpected token ... is not valid JSON`. The handler now catches native metadata-parser failures and falls back to the public WhatsApp channel invite page. The fallback extracts the channel title, follower count, public invite identifier, and description without exposing the raw parser exception to users.
+
+Local verification against `https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f` passed: it returned **MANIX MD 💐**, **2 followers**, public identifier `0029Vb8XvFqD8SDvDPkdqG1f`, and source `public WhatsApp channel page`. The native metadata path remains preferred when Baileys returns a valid newsletter object, preserving JID and creation-time details when available.
+
+The YouTube and Instagram messages visible in the screenshot are provider access restrictions rather than dispatcher failures. YouTube is rejecting anonymous Render traffic and Instagram is rate-limiting anonymous server downloads. The bot now uses yt-dlp first and returns actionable cookie/authorized-provider guidance; no code-only change can legitimately bypass those upstream account or IP restrictions.
+
+**Screenshot-fix verification:** `drenox.js` syntax passed; cinfo public-page fallback passed; yt-dlp route test passed; dispatcher inventory remained **730 labels, 730 unique, zero duplicates**.

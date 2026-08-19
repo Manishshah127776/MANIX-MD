@@ -265,6 +265,50 @@ function youtubeRecoveryHint(error) {
   return 'Try another title or YouTube link.'
 }
 
+function decodeBasicHtml(value) {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#x27;|&#39;|&apos;/gi, "'")
+    .replace(/&#x2F;|&#47;|\//gi, '/')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/<[^>]+>/g, '')
+    .trim()
+}
+
+async function fetchPublicWhatsAppChannelInfo(channelLink) {
+  const response = await axios.get(channelLink, {
+    timeout: 30000,
+    responseType: 'text',
+    headers: {
+      Accept: 'text/html,application/xhtml+xml',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36'
+    },
+    validateStatus: status => status >= 200 && status < 400
+  })
+  const html = String(response.data || '')
+  if (!html) throw new Error('WhatsApp returned an empty channel page')
+  const metaContent = (name) => {
+    const pattern = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]+content=["']([^"']*)["'][^>]*>`, 'i')
+    const reversePattern = new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+(?:name|property)=["']${name}["'][^>]*>`, 'i')
+    return decodeBasicHtml(html.match(pattern)?.[1] || html.match(reversePattern)?.[1] || '')
+  }
+  const title = decodeBasicHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || metaContent('og:title') || 'WhatsApp Channel'
+  const description = metaContent('description') || metaContent('og:description') || 'No description available'
+  const followersMatch = html.match(/(?:Channel\s*[•·]\s*|Join\s+)[^<\d]{0,80}([\d,]+)\s+followers/i)
+  const followers = followersMatch?.[1] || description.match(/([\d,]+)\s+followers/i)?.[1] || 'Unknown'
+  const publicChannelId = html.match(/href=["'][^"']*\/channel\/([A-Za-z0-9_-]{10,})["']/i)?.[1] || null
+  return {
+    id: publicChannelId,
+    name: title.replace(/\s+-\s+WhatsApp channel$/i, '').trim(),
+    description: description.replace(/^Channel\s*•\s*[\d,]+\s*followers\.?$/i, '').trim() || 'No description available',
+    followers,
+    created: null,
+    source: 'public WhatsApp channel page'
+  }
+}
+
 function getInstagramAuthOptions() {
   const configuredPath = String(process.env.INSTAGRAM_COOKIES_PATH || process.env.YT_COOKIES_PATH || '').trim()
   if (!configuredPath) return {}
@@ -7958,19 +8002,30 @@ case 'chinfo': {
     const channelLink = String(text || DEFAULT_MANIX_CHANNEL_URL).trim().split(/\s+/)[0]
     const inviteMatch = channelLink.match(/whatsapp\.com\/channel\/([^/?#\s]+)/i)
     if (!inviteMatch) return reply(`❌ ᴜsᴀɢᴇ: ${prefix}cinfo <WhatsApp channel link>\n\nExample: ${prefix}cinfo ${DEFAULT_MANIX_CHANNEL_URL}`)
+    let metadata = null
+    let nativeError = null
     try {
-        const metadata = await bad.newsletterMetadata('invite', inviteMatch[1])
-        if (!metadata?.id) throw new Error('WhatsApp could not resolve that channel invite')
+        metadata = await bad.newsletterMetadata('invite', inviteMatch[1])
+    } catch (error) {
+        nativeError = error
+        console.warn('Native WhatsApp channel metadata unavailable; using public page fallback:', error.message)
+    }
+    if (metadata?.id) {
         const thread = metadata.thread_metadata || metadata.threadMetadata || metadata
         const name = thread.name || thread.subject || metadata.name || 'WhatsApp Channel'
         const description = thread.description || metadata.description || 'No description available'
         const followers = thread.subscribers_count ?? thread.subscribersCount ?? metadata.subscribers_count ?? metadata.subscribersCount ?? 'Unknown'
         const created = thread.creation_time || metadata.creation_time || metadata.creationTime
         const createdText = created ? new Date(Number(created) * 1000).toISOString() : 'Unknown'
-        reply(`╭━━〔 📰 ᴄʜᴀɴɴᴇʟ ɪɴғᴏ 〕━━┈⊷\n┃\n┃ 🏷️ *ɴᴀᴍᴇ:* ${name}\n┃ 🆔 *ᴊɪᴅ:* ${metadata.id}\n┃ 👥 *ғᴏʟʟᴏᴡᴇʀs:* ${followers}\n┃ 📝 *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${description}\n┃ 🕒 *ᴄʀᴇᴀᴛᴇᴅ:* ${createdText}\n┃ 🔗 *ʟɪɴᴋ:* ${channelLink}\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
-    } catch (error) {
-        console.error('Channel info error:', error.message)
-        reply(`❌ ᴄʜᴀɴɴᴇʟ ɪɴғᴏ ғᴀɪʟᴇᴅ\n\n${error.message}`)
+        return reply(`╭━━〔 📰 ᴄʜᴀɴɴᴇʟ ɪɴғᴏ 〕━━┈⊷\n┃\n┃ 🏷️ *ɴᴀᴍᴇ:* ${name}\n┃ 🆔 *ᴊɪᴅ:* ${metadata.id}\n┃ 👥 *ғᴏʟʟᴏᴡᴇʀs:* ${followers}\n┃ 📝 *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${description}\n┃ 🕒 *ᴄʀᴇᴀᴛᴇᴅ:* ${createdText}\n┃ 🔗 *ʟɪɴᴋ:* ${channelLink}\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+    }
+    try {
+        const publicInfo = await fetchPublicWhatsAppChannelInfo(channelLink)
+        const nativeNote = nativeError ? 'Native channel metadata was unavailable, so this was read from the public channel page.' : 'Channel metadata was read from the public channel page.'
+        return reply(`╭━━〔 📰 ᴄʜᴀɴɴᴇʟ ɪɴғᴏ 〕━━┈⊷\n┃\n┃ 🏷️ *ɴᴀᴍᴇ:* ${publicInfo.name}\n┃ 🆔 *ᴘᴜʙʟɪᴄ ɪᴅ:* ${publicInfo.id || 'Unavailable'}\n┃ 👥 *ғᴏʟʟᴏᴡᴇʀs:* ${publicInfo.followers}\n┃ 📝 *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${publicInfo.description}\n┃ 🔗 *ʟɪɴᴋ:* ${channelLink}\n┃\n┃ ℹ️ ${nativeNote}\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+    } catch (fallbackError) {
+        console.error('Channel info fallback error:', fallbackError.message)
+        return reply('❌ ᴄʜᴀɴɴᴇʟ ɪɴғᴏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ. WhatsApp rejected the native metadata query and the public channel page could not be read. Try again later.')
     }
 }
 break
@@ -13967,7 +14022,8 @@ module.exports.mediaHelpers = {
   fetchTikTokVideo,
   fetchInstagramWithYtdlp,
   fetchInstagramWithCobalt,
-  fetchInstagramMedia
+  fetchInstagramMedia,
+  fetchPublicWhatsAppChannelInfo
 };
 // ═══════════════════════════════════════════════════════════
 // FILE WATCHER
