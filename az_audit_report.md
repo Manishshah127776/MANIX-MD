@@ -3,7 +3,7 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed runtime commit:** `53f91a26`
+**Latest deployed runtime commit:** `e7d7f78c`
 **Pairing-code feature commit:** `78cdbe2d`  
 **405 compatibility commit:** `4479f643`
 **Report author:** **Manus AI**  
@@ -13,7 +13,7 @@
 
 The MANI XMD source audit, branding migration, command-dispatch repair, media repair, security hardening, and Render deployment work has been completed and pushed to the selected GitHub repository. The production service is live: `/healthz` returns HTTP 200 with `ok`, the dashboard is reachable, the required artwork returns HTTP 200, and the live HTML contains the exact MANI XMD branding, WhatsApp channel, and contact number.
 
-The source-level command inventory now reconciles exactly: **726 case labels, 726 unique labels, zero duplicates, no labels missing from the generated inventory, and no extra labels**. The original 723-command dispatcher was preserved; the three additional labels are dedicated compatibility handlers for `.fixowner`, `.enc`, and `.bugmenu`. Duplicate switch labels were renamed rather than deleting commands.
+The source-level command inventory now reconciles exactly: **730 case labels, 730 unique labels, zero duplicates, no labels missing from the generated inventory, and no extra labels**. The original 723-command dispatcher was preserved; the added labels cover dedicated compatibility, diagnostics, channel-information, and channel-forwarding handlers. Duplicate switch labels were renamed rather than deleting commands.
 
 The earlier production blocker was upstream WhatsApp registration: Baileys was rejected with **disconnect code 405 before a QR or pairing code was emitted**. The deployed fix upgrades Baileys to rc14, uses the currently reported protocol tuple, and applies a guarded MACOS platform compatibility patch during installation. After rollout, `/status` changed to `WhatsApp is waiting for a fresh QR scan` with `qrAvailable: true`. The service is ready for linking, but it must not be described as WhatsApp-connected until the user scans the QR or completes pairing-code linking.
 
@@ -33,6 +33,7 @@ The earlier production blocker was upstream WhatsApp registration: Baileys was r
 | `b211eb65` | Return HTTP 400 for malformed pairing-code phone numbers instead of HTTP 503 | Pushed to `main`; Render deployed |
 | `83205282` | Add Unicode command normalization, 20 compatibility aliases, `.fixowner`/`.enc`, unknown-command recovery, startup command audit, and the reconciled 725-label inventory | Pushed to `main`; Render deployed |
 | `53f91a26` | Repair TikTok downloads with current yt-dlp and official-embed fallback, add automatic stable yt-dlp refresh, and restore `.bugmenu` routing | Pushed to `main`; Render deployed |
+| `e7d7f78c` | Harden YouTube and Instagram fallbacks, add `.cinfo` and owner-only channel forwarding, persist forwarding settings, add newsletter deduplication, and update the 730-label inventory | Pushed to `main`; Render deployed |
 
 Render accepted the latest deploy hook with HTTP 202. The service endpoint confirms that the deployed application is online.
 
@@ -42,15 +43,15 @@ The dispatcher was audited without removing the original command set. A determin
 
 | Check | Result |
 |---|---:|
-| Source labels | **726** |
-| Unique source labels | **726** |
+| Source labels | **730** |
+| Unique source labels | **730** |
 | Duplicate source labels | **0** |
-| Inventory labels | **726** |
+| Inventory labels | **730** |
 | Missing inventory labels | **0** |
 | Extra source labels | **0** |
 | Syntax checks for `drenox.js`, `pair.js`, `index.js`, `bot.js`, `setting/config.js`, and `autoload.js` | **Passed** |
 
-The generated audit script is retained at `scripts/audit-case-labels.js` for future regression checks.
+The generated audit script is retained at `scripts/audit-case-labels.js` for future regression checks. The focused media/channel test also passed for cinfo, channel forwarding, Instagram fallback wiring, newsletter deduplication, and YouTube cookie recovery.
 
 ## Major fixes applied
 
@@ -140,11 +141,11 @@ The post-audit reliability patch is deployed in `5115845e`. Validate `.play`/`.s
 
 ## Current command-resolution patch
 
-The dispatcher now normalizes Unicode small-cap and Cyrillic-stylized command spellings before routing them, so menu forms such as `.ᴀʟʟᴍᴇɴᴜ`, `.spotiғy`, and `.ғlux` resolve to their ASCII handlers. A frozen compatibility table covers 20 legacy or stylized names, including `.ai`, `.chatgpt`, `.antidelete`, `.closegroup`, `.opengroup`, `.s`, `.tr`, `.vv2`, `.whoami`, `.setppbot`, `.setprefix`, `.welcomecard`, `.protect`, `.kickadmins`, `.maid`, `.nwaifu`, `.rwaifu`, `.script`, `.llama`, and `.greatcheck`.
+The dispatcher now normalizes Unicode small-cap and Cyrillic-stylized command spellings before routing them, so menu forms such as `.ᴀʟʟᴍᴇɴᴜ`, `.spotiғy`, and `.ғlux` resolve to their ASCII handlers. A frozen compatibility table covers 26 legacy, stylized, and channel-tool names, including `.ai`, `.chatgpt`, `.antidelete`, `.closegroup`, `.opengroup`, `.s`, `.tr`, `.vv2`, `.whoami`, `.setppbot`, `.setprefix`, `.welcomecard`, `.protect`, `.kickadmins`, `.maid`, `.nwaifu`, `.rwaifu`, `.script`, `.llama`, `.greatcheck`, `.channelinfo`, `.chinfo`, `.channelforwarder`, `.forwardchannel`, and `.cf`.
 
 Two dedicated owner/utility handlers were added without removing any original command: `.fixowner` refreshes the owner allowlist using the authenticated sender, and `.enc <text>` returns a Base64 encoding. Valid-prefix commands that do not resolve now receive a formatted command-not-found response pointing users to `.menu`; command execution failures receive a single user-facing recovery message, with the duplicate-reply guard preserved.
 
-Startup now emits a `[COMMAND AUDIT]` block covering the loaded dispatcher count, alias count, duplicate labels, missing dependencies, failed modules, and broken-command status. The deterministic audit scripts report **726 source labels, 726 unique labels, zero duplicates, and no inventory mismatch**. Menu comparison reports no unresolved command names; `0*` and `runway<prompt>` are retained as display-only menu artifacts.
+Startup now emits a `[COMMAND AUDIT]` block covering the loaded dispatcher count, alias count, duplicate labels, missing dependencies, failed modules, and broken-command status. The deterministic audit scripts report **730 source labels, 730 unique labels, zero duplicates, and no inventory mismatch**. Menu comparison reports no unresolved command names; `0*` and `runway<prompt>` are retained as display-only menu artifacts.
 
 ## Media and bugmenu repair release
 
@@ -152,7 +153,7 @@ The TikTok path was repaired after Render reported `Unexpected response from web
 
 The missing `.bugmenu` dispatcher case was added as a reliable text-only diagnostic menu advertising only real handlers: `.ping`, `.speed`, `.runtime`, `.debug`, `.admincheck`, `.glitch`, `.glitchtext`, and `.menu`. This avoids image-payload failures and prevents the command from falling through to the unknown-command response.
 
-Local verification passed with a public TikTok video: yt-dlp downloaded a valid 4,172,714-byte MP4, with title and uploader metadata returned. The final dispatcher inventory is now **726 labels, 726 unique labels, and zero duplicates**, reflecting the original 723 labels plus `.fixowner`, `.enc`, and `.bugmenu`.
+Local verification passed with a public TikTok video: yt-dlp downloaded a valid 4,172,714-byte MP4, with title and uploader metadata returned. The final dispatcher inventory is now **730 labels, 730 unique labels, and zero duplicates**, reflecting the original command set plus the compatibility, diagnostics, channel-information, and channel-forwarding additions.
 
 ## YouTube, Instagram, cinfo, and channel-forwarder repair release
 
