@@ -3,7 +3,7 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed runtime commit:** `5115845e`
+**Latest deployed runtime commit:** `83205282`
 **Pairing-code feature commit:** `78cdbe2d`  
 **405 compatibility commit:** `4479f643`
 **Report author:** **Manus AI**  
@@ -31,6 +31,7 @@ The earlier production blocker was upstream WhatsApp registration: Baileys was r
 | `5115845e` | Harden YouTube bot-check fallback, add optional cookie authentication, and retry the connected confirmation message | Pushed to `main`; Render deployed |
 | `78cdbe2d` | Add optional phone-number pairing-code API, dashboard controls, Socket.IO events, Telegram instructions, and README documentation | Pushed to `main`; Render deployed |
 | `b211eb65` | Return HTTP 400 for malformed pairing-code phone numbers instead of HTTP 503 | Pushed to `main`; Render deployed |
+| `83205282` | Add Unicode command normalization, 20 compatibility aliases, `.fixowner`/`.enc`, unknown-command recovery, startup command audit, and the reconciled 725-label inventory | Pushed to `main`; Render deployed |
 
 Render accepted the latest deploy hook with HTTP 202. The service endpoint confirms that the deployed application is online.
 
