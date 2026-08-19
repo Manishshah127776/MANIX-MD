@@ -103,15 +103,15 @@ const PAIRING_DASHBOARD_URL = process.env.PAIRING_DASHBOARD_URL || 'https://mani
 
 const sendPairingDashboardMessage = async (chatId) => {
   return bot.sendMessage(chatId,
-    `📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 WhatsApp QR Pairing*\n\n` +
-    `Open the dashboard and scan the QR code with WhatsApp → Linked devices:\n${PAIRING_DASHBOARD_URL}\n\n` +
-    `Custom pairing codes are disabled.`,
+    `📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 WhatsApp Pairing*\n\n` +
+    `Open the dashboard for QR pairing or enter your WhatsApp number to request an optional pairing code:\n${PAIRING_DASHBOARD_URL}\n\n` +
+    `QR: WhatsApp → Linked devices → Link a device.\nPairing code: WhatsApp → Linked devices → Link with phone number.`,
     {
       parse_mode: 'Markdown',
       disable_web_page_preview: false,
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📲 Open QR Dashboard', url: PAIRING_DASHBOARD_URL }],
+          [{ text: '📲 Open Pairing Dashboard', url: PAIRING_DASHBOARD_URL }],
           [{ text: '📢 MANIX MD 💐 Channel', url: MANIX_CHANNEL_URL }],
           [{ text: '☎ Contact: 9779807044421', url: 'https://wa.me/9779807044421' }]
         ]
@@ -176,7 +176,7 @@ bot.onText(/\/start/, async (msg) => {
     chatId,
     "https://manix-md.onrender.com/assets/menu-art.jpg",
     {
-      caption: `🪀 *𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n╔════════════════════╗\n ⤷ /pair - open QR dashboard\n ⤷ /unpair <wa_number>\n╚════════════════════╝`,
+      caption: `🪀 *𝙏𝙝𝙚 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n╔════════════════════╗\n ⤷ /pair - open QR / pairing-code dashboard\n ⤷ /unpair <wa_number>\n╚════════════════════╝`,
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
@@ -187,7 +187,7 @@ bot.onText(/\/start/, async (msg) => {
   );
 });
 
-// ========== PAIR COMMAND (QR ONLY) ==========
+// ========== PAIR COMMAND (QR + OPTIONAL PAIRING CODE DASHBOARD) ==========
 bot.onText(/\/pair(?:\s+(.+))?/, async (msg) => {
   const chatId = msg.chat.id;
   const isGroup = msg.chat.type === 'group' || msg.chat.type === 'supergroup';

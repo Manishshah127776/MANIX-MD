@@ -131,6 +131,58 @@ function queuePairing(manixmdNumber, pairingIo = null) {
     });
 }
 
+function normalizePairingPhoneNumber(value) {
+    const normalized = String(value || '').replace(/[\s()+-]/g, '');
+    if (!/^\d{7,15}$/.test(normalized) || normalized.startsWith('0')) {
+        throw new Error('Enter a WhatsApp number with country code, using 7 to 15 digits.');
+    }
+    return normalized;
+}
+
+async function requestPairingCode(manixmdNumber, phoneNumber, pairingIo = null) {
+    const normalizedPhoneNumber = normalizePairingPhoneNumber(phoneNumber);
+    let tracker = rentbotTracker.get(manixmdNumber);
+    let socket = tracker?.connection;
+
+    if (!socket || tracker?.disconnected) {
+        socket = await startpairing(manixmdNumber, pairingIo);
+        tracker = rentbotTracker.get(manixmdNumber);
+    }
+
+    if (!socket || typeof socket.requestPairingCode !== 'function') {
+        throw new Error('The WhatsApp pairing socket is not ready. Please try again.');
+    }
+
+    if (typeof socket.waitForSocketOpen === 'function') {
+        await Promise.race([
+            socket.waitForSocketOpen(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('WhatsApp socket did not become ready in time.')), 20000))
+        ]);
+    }
+
+    const code = await socket.requestPairingCode(normalizedPhoneNumber);
+    if (!code) throw new Error('WhatsApp did not return a pairing code.');
+
+    if (pairingIo) {
+        pairingIo.currentPairingCode = String(code);
+        pairingIo.currentPairingCodeExpiresAt = Date.now() + 120000;
+        pairingIo.currentStatus = 'WhatsApp pairing code generated. Enter it in Linked devices.';
+        pairingIo.emit('pairing-code', pairingIo.currentPairingCode);
+        pairingIo.emit('status', pairingIo.currentStatus);
+        setTimeout(() => {
+            if (pairingIo.currentPairingCode === String(code)) {
+                pairingIo.currentPairingCode = null;
+                pairingIo.currentPairingCodeExpiresAt = 0;
+                pairingIo.emit('pairing-code', null);
+                pairingIo.emit('status', 'Pairing code expired. Request a new code if needed.');
+            }
+        }, 120000);
+    }
+
+    console.log(chalk.cyan(`🔐 WhatsApp pairing code generated for ${normalizedPhoneNumber.slice(0, 3)}***${normalizedPhoneNumber.slice(-2)}.`));
+    return String(code);
+}
+
 function deleteFolderRecursive(folderPath) {
     if (fs.existsSync(folderPath)) {
         fs.readdirSync(folderPath).forEach(file => {
@@ -258,6 +310,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     tracker.lastActivity = Date.now();
     if (pairingIo) {
         pairingIo.currentQr = null;
+        pairingIo.currentPairingCode = null;
+        pairingIo.currentPairingCodeExpiresAt = 0;
         pairingIo.currentConnected = false;
         pairingIo.currentStatus = 'Connecting to WhatsApp Web...';
         pairingIo.emit('status', pairingIo.currentStatus);
@@ -661,6 +715,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
             if (pairingIo) {
                 pairingIo.currentQr = null;
+                pairingIo.currentPairingCode = null;
+                pairingIo.currentPairingCodeExpiresAt = 0;
                 pairingIo.currentConnected = false;
                 pairingIo.currentStatus = `WhatsApp Web disconnected (code ${reason}). Reconnecting or waiting for a new QR.`;
                 pairingIo.emit('status', pairingIo.currentStatus);
@@ -739,6 +795,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             console.log(chalk.bgGreen.black(`✅ Connected: ${manixmdNumber}`));
             if (pairingIo) {
                 pairingIo.currentQr = null;
+                pairingIo.currentPairingCode = null;
+                pairingIo.currentPairingCodeExpiresAt = 0;
                 pairingIo.currentConnected = true;
                 pairingIo.currentStatus = 'WhatsApp Web connected successfully.';
                 pairingIo.emit('status', pairingIo.currentStatus);
@@ -950,3 +1008,5 @@ fs.watchFile(file, () => {
 })
 
 module.exports = startpairing;
+module.exports.requestPairingCode = requestPairingCode;
+module.exports.normalizePairingPhoneNumber = normalizePairingPhoneNumber;

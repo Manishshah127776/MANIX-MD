@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ - QR Pairing Dashboard</title>
+    <title>𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ - WhatsApp Pairing Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -13,53 +13,56 @@
             color: #f8fafc;
             font-family: 'Inter', sans-serif;
         }
-        .brand-font {
-            font-family: 'Orbitron', sans-serif;
-        }
-        .qr-container {
-            background: rgba(30, 41, 59, 0.7);
+        .brand-font { font-family: 'Orbitron', sans-serif; }
+        .pairing-card {
+            background: rgba(30, 41, 59, 0.78);
             backdrop-filter: blur(10px);
             border: 1px solid #334155;
             box-shadow: 0 0 20px rgba(255, 0, 85, 0.2);
         }
-        .animate-pulse-custom {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
+        .animate-pulse-custom { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
-    <div class="max-w-md w-full text-center">
+    <main class="max-w-md w-full text-center">
         <h1 class="text-4xl brand-font font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">
             𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏
         </h1>
         <img src="/assets/manix-md-banner.png" alt="𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏" class="w-full h-32 object-cover rounded-xl mb-4 opacity-90">
-        <p class="text-slate-400 mb-2">WhatsApp Multi-Device Pairing System</p>
+        <p class="text-slate-300 mb-2">WhatsApp Multi-Device Pairing System</p>
         <p class="text-slate-500 text-xs mb-6">𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ WhatsApp Channel and Support</p>
 
-        <div class="qr-container rounded-2xl p-8 mb-8">
-            <div id="qr-status" class="mb-4 text-sm font-semibold text-pink-500 animate-pulse-custom">
-                Connecting to server...
-            </div>
-            
+        <section class="pairing-card rounded-2xl p-6 mb-6">
+            <div id="qr-status" class="mb-4 text-sm font-semibold text-pink-500 animate-pulse-custom">Connecting to server...</div>
             <div class="flex justify-center items-center bg-white p-4 rounded-xl mb-4 min-h-[250px]">
-                <img id="qr-code" src="" alt="QR Code" class="hidden max-w-full h-auto">
+                <img id="qr-code" src="" alt="WhatsApp QR Code" class="hidden max-w-full h-auto">
                 <div id="qr-placeholder" class="text-slate-400 flex flex-col items-center">
-                    <svg class="animate-spin h-10 w-10 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin h-10 w-10 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Generating QR Code...</span>
+                    <span id="qr-placeholder-text">Generating QR Code...</span>
                 </div>
             </div>
+            <p class="text-xs text-slate-500">QR option: open WhatsApp → Linked Devices → Link a Device → scan this QR.</p>
+        </section>
 
-            <div id="connection-details" class="text-xs text-slate-500">
-                Open WhatsApp → Linked Devices → Link a Device → scan this QR
+        <section class="pairing-card rounded-2xl p-6 mb-6 text-left">
+            <h2 class="text-lg font-semibold text-violet-300 mb-2">Pair with phone number</h2>
+            <p class="text-xs text-slate-400 mb-4">Optional alternative: enter the WhatsApp number that will receive the pairing request, including its country code. Do not include a leading plus sign.</p>
+            <label for="phone-number" class="sr-only">WhatsApp phone number</label>
+            <input id="phone-number" type="tel" inputmode="numeric" autocomplete="tel" placeholder="9779807044421" class="w-full rounded-lg bg-slate-900 border border-slate-600 px-4 py-3 text-white outline-none focus:border-violet-400 mb-3">
+            <button id="request-pairing-code" type="button" class="w-full rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-400 px-4 py-3 font-semibold text-white transition">
+                Request pairing code
+            </button>
+            <div id="pairing-code-box" class="hidden mt-4 rounded-xl bg-slate-950 border border-violet-500/50 p-4 text-center">
+                <p class="text-xs text-slate-400 mb-2">Enter this code in WhatsApp → Linked Devices → Link with phone number:</p>
+                <div id="pairing-code" class="text-3xl tracking-[0.35em] font-bold text-pink-300 select-all" aria-live="polite"></div>
+                <p id="pairing-code-help" class="text-xs text-slate-500 mt-2">The code expires shortly. Never share it publicly.</p>
             </div>
-        </div>
+            <p id="pairing-error" class="hidden text-xs text-rose-300 mt-3" role="alert"></p>
+        </section>
 
         <div class="flex flex-col gap-4 text-sm">
             <div class="flex gap-2 justify-center">
@@ -73,24 +76,40 @@
                     Checking WhatsApp...
                 </span>
             </div>
-            <p class="text-slate-500 text-xs italic">
-                𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ · wa.me/9779807044421
-            </p>
+            <p class="text-slate-500 text-xs italic">𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ · wa.me/9779807044421</p>
         </div>
-    </div>
+    </main>
 
     <script>
         const socket = io();
         const qrImg = document.getElementById('qr-code');
         const qrPlaceholder = document.getElementById('qr-placeholder');
+        const qrPlaceholderText = document.getElementById('qr-placeholder-text');
         const qrStatus = document.getElementById('qr-status');
         const systemStatus = document.getElementById('system-status');
         const systemStatusDot = document.getElementById('system-status-dot');
+        const phoneInput = document.getElementById('phone-number');
+        const requestButton = document.getElementById('request-pairing-code');
+        const pairingCodeBox = document.getElementById('pairing-code-box');
+        const pairingCode = document.getElementById('pairing-code');
+        const pairingCodeHelp = document.getElementById('pairing-code-help');
+        const pairingError = document.getElementById('pairing-error');
 
         function setSystemStatus(isConnected, label) {
             systemStatus.className = `flex items-center ${isConnected ? 'text-green-400' : 'text-yellow-300'}`;
             systemStatusDot.className = `h-2 w-2 rounded-full mr-2 ${isConnected ? 'bg-green-400 animate-ping' : 'bg-yellow-300'}`;
             systemStatus.lastChild.textContent = ` ${label}`;
+        }
+
+        function showPairingCode(code) {
+            if (!code) {
+                pairingCodeBox.classList.add('hidden');
+                pairingCode.textContent = '';
+                return;
+            }
+            pairingCode.textContent = String(code).match(/.{1,4}/g)?.join(' ') || code;
+            pairingCodeHelp.textContent = 'Enter it in WhatsApp → Linked Devices → Link with phone number. Never share it publicly.';
+            pairingCodeBox.classList.remove('hidden');
         }
 
         socket.on('qr', (qrDataURL) => {
@@ -103,6 +122,8 @@
             setSystemStatus(false, 'Waiting for QR scan');
         });
 
+        socket.on('pairing-code', showPairingCode);
+
         socket.on('status', (status) => {
             qrStatus.innerText = status;
             if (!status.toLowerCase().includes('connected')) setSystemStatus(false, status);
@@ -110,13 +131,41 @@
 
         socket.on('connected', (isConnected) => {
             setSystemStatus(Boolean(isConnected), isConnected ? 'WhatsApp connected' : 'WhatsApp not paired');
+            requestButton.disabled = Boolean(isConnected);
             if (isConnected) {
                 qrStatus.innerText = 'Connected Successfully!';
                 qrStatus.classList.remove('text-violet-400');
                 qrStatus.classList.add('text-green-400');
                 qrImg.style.opacity = '0.5';
+                showPairingCode(null);
             } else {
                 qrImg.style.opacity = '1';
+            }
+        });
+
+        requestButton.addEventListener('click', async () => {
+            pairingError.classList.add('hidden');
+            pairingError.textContent = '';
+            showPairingCode(null);
+            requestButton.disabled = true;
+            requestButton.textContent = 'Requesting code...';
+            try {
+                const response = await fetch('/api/pair-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: phoneInput.value })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || 'Pairing code is unavailable.');
+                showPairingCode(result.code);
+                qrStatus.innerText = 'Pairing code ready. Enter it in WhatsApp.';
+                setSystemStatus(false, 'Pairing code ready');
+            } catch (error) {
+                pairingError.textContent = error.message;
+                pairingError.classList.remove('hidden');
+            } finally {
+                requestButton.disabled = false;
+                requestButton.textContent = 'Request pairing code';
             }
         });
 

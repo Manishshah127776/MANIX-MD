@@ -27,9 +27,13 @@ function startHealthServer() {
     const server = http.createServer(app);
     const io = new Server(server);
     io.currentQr = null;
+    io.currentPairingCode = null;
+    io.currentPairingCodeExpiresAt = 0;
     io.currentStatus = 'Checking WhatsApp session state...';
     io.currentConnected = false;
+    let lastPairingCodeRequestAt = 0;
 
+    app.use(express.json({ limit: '2kb' }));
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/healthz', (req, res) => res.status(200).send('ok'));
     app.get('/status', (req, res) => res.json({
@@ -37,13 +41,43 @@ function startHealthServer() {
         whatsappConnected: Boolean(io.currentConnected),
         status: io.currentStatus,
         qrAvailable: Boolean(io.currentQr),
+        pairingCodeAvailable: Boolean(io.currentPairingCode && io.currentPairingCodeExpiresAt > Date.now()),
+        pairingCodeExpiresAt: io.currentPairingCodeExpiresAt || null,
         authDirectory: process.env.WHATSAPP_AUTH_DIR || 'local filesystem; configure a persistent mount for restart-safe pairing'
     }));
+
+    app.post('/api/pair-code', async (req, res) => {
+        res.set('Cache-Control', 'no-store');
+        const now = Date.now();
+        const cooldownMs = 30000;
+        if (now - lastPairingCodeRequestAt < cooldownMs) {
+            const retryAfter = Math.ceil((cooldownMs - (now - lastPairingCodeRequestAt)) / 1000);
+            return res.status(429).json({ ok: false, error: `Please wait ${retryAfter} seconds before requesting another pairing code.` });
+        }
+        if (io.currentConnected) {
+            return res.status(409).json({ ok: false, error: 'WhatsApp is already connected. Unpair the current session before starting another pairing flow.' });
+        }
+
+        try {
+            const phoneNumber = startpairing.normalizePairingPhoneNumber(req.body?.phoneNumber);
+            lastPairingCodeRequestAt = now;
+            io.currentPairingCode = null;
+            io.currentPairingCodeExpiresAt = 0;
+            io.currentStatus = 'Preparing WhatsApp pairing code...';
+            io.emit('status', io.currentStatus);
+            const code = await startpairing.requestPairingCode(SESSION_NAME, phoneNumber, io);
+            return res.json({ ok: true, code, expiresInSeconds: 120, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
+        } catch (error) {
+            console.error(`Pairing-code request failed: ${error.message}`);
+            return res.status(503).json({ ok: false, error: error.message || 'WhatsApp pairing code is currently unavailable.' });
+        }
+    });
 
     io.on('connection', (socket) => {
         socket.emit('status', io.currentStatus);
         socket.emit('connected', Boolean(io.currentConnected));
         if (io.currentQr) socket.emit('qr', io.currentQr);
+        if (io.currentPairingCode && io.currentPairingCodeExpiresAt > Date.now()) socket.emit('pairing-code', io.currentPairingCode);
     });
 
     server.listen(PORT, '0.0.0.0', () => {
