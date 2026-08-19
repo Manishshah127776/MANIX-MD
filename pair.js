@@ -30,7 +30,7 @@ const execFileAsync = promisify(execFile)
 
 // WhatsApp has recently rejected several otherwise-valid Baileys handshakes with
 // HTTP 405. Keep the currently reported working tuple configurable for recovery.
-const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1033893291')
+const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1034074495')
     .split(',')
     .map(value => Number.parseInt(value.trim(), 10))
 const BAILEYS_BROWSER = (process.env.BAILEYS_BROWSER || 'MANI XMD,Chrome,145.0.0')
