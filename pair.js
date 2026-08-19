@@ -1,6 +1,7 @@
 const {
     default: makeWASocket,
     jidDecode,
+    jidNormalizedUser,
     DisconnectReason,
     PHONENUMBER_MCC,
     makeCacheableSignalKeyStore,
@@ -36,6 +37,7 @@ const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1034074495')
 const BAILEYS_BROWSER = (process.env.BAILEYS_BROWSER || 'MANI XMD,Chrome,145.0.0')
     .split(',')
     .map(value => value.trim())
+const CONNECTED_NOTICE_OWNER = String(process.env.OWNER_NUMBER || process.env.MANIX_CONTACT_NUMBER || '9779807044421').replace(/\D/g, '')
 
 // Use a configurable auth root so Render Persistent Disk (for example /var/data)
 // can retain WhatsApp credentials across restarts and redeploys.
@@ -304,6 +306,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             disconnected: false,
             lastActivity: Date.now(),
             connectedNoticeAt: 0,
+            connectedNoticeSent: false,
+            connectedNoticeSending: false,
             keepAliveInterval: null,
             eventListenersAttached: false
         });
@@ -316,6 +320,8 @@ async function startpairing(manixmdNumber, pairingIo = null) {
     }
     tracker.retryCount++;
     tracker.disconnected = false;
+    tracker.connectedNoticeSent = false;
+    tracker.connectedNoticeSending = false;
     tracker.lastActivity = Date.now();
     let resolveRegistrationReady;
     let rejectRegistrationReady;
@@ -863,17 +869,40 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             try {
                 console.log(chalk.blue('🚀 Starting auto-actions...'));
 
-                // Send one connected confirmation per connection cycle. The timestamp
-                // prevents duplicate notices if Baileys emits `open` more than once.
-                if (!tracker.connectedNoticeAt || Date.now() - tracker.connectedNoticeAt > 30000) {
-                    tracker.connectedNoticeAt = Date.now();
+                // Send one connected confirmation per connection cycle. The authenticated
+                // account JID is preferred; the configured owner is a safe fallback when
+                // Baileys has not exposed a normalized user identity yet.
+                if (!tracker.connectedNoticeSent && !tracker.connectedNoticeSending) {
+                    tracker.connectedNoticeSending = true;
+                    const authenticatedJid = bad.user?.id ? jidNormalizedUser(bad.user.id) : '';
+                    const ownerJid = CONNECTED_NOTICE_OWNER ? `${CONNECTED_NOTICE_OWNER}@s.whatsapp.net` : '';
+                    const noticeTargets = [...new Set([authenticatedJid, ownerJid].filter(Boolean))];
+                    const noticeText = `╭━━〔 ✅ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏɴɴᴇᴄᴛᴇᴅ 〕━━╮\n┃\n┃ 🤖 ʙᴏᴛ: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n┃ 📡 sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n┃\n┃ 📢 Follow the MANIX MD 💐 channel:\n┃ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n┃\n┃ ☎ Contact: wa.me/9779807044421\n┃\n╰━━━━━━━━━━━━━━━━━━━━━━╯`;
                     try {
-                        await bad.sendMessage(manixmdNumber, {
-                            text: `╭━━〔 ✅ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏɴɴᴇᴄᴛᴇᴅ 〕━━╮\n┃\n┃ 🤖 ʙᴏᴛ: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n┃ 📡 sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n┃\n┃ 📢 Follow the MANIX MD 💐 channel:\n┃ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n┃\n┃ ☎ Contact: wa.me/9779807044421\n┃\n╰━━━━━━━━━━━━━━━━━━━━━━╯`
-                        });
-                        console.log(chalk.green(`✅ Connected message sent for ${manixmdNumber}`));
+                        let lastNoticeError = null;
+                        for (let attempt = 1; attempt <= 3 && !tracker.connectedNoticeSent; attempt++) {
+                            if (attempt > 1) await sleep(2500);
+                            for (const target of noticeTargets) {
+                                try {
+                                    console.log(chalk.cyan(`📨 Sending connected confirmation to ${target} (attempt ${attempt}/3)`));
+                                    await bad.sendMessage(target, { text: noticeText });
+                                    tracker.connectedNoticeSent = true;
+                                    tracker.connectedNoticeAt = Date.now();
+                                    console.log(chalk.green(`✅ Connected message sent to ${target} for ${manixmdNumber}`));
+                                    break;
+                                } catch (noticeError) {
+                                    lastNoticeError = noticeError;
+                                    console.log(chalk.yellow(`⚠️ Connected message target failed (${target}, attempt ${attempt}): ${noticeError.message}`));
+                                }
+                            }
+                        }
+                        if (!tracker.connectedNoticeSent) {
+                            throw lastNoticeError || new Error('No valid connected-message target was available.');
+                        }
                     } catch (noticeError) {
-                        console.log(chalk.yellow(`⚠️ Connected message failed: ${noticeError.message}`));
+                        console.log(chalk.yellow(`⚠️ Connected message failed for ${manixmdNumber}: ${noticeError.message}`));
+                    } finally {
+                        tracker.connectedNoticeSending = false;
                     }
                 }
                 

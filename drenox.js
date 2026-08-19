@@ -176,6 +176,100 @@ const areJidsSameUser = (jid1, jid2) => {
   }
 }
 
+const PIPED_API_URLS = String(process.env.PIPED_API_URLS || [
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.adminforge.de',
+  'https://api.piped.yt',
+  'https://pipedapi.reallyaweso.me'
+].join(','))
+  .split(',')
+  .map(value => value.trim().replace(/\/$/, ''))
+  .filter(Boolean)
+
+function extractYoutubeVideoId(value) {
+  try {
+    const url = new URL(String(value))
+    if (url.hostname === 'youtu.be') return url.pathname.slice(1).split('/')[0] || null
+    if (/youtube\.com$/i.test(url.hostname) || /(^|\.)youtube\.com$/i.test(url.hostname)) {
+      if (url.pathname === '/watch') return url.searchParams.get('v')
+      const parts = url.pathname.split('/').filter(Boolean)
+      if (['shorts', 'embed', 'live'].includes(parts[0])) return parts[1] || null
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+function isYoutubeBotCheckError(error) {
+  const message = `${error?.message || ''} ${error?.stderr || ''}`.toLowerCase()
+  return /sign in to confirm|not a bot|po token|bot check|http error 403|http error 429|captcha/.test(message)
+}
+
+function youtubeRecoveryHint(error) {
+  const message = `${error?.message || ''} ${error?.stderr || ''}`.toLowerCase()
+  if (/sign in to confirm|not a bot|po token|bot check|captcha|fallback audio services|piped/.test(message)) {
+    return 'YouTube is blocking this server. Configure YT_COOKIES_PATH with a valid Netscape cookies file or try another song/link.'
+  }
+  return 'Try another title or YouTube link.'
+}
+
+function getYtdlpAuthOptions() {
+  const configuredPath = String(process.env.YT_COOKIES_PATH || '').trim()
+  if (!configuredPath) return {}
+  const cookiePath = path.resolve(configuredPath)
+  if (!fs.existsSync(cookiePath)) {
+    console.warn(`YT_COOKIES_PATH does not exist: ${cookiePath}`)
+    return {}
+  }
+  return { cookies: cookiePath }
+}
+
+async function fetchPipedAudio(videoUrl) {
+  const videoId = extractYoutubeVideoId(videoUrl)
+  if (!videoId) throw new Error('Could not identify the YouTube video for the fallback audio service.')
+
+  let lastError = null
+  for (const apiBase of PIPED_API_URLS) {
+    try {
+      const streamResponse = await axios.get(`${apiBase}/streams/${encodeURIComponent(videoId)}`, {
+        timeout: 20000,
+        validateStatus: status => status >= 200 && status < 300
+      })
+      if (streamResponse.status >= 400 || !streamResponse.data) {
+        throw new Error(`Piped streams request returned HTTP ${streamResponse.status}`)
+      }
+      const streams = Array.isArray(streamResponse.data.audioStreams) ? streamResponse.data.audioStreams : []
+      const selected = streams
+        .filter(stream => stream && stream.url && !stream.videoOnly && /^audio\//i.test(stream.mimeType || 'audio/mp4'))
+        .sort((a, b) => Number(b.bitrate || 0) - Number(a.bitrate || 0))[0]
+      if (!selected) throw new Error('Piped returned no playable audio stream')
+
+      const audioResponse = await axios.get(selected.url, {
+        responseType: 'arraybuffer',
+        timeout: 90000,
+        maxContentLength: 80 * 1024 * 1024,
+        maxBodyLength: 80 * 1024 * 1024
+      })
+      const mimeType = String(selected.mimeType || 'audio/mp4').split(';')[0]
+      const extension = /mpeg|mp3/i.test(mimeType) ? 'mp3' : /webm/i.test(mimeType) ? 'webm' : 'm4a'
+      return {
+        buffer: Buffer.from(audioResponse.data),
+        mimetype: mimeType,
+        fileName: `manix-xmd-audio.${extension}`,
+        title: streamResponse.data.title || 'YouTube Audio',
+        uploader: streamResponse.data.uploader || 'YouTube',
+        thumbnail: streamResponse.data.thumbnailUrl || null,
+        sourceUrl: videoUrl
+      }
+    } catch (error) {
+      lastError = error
+      console.warn(`Piped audio fallback failed for ${apiBase}: ${error.message}`)
+    }
+  }
+  throw new Error(`YouTube and fallback audio services are unavailable. ${lastError?.message || ''}`.trim())
+}
+
 const pickRandom = (arr) => {
   if (!Array.isArray(arr) || arr.length === 0) return null
   return arr[Math.floor(Math.random() * arr.length)]
@@ -6412,7 +6506,7 @@ case 'song': {
     await bad.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
     const yts = require('yt-search')
     const ytdlp = require('youtube-dl-exec')
-    const search = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(text)
+    const search = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(text)
       ? { videos: [{ url: text, title: text, author: { name: 'YouTube' } }] }
       : await yts(text)
     if (!search.videos.length) {
@@ -6424,34 +6518,56 @@ case 'song': {
     const safeTitle = String(video.title || 'audio').replace(/[\\/:*?"<>|]/g, '').slice(0, 80)
     const outputBase = path.join(os.tmpdir(), `manix-xmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     audioPath = `${outputBase}.mp3`
+    let audioBuffer = null
+    let audioMimetype = 'audio/mpeg'
+    let audioFileName = `${safeTitle}.mp3`
+    let info = {}
 
-    await ytdlp(video.url, {
-      noPlaylist: true,
-      noWarnings: true,
-      noCheckCertificates: true,
-      format: 'bestaudio/best',
-      extractAudio: true,
-      audioFormat: 'mp3',
-      audioQuality: '5',
-      output: `${outputBase}.%(ext)s`,
-      jsRuntime: 'node',
-      remoteComponents: 'ejs:github'
-    })
+    try {
+      await ytdlp(video.url, {
+        noPlaylist: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        format: 'bestaudio/best',
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: '5',
+        output: `${outputBase}.%(ext)s`,
+        jsRuntime: 'node',
+        remoteComponents: 'ejs:github',
+        ...getYtdlpAuthOptions()
+      })
+      if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
+      audioBuffer = fs.readFileSync(audioPath)
+      info = await ytdlp(video.url, {
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        skipDownload: true,
+        jsRuntime: 'node',
+        remoteComponents: 'ejs:github',
+        ...getYtdlpAuthOptions()
+      }).catch(() => ({}))
+    } catch (downloadError) {
+      if (!isYoutubeBotCheckError(downloadError)) throw downloadError
+      console.warn('yt-dlp YouTube bot-check encountered; trying Piped audio fallback.')
+      const fallback = await fetchPipedAudio(video.url)
+      audioBuffer = fallback.buffer
+      audioMimetype = fallback.mimetype
+      audioFileName = `${safeTitle || 'manix-xmd-audio'}.${fallback.fileName.split('.').pop()}`
+      info = {
+        title: fallback.title,
+        uploader: fallback.uploader,
+        thumbnail: fallback.thumbnail,
+        webpage_url: fallback.sourceUrl
+      }
+    }
 
-    if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
-    const info = await ytdlp(video.url, {
-      dumpSingleJson: true,
-      noWarnings: true,
-      noCheckCertificates: true,
-      skipDownload: true,
-      jsRuntime: 'node',
-      remoteComponents: 'ejs:github'
-    }).catch(() => ({}))
-
+    if (!audioBuffer) throw new Error('Audio data was not created')
     await bad.sendMessage(m.chat, {
-      audio: fs.readFileSync(audioPath),
-      mimetype: 'audio/mpeg',
-      fileName: `${safeTitle}.mp3`,
+      audio: audioBuffer,
+      mimetype: audioMimetype,
+      fileName: audioFileName,
       contextInfo: {
         externalAdReply: {
           title: info.title || video.title || 'YouTube Audio',
@@ -6467,7 +6583,7 @@ case 'song': {
   } catch (e) {
     console.error('Play command error:', e.stderr || e.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    return reply(`⚠️ Could not fetch that song right now. ${e.message || 'Try another title or YouTube link.'}`)
+    return reply(`⚠️ Could not fetch that song right now. ${youtubeRecoveryHint(e)}`)
   } finally {
     if (audioPath) {
       try { fs.unlinkSync(audioPath) } catch (cleanupError) {
@@ -7011,29 +7127,44 @@ case 'ytaudio': {
     const ytdlp = require('youtube-dl-exec')
     const base = path.join(os.tmpdir(), `manix-xmd-ytaudio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     audioPath = `${base}.mp3`
-    await ytdlp(text, {
-      noPlaylist: true,
-      noWarnings: true,
-      noCheckCertificates: true,
-      format: 'bestaudio/best',
-      extractAudio: true,
-      audioFormat: 'mp3',
-      audioQuality: '5',
-      output: `${base}.%(ext)s`,
-      jsRuntime: 'node',
-      remoteComponents: 'ejs:github'
-    })
-    if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
+    let audioBuffer = null
+    let audioMimetype = 'audio/mpeg'
+    let audioFileName = 'manix-xmd-audio.mp3'
+    try {
+      await ytdlp(text, {
+        noPlaylist: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        format: 'bestaudio/best',
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: '5',
+        output: `${base}.%(ext)s`,
+        jsRuntime: 'node',
+        remoteComponents: 'ejs:github',
+        ...getYtdlpAuthOptions()
+      })
+      if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
+      audioBuffer = fs.readFileSync(audioPath)
+    } catch (downloadError) {
+      if (!isYoutubeBotCheckError(downloadError)) throw downloadError
+      console.warn('yt-dlp YouTube bot-check encountered; trying Piped audio fallback.')
+      const fallback = await fetchPipedAudio(text)
+      audioBuffer = fallback.buffer
+      audioMimetype = fallback.mimetype
+      audioFileName = fallback.fileName
+    }
+    if (!audioBuffer) throw new Error('Audio data was not created')
     await bad.sendMessage(m.chat, {
-      audio: fs.readFileSync(audioPath),
-      mimetype: 'audio/mpeg',
-      fileName: 'manix-xmd-audio.mp3'
+      audio: audioBuffer,
+      mimetype: audioMimetype,
+      fileName: audioFileName
     }, { quoted: m })
     await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
   } catch (err) {
     console.error('YouTube audio error:', err.stderr || err.message)
     await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    return reply(`❌ Failed to download audio. ${err.message || ''}`)
+    return reply(`❌ Failed to download audio. ${youtubeRecoveryHint(err)}`)
   } finally {
     if (audioPath) {
       try { fs.unlinkSync(audioPath) } catch (cleanupError) {
