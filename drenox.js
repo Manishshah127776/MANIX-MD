@@ -6857,7 +6857,8 @@ case "ytmp4": {
             output: `${base}.%(ext)s`,
             jsRuntime: 'node',
             remoteComponents: 'ejs:github',
-      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } }
+            extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } },
+            ...getYtdlpAuthOptions()
         })
         if (!fs.existsSync(videoPath)) throw new Error('Video file was not created')
         await bad.sendMessage(m.chat, {
@@ -7535,25 +7536,45 @@ break;
 case 'ytmp4_alt2':
 case 'ytvideo_alt2': {
   if (!text) return reply(`*Usage:* ${prefix}ytmp4 <youtube url>`);
+  if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(text)) {
+    return reply('❌ Please provide a valid YouTube link.')
+  }
 
-  await loading();
-
+  let videoPath = null
   try {
-    const apiUrl = `${NEXORACLE_API}downloader/ytmp4?apikey=${NEXORACLE_KEY}&url=${encodeURIComponent(text)}`;
-    const data = await fetchJson(apiUrl);
-
-    if (data.status && data.result?.video) {
-      await bad.sendMessage(m.chat, {
-        video: { url: data.result.video },
-        mimetype: 'video/mp4',
-        fileName: `${data.result.title || 'video'}.mp4`
-      }, { quoted: m });
-    } else {
-      reply('❌ Failed to download.');
+    await bad.sendMessage(m.chat, { react: { text: '⏳', key: m.key } })
+    const ytdlp = require('youtube-dl-exec')
+    const base = path.join(os.tmpdir(), `manix-xmd-video-alt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    videoPath = `${base}.mp4`
+    await ytdlp(text, {
+      noPlaylist: true,
+      noWarnings: true,
+      noCheckCertificates: true,
+      format: 'bv*[ext=mp4]+ba[ext=m4a]/best[ext=mp4]/best',
+      mergeOutputFormat: 'mp4',
+      output: `${base}.%(ext)s`,
+      jsRuntime: 'node',
+      remoteComponents: 'ejs:github',
+      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } },
+      ...getYtdlpAuthOptions()
+    })
+    if (!fs.existsSync(videoPath)) throw new Error('Video file was not created')
+    await bad.sendMessage(m.chat, {
+      video: fs.readFileSync(videoPath),
+      mimetype: 'video/mp4',
+      fileName: 'manix-xmd-video.mp4'
+    }, { quoted: m })
+    await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+  } catch (error) {
+    console.error('YouTube alternate video error:', error.stderr || error.message)
+    await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    return reply(`❌ Failed to download video. ${youtubeRecoveryHint(error)}`)
+  } finally {
+    if (videoPath) {
+      try { fs.unlinkSync(videoPath) } catch (cleanupError) {
+        console.warn('YouTube alternate video cleanup failed:', cleanupError.message)
+      }
     }
-  } catch (err) {
-    console.error(err);
-    reply('❌ Failed to download.');
   }
 }
 break;
