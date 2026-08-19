@@ -3,7 +3,8 @@
 **Project:** `Manishshah127776/MANIX-MD`  
 **Brand:** **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳**  
 **Production URL:** [https://manix-md.onrender.com/](https://manix-md.onrender.com/)  
-**Latest deployed commit:** `d0821052`  
+**Latest deployed runtime commit:** `b211eb65`  
+**Pairing-code feature commit:** `78cdbe2d`  
 **Report author:** **Manus AI**  
 **Verification date:** 19 August 2026 UTC
 
@@ -13,7 +14,7 @@ The MANI XMD source audit, branding migration, command-dispatch repair, media re
 
 The source-level command inventory now reconciles exactly: **723 case labels, 723 unique labels, zero duplicates, no labels missing from the generated inventory, and no extra labels**. The original dispatcher was preserved; duplicate switch labels were renamed rather than deleting commands.
 
-The remaining production blocker is upstream WhatsApp registration. Render is healthy, but the Baileys socket is currently rejected by WhatsApp with **disconnect code 405 before a QR is emitted**, so `/status` reports `whatsappConnected: false` and `qrAvailable: false`. This failure is consistent with a current Baileys/WhatsApp registration issue reported across multiple Baileys versions and environments [1]. The code now cleans invalid sessions, re-queues a fresh QR, and uses the currently reported compatibility tuple and browser identity as configurable defaults. The service is therefore deployed and ready to display a QR when WhatsApp accepts the registration handshake, but it must not be described as WhatsApp-connected until a QR scan succeeds.
+The remaining production blocker is upstream WhatsApp registration. Render is healthy, but the Baileys socket is currently rejected by WhatsApp with **disconnect code 405 before a QR or pairing code is emitted**, so `/status` reports `whatsappConnected: false`, `qrAvailable: false`, and `pairingCodeAvailable: false`. This failure is consistent with a current Baileys/WhatsApp registration issue reported across multiple Baileys versions and environments [1]. The code now supports both QR and optional phone-number pairing codes, cleans invalid sessions, re-queues a fresh connection, and uses the currently reported compatibility tuple and browser identity as configurable defaults. The service is deployed and ready to complete either pairing method when WhatsApp accepts the registration handshake, but it must not be described as WhatsApp-connected until linking succeeds.
 
 ## Release and deployment history
 
@@ -22,7 +23,9 @@ The remaining production blocker is upstream WhatsApp registration. Render is he
 | `040e587a` | Completed A–Z audit, branding normalization, configuration collision fixes, security hardening, diagnostics, and documentation cleanup | Pushed to `main`; Render deployed |
 | `f4224dc5` | Re-queue a fresh QR after invalid or ephemeral WhatsApp code-405 sessions | Pushed to `main`; Render deployed |
 | `65dcd2fd` | Enforce QR-only pairing across WhatsApp and Telegram; remove Telegram custom pairing-code handlers | Pushed to `main`; Render deployed |
-| `d0821052` | Use the current reported Baileys handshake tuple and Chrome browser identity for 405 recovery; document environment controls | Pushed to `main`; Render deploy hook accepted |
+| `d0821052` | Use the current reported Baileys handshake tuple and Chrome browser identity for 405 recovery; document environment controls | Pushed to `main`; Render deployed |
+| `78cdbe2d` | Add optional phone-number pairing-code API, dashboard controls, Socket.IO events, Telegram instructions, and README documentation | Pushed to `main`; Render deployed |
+| `b211eb65` | Return HTTP 400 for malformed pairing-code phone numbers instead of HTTP 503 | Pushed to `main`; Render deployed |
 
 Render accepted the latest deploy hook with HTTP 202. The service endpoint confirms that the deployed application is online.
 
@@ -79,18 +82,18 @@ The generated audit script is retained at `scripts/audit-case-labels.js` for fut
 | Endpoint or asset | Observed result |
 |---|---|
 | `https://manix-md.onrender.com/healthz` | HTTP 200; body `ok` |
-| `https://manix-md.onrender.com/status` | HTTP 200; server online; WhatsApp currently disconnected with code 405; no QR currently available |
-| Dashboard HTML | Contains exact MANI XMD branding, channel URL, contact number, and QR dashboard wording |
+| `https://manix-md.onrender.com/status` | HTTP 200; server online; WhatsApp currently disconnected with code 405; no QR or pairing code currently available |
+| Dashboard HTML | Contains exact MANI XMD branding, channel URL, contact number, QR controls, pairing-code form, and `/api/pair-code` integration |
 | `menu-art.jpg` | HTTP 200 |
 | `bot-avatar.jpg` | HTTP 200 |
 | `music-art.jpg` | HTTP 200 |
 | `vcard-card.png` | HTTP 200 |
 
-## QR pairing instructions
+## QR and pairing-code instructions
 
-Open [https://manix-md.onrender.com/](https://manix-md.onrender.com/) from a browser. When the service receives a QR string from WhatsApp, scan it from **WhatsApp → Settings → Linked devices → Link a device**. After successful linking, the bot is designed to send one MANI XMD connected confirmation message. The Telegram `/pair` command now sends the same dashboard link and no longer exposes a custom pairing code.
+Open [https://manix-md.onrender.com/](https://manix-md.onrender.com/) from a browser. For QR pairing, scan the displayed QR from **WhatsApp → Settings → Linked devices → Link a device**. For pairing-code linking, enter the WhatsApp number with its country code, select **Request pairing code**, then open **WhatsApp → Settings → Linked devices → Link with phone number** and enter the displayed code. Pairing codes are rate-limited, expire after 120 seconds, and are not written to disk. After successful linking, the bot is designed to send one MANI XMD connected confirmation message. Telegram `/pair` opens the same dashboard.
 
-At the time of this report, the dashboard is reachable but the QR is not yet available because WhatsApp rejects the registration handshake with code 405 before emitting the QR. Refreshing the dashboard after a successful upstream handshake is required; this is not a Render HTTP failure.
+At the time of this report, the dashboard and API are reachable but WhatsApp rejects the registration handshake with code 405 before emitting either a QR or pairing code. Refreshing the dashboard after a successful upstream handshake is required; this is not a Render HTTP failure. A malformed number is rejected with HTTP 400, while a valid request that cannot reach WhatsApp returns HTTP 503.
 
 ## Security and configuration notes
 
