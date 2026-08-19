@@ -1,25 +1,9 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-const { startWebPairing } = require('./web-pair');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-const PORT = process.env.PORT || 3000;
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-io.on('connection', (socket) => {
-    console.log('A user connected to the pairing dashboard');
-    socket.emit('status', 'Initializing WhatsApp connection...');
-    
-    // Start pairing process when a user connects
-    startWebPairing(io);
-});
-
-server.listen(PORT, () => {
-    console.log(`Pairing server is running on http://localhost:${PORT}`);
-});
+/**
+ * Compatibility entrypoint.
+ *
+ * The active MANI XMD service is implemented by index.js. Keeping a second
+ * Express/Baileys pairing server here could create competing WhatsApp
+ * sessions, duplicate QR flows, and conflicting listeners. The legacy `web`
+ * script therefore delegates to the same production runtime.
+ */
+require('./index.js')

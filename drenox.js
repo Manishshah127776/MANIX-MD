@@ -27,11 +27,13 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid, addExif } = require('./allfunc/exif');
 
-const API_KEY = 'free_key@maher_apis';
+const API_KEY = process.env.NEXORACLE_API_KEY || process.env.NEXORACLE_KEY || '';
 const API_BASE = 'https://api.nexoracle.com/stalking';
 
 const NEXORACLE_API = 'https://api.nexoracle.com/';
-const NEXORACLE_KEY = 'free_key@maher_apis&q';
+const NEXORACLE_KEY = process.env.NEXORACLE_API_KEY || process.env.NEXORACLE_KEY || '';
+const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
+const OWNER_SHELL_ENABLED = process.env.ENABLE_OWNER_SHELL === 'true'
 
 // Download media helper
 async function downloadMedia(message, type) {
@@ -255,7 +257,9 @@ const fetchVCardProfile = async (bad, targetJid) => {
     if (typeof bad.profilePictureUrl === 'function') {
       profile.photoUrl = await bad.profilePictureUrl(targetJid, 'image')
     }
-  } catch {}
+  } catch (error) {
+    console.debug('vCard profile photo lookup skipped:', error.message)
+  }
 
   if (profile.photoUrl) {
     try {
@@ -263,7 +267,9 @@ const fetchVCardProfile = async (bad, targetJid) => {
       if (Buffer.isBuffer(downloaded) && downloaded.length <= 768 * 1024) {
         profile.photoBuffer = downloaded
       }
-    } catch {}
+    } catch (error) {
+      console.debug('vCard profile photo download skipped:', error.message)
+    }
   }
 
   try {
@@ -271,7 +277,9 @@ const fetchVCardProfile = async (bad, targetJid) => {
       const status = await bad.fetchStatus(targetJid)
       profile.status = typeof status?.status === 'string' ? status.status.trim() : ''
     }
-  } catch {}
+  } catch (error) {
+    console.debug('vCard status lookup skipped:', error.message)
+  }
 
   vcardProfileCache.set(cacheKey, { timestamp: Date.now(), profile })
   return profile
@@ -5895,7 +5903,7 @@ case 'ffstalk': {
   if (!text) return reply('ᴇxᴀᴍᴘʟᴇ: .ffstalk 1234567890')
 
   try {
-    const res = await fetch(`https://api.lolhuman.xyz/api/freefire/${text}?apikey=GataDios`)
+    const res = await fetch(`https://api.lolhuman.xyz/api/freefire/${text}?apikey=${encodeURIComponent(process.env.FREEFIRE_API_KEY || '')}`)
     const data = await res.json()
 
     let message = `*🎮 ғʀᴇᴇ ғɪʀᴇ ᴘʀᴏғɪʟᴇ*\n\n`
@@ -6385,7 +6393,9 @@ case "ytmp4": {
         return reply(`❌ ʏᴏᴜᴛᴜʙᴇ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${error.message}`);
     } finally {
         if (videoPath) {
-            try { fs.unlinkSync(videoPath) } catch {}
+            try { fs.unlinkSync(videoPath) } catch (cleanupError) {
+                console.warn('YouTube video temp cleanup failed:', cleanupError.message)
+            }
         }
     }
 }
@@ -6460,7 +6470,9 @@ case 'song': {
     return reply(`⚠️ Could not fetch that song right now. ${e.message || 'Try another title or YouTube link.'}`)
   } finally {
     if (audioPath) {
-      try { fs.unlinkSync(audioPath) } catch {}
+      try { fs.unlinkSync(audioPath) } catch (cleanupError) {
+        console.warn('YouTube audio temp cleanup failed:', cleanupError.message)
+      }
     }
   }
 }
@@ -6590,7 +6602,7 @@ case "igdl": {
     try {
         await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
 
-        const response = await axios.get(`https://api.nexoracle.com/downloader/insta?apikey=free_key@maher_apis&url=${encodeURIComponent(text)}`);
+        const response = await axios.get(`https://api.nexoracle.com/downloader/insta?apikey=${encodeURIComponent(NEXORACLE_KEY)}&url=${encodeURIComponent(text)}`);
 
         const data = response.data.result;
 
@@ -7024,7 +7036,9 @@ case 'ytaudio': {
     return reply(`❌ Failed to download audio. ${err.message || ''}`)
   } finally {
     if (audioPath) {
-      try { fs.unlinkSync(audioPath) } catch {}
+      try { fs.unlinkSync(audioPath) } catch (cleanupError) {
+        console.warn('YouTube audio temp cleanup failed:', cleanupError.message)
+      }
     }
   }
 }
@@ -7280,7 +7294,7 @@ case "makeq": {
         console.log('✍️ Author:', author);
 
         const axios = require('axios');
-        const apiUrl = `https://api.nexoracle.com/image-creating/quotes-maker?apikey=free_key@maher_apis&text1=${encodeURIComponent(quoteText)}&text2=${encodeURIComponent(author)}`;
+        const apiUrl = `https://api.nexoracle.com/image-creating/quotes-maker?apikey=${encodeURIComponent(NEXORACLE_KEY)}&text1=${encodeURIComponent(quoteText)}&text2=${encodeURIComponent(author)}`;
 
         console.log('🔗 Fetching from:', apiUrl);
 
@@ -8417,7 +8431,15 @@ case 'math': {
   if (!text) return reply('ᴘʀᴏᴠɪᴅᴇ ᴀ ᴍᴀᴛʜ ᴘʀᴏʙʟᴇᴍ!\nᴇxᴀᴍᴘʟᴇ: .math 5 + 3 * 2')
 
   try {
-    const result = eval(text.replace(/[^0-9+\-*/().]/g, ''))
+    const expression = text.trim()
+    if (expression.length > 200 || !/^[0-9+\-*/().\s]+$/.test(expression)) {
+      return reply('ɪɴᴠᴀʟɪᴅ ᴍᴀᴛʜ ᴇxᴘʀᴇssɪᴏɴ!')
+    }
+    const { evaluate } = require('mathjs')
+    const result = evaluate(expression)
+    if (typeof result !== 'number' || !Number.isFinite(result)) {
+      return reply('ɪɴᴠᴀʟɪᴅ ᴍᴀᴛʜ ᴇxᴘʀᴇssɪᴏɴ!')
+    }
     reply(`🧮 *ᴄᴀʟᴄᴜʟᴀᴛᴏʀ*\n\n${text} = ${result}`)
   } catch (e) {
     reply('ɪɴᴠᴀʟɪᴅ ᴍᴀᴛʜ ᴇxᴘʀᴇssɪᴏɴ!')
@@ -9861,7 +9883,7 @@ case 'nobg': {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Api-Key': '1akxyLM8h64QuKxbjTqXoNaU' // You need to get free API key from remove.bg
+                'X-Api-Key': process.env.REMOVEBG_API_KEY || ''
             },
             body: JSON.stringify({
                 image_file_b64: base64,
@@ -10838,7 +10860,7 @@ case "tweetgen": {
         console.log('💬 Tweet text:', tweetText);
 
         const axios = require('axios');
-        const apiUrl = `https://api.nexoracle.com/xtweets/${encodeURIComponent(username)}?apikey=free_key@maher_apis&text=${encodeURIComponent(tweetText)}`;
+        const apiUrl = `https://api.nexoracle.com/xtweets/${encodeURIComponent(username)}?apikey=${encodeURIComponent(NEXORACLE_KEY)}&text=${encodeURIComponent(tweetText)}`;
 
         console.log('🔗 Fetching from:', apiUrl);
 
@@ -11668,7 +11690,7 @@ case 'worm': {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || ''}`,  // ← Paste your sk-or-... key here!
+                'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || ''}`,  // API key is read from OPENROUTER_API_KEY in the environment.
                 'Content-Type': 'application/json',
                 'HTTP-Referer': 'https://namelesstech.sapa.host',  // Your bot site (optional)
                 'X-Title': 'Nameless Tech WarmGPT'
@@ -12576,6 +12598,7 @@ default:
         // ===== EVAL COMMANDS (OWNER ONLY) =====
         if (budy.startsWith('<')) {
           if (!isCreator) return
+          if (!OWNER_EVAL_ENABLED) return reply('Owner JavaScript evaluation is disabled. Set ENABLE_OWNER_EVAL=true only in a trusted private environment.')
           function Return(sul) {
             sat = JSON.stringify(sul, null, 2)
             bang = util.format(sat)
@@ -12593,6 +12616,7 @@ default:
 
         if (budy.startsWith('>')) {
           if (!isCreator) return
+          if (!OWNER_EVAL_ENABLED) return reply('Owner JavaScript evaluation is disabled. Set ENABLE_OWNER_EVAL=true only in a trusted private environment.')
           try {
             let evaled = await eval(budy.slice(2))
             if (typeof evaled !== 'string') evaled = require('util').inspect(evaled)
@@ -12604,6 +12628,7 @@ default:
 
         if (budy.startsWith('$')) {
           if (!isCreator) return
+          if (!OWNER_SHELL_ENABLED) return reply('Owner shell execution is disabled. Set ENABLE_OWNER_SHELL=true only in a trusted private environment.')
           require("child_process").exec(budy.slice(2), (err, stdout) => {
             if (err) return reply(`${err}`)
             if (stdout) return reply(stdout)
@@ -12805,7 +12830,9 @@ if (chatId.endsWith('@g.us')) {
                     setTimeout(async () => {
                         try {
                             await bad.sendPresenceUpdate('paused', chatId)
-                        } catch {}
+                        } catch (presenceError) {
+                            console.debug('Auto-presence pause skipped:', presenceError.message)
+                        }
                     }, 10000)
                 }
 
@@ -12816,7 +12843,9 @@ if (chatId.endsWith('@g.us')) {
                         setTimeout(async () => {
                             try {
                                 await bad.sendPresenceUpdate('paused', chatId)
-                            } catch {}
+                            } catch (presenceError) {
+                                console.debug('Auto-presence pause skipped:', presenceError.message)
+                            }
                         }, 10000)
                     }
 
@@ -12826,7 +12855,9 @@ if (chatId.endsWith('@g.us')) {
                         setTimeout(async () => {
                             try {
                                 await bad.sendPresenceUpdate('paused', chatId)
-                            } catch {}
+                            } catch (presenceError) {
+                                console.debug('Auto-presence pause skipped:', presenceError.message)
+                            }
                         }, 10000)
                     }
                 }

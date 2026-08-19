@@ -47,7 +47,7 @@
 
 **MANIX MD** is an elite, high-performance WhatsApp bot framework engineered for multi-device environments. Packed with advanced automation, multi-LLM artificial intelligence integrations, granular group moderation tools, anti-link protection, and lightning-fast media downloaders, MANIX MD delivers unmatched reliability and power.
 
-Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**.
+Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏**.
 
 ---
 
@@ -55,7 +55,6 @@ Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**.
 
 - **Multi-Device Architecture**: Fully synchronized with the modern WhatsApp Multi-Device protocol (`@whiskeysockets/baileys`).
 - **Web QR Pairing System**: Professional web dashboard to pair your bot visually.
-- **Pairing Code Authentication**: Seamless pairing via phone number input.
 - **Advanced AI Integration**: Direct connectivity with top-tier LLMs (Groq, GPT, Gemini, DeepSeek, Mistral).
 - **Robust Group Moderation**: Automated anti-link defense, welcome greetings, and admin commands.
 - **Multimedia Utilities**: Rapid downloading of YouTube media and custom sticker generation.
@@ -132,7 +131,7 @@ The hosting providers’ free tiers may sleep or restart services, so strict 24/
 ## 👤 Credits & Author
 
 - **Framework**: **MANIX MD**
-- **Lead Developer & Brand**: **𝙼𝙰𝙽𝙸 𝚇𝙳 ☏**
+- **Lead Developer & Brand**: **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏**
 - **Official Channel**: [MANIX MD 💐 on WhatsApp](https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f)
 - **Owner WhatsApp**: [https://wa.me/9779807044421](https://wa.me/9779807044421)
 

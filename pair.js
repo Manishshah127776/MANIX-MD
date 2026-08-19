@@ -9,7 +9,6 @@ const {
     getContentType,
     proto,
     downloadContentFromMessage,
-    fetchLatestBaileysVersion,
     makeInMemoryStore,
     generateWAMessageContent  
 } = require("@whiskeysockets/baileys");
@@ -28,6 +27,13 @@ const crypto = require('crypto')
 const { promisify } = require('util')
 const { execFile } = require('child_process')
 const execFileAsync = promisify(execFile)
+
+// Keep the WhatsApp protocol version aligned with the pinned Baileys release.
+// Override with BAILEYS_VERSION="major,minor,patch" only when deliberately
+// upgrading the dependency and testing the new protocol tuple.
+const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1035194821')
+    .split(',')
+    .map(value => Number.parseInt(value.trim(), 10))
 
 // Use a configurable auth root so Render Persistent Disk (for example /var/data)
 // can retain WhatsApp credentials across restarts and redeploys.
@@ -57,7 +63,11 @@ async function convertAudioBuffer(data, inputExt = '.bin', voiceNote = false) {
         return { data: fs.readFileSync(outputPath), filename: outputPath }
     } finally {
         for (const filePath of [inputPath, outputPath]) {
-            try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath) } catch {}
+            try {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+            } catch (cleanupError) {
+                console.warn('Pairing media temp cleanup failed:', cleanupError.message)
+            }
         }
     }
 }
@@ -252,8 +262,6 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         pairingIo.emit('connected', false);
     }
 
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    
     const sessionPath = sessionPathFor(manixmdNumber);
     ensureDirectoryExists(sessionPath);
     
@@ -266,7 +274,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         logger: pino({ level: "silent" }),
         printQRInTerminal: false,
         auth: state,
-        version,
+        version: BAILEYS_VERSION,
         browser: Browsers.ubuntu("Edge"),
         getMessage: async key => {
             if (!store) return { conversation: '' };
@@ -582,6 +590,16 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         }
     }
 
+    // Compatibility helper used by smsg.reply(Buffer) and legacy command paths.
+    bad.sendMedia = async (jid, data, type = 'file', filename = '', quoted, options = {}) => {
+        const mediaOptions = { ...options }
+        if (type === 'file' || type === 'document') mediaOptions.asDocument = true
+        if (type === 'sticker') mediaOptions.asSticker = true
+        if (type === 'image') mediaOptions.asImage = true
+        if (type === 'video') mediaOptions.asVideo = true
+        return bad.sendFile(jid, data, filename, mediaOptions.caption || '', quoted, Boolean(mediaOptions.ptt), mediaOptions)
+    }
+
     bad.sendTextWithMentions = async (jid, text, quoted, options = {}) => bad.sendMessage(jid, { text: text, mentions: [...text.matchAll(/@(\d{0,16})/g)].map(v => v[1] + '@s.whatsapp.net'), ...options }, { quoted })
 
     bad.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
@@ -688,7 +706,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 tracker.disconnected = false;
                 tracker.retryCount = 0;
                 console.log(chalk.yellow(`🔄 Recovering WhatsApp Web session ${manixmdNumber} after timeout...`));
-                try { tracker.connection?.end(); tracker.connection?.ws?.close(); } catch {}
+                try {
+                    tracker.connection?.end();
+                    tracker.connection?.ws?.close();
+                } catch (closeError) {
+                    console.warn(`WhatsApp socket close cleanup failed for ${manixmdNumber}:`, closeError.message)
+                }
                 await sleep(1500);
                 // A QR timeout is normal while waiting to scan. Keep the session directory and
                 // regenerate a fresh QR instead of marking the bot permanently offline.
@@ -823,7 +846,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                     }
                 }
                 
-                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙳 ☏ ☠︎︎online: ${manixmdNumber}`));
+                console.log(chalk.green.bold(`🎉 𓆩 ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏ ☠︎︎online: ${manixmdNumber}`));
                 console.log(chalk.cyan(`📰 Newsletter auto-react is ACTIVE`));
                 console.log(chalk.cyan(`💓 Keep-alive running (silent mode)`));
                 console.log(chalk.green(`✅ All commands are functional!`));
@@ -856,7 +879,7 @@ function smsg(bad, m, store) {
        
         m.chat = m.key.remoteJid
         m.fromMe = m.key.fromMe
-        m.isGroup = m.chat.endsWith('@g.us')
+        m.isGroup = typeof m.chat === 'string' && m.chat.endsWith('@g.us')
         m.sender = bad.decodeJid(m.fromMe && bad.user.id || m.participant || m.key.participant || m.chat || '')
         if (m.isGroup) m.participant = bad.decodeJid(m.key.participant) || ''
     }
@@ -886,8 +909,9 @@ function smsg(bad, m, store) {
             m.quoted.mentionedJid = m.msg.contextInfo ? m.msg.contextInfo.mentionedJid : []
             m.getQuotedObj = m.getQuotedMessage = async () => {
                 if (!m.quoted.id) return false
+                if (!store || typeof store.loadMessage !== 'function') return false
                 let q = await store.loadMessage(m.chat, m.quoted.id, bad)
-                return exports.smsg(bad, q, store)
+                return q ? exports.smsg(bad, q, store) : false
             }
             let vM = m.quoted.fakeObj = M.fromObject({
                 key: {

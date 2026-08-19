@@ -6,12 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true })
 const axios = require("axios")
 const cheerio = require("cheerio")
 const { resolve } = require("path")
+const path = require('path')
 const util = require("util")
 let BodyForm = require('form-data')
 let { fromBuffer } = require('file-type')
 //let fetch = require('node-fetch')
 let fs = require('fs')
 const child_process = require('child_process')
+const execFileAsync = util.promisify(child_process.execFile)
 const ffmpeg = require('fluent-ffmpeg')
 
 const {unlink } = require ('fs').promises
@@ -152,15 +154,27 @@ const sleepy = async (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 exports.buffergif = async (image) => {
-        
-	const filename = `${Math.random().toString(36)}`
-			await fs.writeFileSync(`./XeonMedia/trash/${filename}.gif`, image)
-					 child_process.exec(
-								`ffmpeg -i ./XeonMedia/trash/${filename}.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" ./XeonMedia/trash/${filename}.mp4`
-										) 
-  await sleepy(4000)
-  
-	var buffer5  =  await  fs.readFileSync(`./XeonMedia/trash/${filename}.mp4`)
-	Promise.all([unlink(`./XeonMedia/video/${filename}.mp4`), unlink(`./XeonMedia/gif/${filename}.gif`)])
-	return buffer5
-				   }
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const trashDir = path.join(__dirname, '..', 'XeonMedia', 'trash')
+  const inputPath = path.join(trashDir, `${filename}.gif`)
+  const outputPath = path.join(trashDir, `${filename}.mp4`)
+  fs.mkdirSync(trashDir, { recursive: true })
+
+  try {
+    fs.writeFileSync(inputPath, image)
+    await execFileAsync(process.env.FFMPEG_PATH || 'ffmpeg', [
+      '-i', inputPath,
+      '-movflags', 'faststart',
+      '-pix_fmt', 'yuv420p',
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+      outputPath
+    ])
+    const buffer = fs.readFileSync(outputPath)
+    return buffer
+  } finally {
+    await Promise.allSettled([
+      fs.promises.unlink(inputPath),
+      fs.promises.unlink(outputPath)
+    ])
+  }
+}

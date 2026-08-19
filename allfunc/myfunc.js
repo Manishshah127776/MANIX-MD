@@ -1,6 +1,6 @@
 /**
    * Create By MANI XTECH
-   * Contact Me on wa.me/966577531068
+   * Contact Me on wa.me/9779807044421
 */
 
 const fetch = require('node-fetch')
@@ -128,7 +128,7 @@ class Function {
 
 // Export all functions
 module.exports = {
-    simple: new Function(),
+    simple: () => {},
     sleep,
     isUrl,
     getBuffer,

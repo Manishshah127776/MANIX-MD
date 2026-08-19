@@ -1,5 +1,8 @@
 const fs = require('fs');
-const SETTINGS_PATH = './setting.json';
+const path = require('path');
+const SETTINGS_PATH = path.join(__dirname, 'setting.json');
+
+fs.mkdirSync(path.dirname(SETTINGS_PATH), { recursive: true });
 
 let settings = {};
 try {
