@@ -37,6 +37,11 @@ const BAILEYS_VERSION = (process.env.BAILEYS_VERSION || '2,3000,1034074495')
 const BAILEYS_BROWSER = (process.env.BAILEYS_BROWSER || 'MANI XMD,Chrome,145.0.0')
     .split(',')
     .map(value => value.trim())
+// Baileys uses WhatsApp's current Multi-Device protocol when auth state is
+// supplied through useMultiFileAuthState. Keep the capability explicit so the
+// dashboard, health endpoint, and connection logs expose the actual mode.
+const MULTI_DEVICE_ENABLED = true
+const MULTI_DEVICE_LINKING_METHODS = Object.freeze(['qr', 'phone-code'])
 const CONNECTED_NOTICE_OWNER = String(process.env.OWNER_NUMBER || process.env.MANIX_CONTACT_NUMBER || '9779807044421').replace(/\D/g, '')
 
 // Use a configurable auth root so Render Persistent Disk (for example /var/data)
@@ -311,7 +316,9 @@ async function startpairing(manixmdNumber, pairingIo = null) {
             connectedNoticeSent: false,
             connectedNoticeSending: false,
             keepAliveInterval: null,
-            eventListenersAttached: false
+            eventListenersAttached: false,
+            multiDevice: MULTI_DEVICE_ENABLED,
+            linkingMethods: MULTI_DEVICE_LINKING_METHODS
         });
     }
     
@@ -380,7 +387,12 @@ async function startpairing(manixmdNumber, pairingIo = null) {
         markOnlineOnConnect: true,
     })
     // Expose the auth state for the pairing-code guard without changing Baileys internals.
+    // This is the Multi-Device credential state; every key update is persisted by
+    // saveCreds below and reused after Render restarts when WHATSAPP_AUTH_DIR is persistent.
     bad.authState = state;
+    bad.multiDevice = MULTI_DEVICE_ENABLED;
+    bad.linkingMethods = MULTI_DEVICE_LINKING_METHODS;
+    console.log(chalk.cyan(`📱 WhatsApp Multi-Device enabled for ${manixmdNumber} (QR + phone-code linking).`));
     
     tracker.connection = bad;
     tracker.eventListenersAttached = false;
@@ -752,7 +764,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 const qrDataURL = await QRCode.toDataURL(qr);
                 pairingIo.currentQr = qrDataURL;
                 pairingIo.currentConnected = false;
-                pairingIo.currentStatus = 'WhatsApp is waiting for a fresh QR scan.';
+                pairingIo.currentStatus = 'WhatsApp Multi-Device is waiting for a fresh QR scan.';
                 pairingIo.emit('qr', qrDataURL);
                 pairingIo.emit('connected', false);
                 pairingIo.emit('status', pairingIo.currentStatus);
@@ -855,7 +867,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 pairingIo.currentPairingCode = null;
                 pairingIo.currentPairingCodeExpiresAt = 0;
                 pairingIo.currentConnected = true;
-                pairingIo.currentStatus = 'WhatsApp Web connected successfully.';
+                pairingIo.currentStatus = 'WhatsApp Multi-Device connected successfully.';
                 pairingIo.emit('status', pairingIo.currentStatus);
                 pairingIo.emit('connected', true);
             }
@@ -898,7 +910,7 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                     const authenticatedJid = bad.user?.id ? jidNormalizedUser(bad.user.id) : '';
                     const ownerJid = CONNECTED_NOTICE_OWNER ? `${CONNECTED_NOTICE_OWNER}@s.whatsapp.net` : '';
                     const noticeTargets = [...new Set([authenticatedJid, ownerJid].filter(Boolean))];
-                    const noticeText = `╭━━〔 ✅ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏɴɴᴇᴄᴛᴇᴅ 〕━━╮\n┃\n┃ 🤖 ʙᴏᴛ: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n┃ 📡 sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n┃\n┃ 📢 Follow the MANIX MD 💐 channel:\n┃ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n┃\n┃ ☎ Contact: wa.me/9779807044421\n┃\n╰━━━━━━━━━━━━━━━━━━━━━━╯`;
+                    const noticeText = `╭━━〔 ✅ ᴡʜᴀᴛsᴀᴘᴘ ᴄᴏɴɴᴇᴄᴛᴇᴅ 〕━━╮\n┃\n┃ 🤖 ʙᴏᴛ: 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳\n┃ 📡 sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ\n┃ 📱 ᴍᴜʟᴛɪ-ᴅᴇᴠɪᴄᴇ: ᴇɴᴀʙʟᴇᴅ\n┃\n┃ 📢 Follow the MANIX MD 💐 channel:\n┃ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f\n┃\n┃ ☎ Contact: wa.me/9779807044421\n┃\n╰━━━━━━━━━━━━━━━━━━━━━━╯`;
                     try {
                         let lastNoticeError = null;
                         for (let attempt = 1; attempt <= 3 && !tracker.connectedNoticeSent; attempt++) {

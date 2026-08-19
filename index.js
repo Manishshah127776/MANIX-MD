@@ -16,6 +16,8 @@ const figlet = require('figlet');
 const AUTH_FILE = './auth.json';
 const PAIRING_DIR = path.resolve(process.env.WHATSAPP_AUTH_DIR || path.join(__dirname, 'manixmdtimewisher', 'pairing'));
 const SESSION_NAME = 'web-session';
+const MULTI_DEVICE_ENABLED = true;
+const MULTI_DEVICE_LINKING_METHODS = ['qr', 'phone-code'];
 const startpairing = require('./pair');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -78,6 +80,8 @@ function startHealthServer() {
         qrAvailable: Boolean(io.currentQr),
         pairingCodeAvailable: Boolean(io.currentPairingCode && io.currentPairingCodeExpiresAt > Date.now()),
         pairingCodeExpiresAt: io.currentPairingCodeExpiresAt || null,
+        multiDevice: MULTI_DEVICE_ENABLED,
+        linkingMethods: MULTI_DEVICE_LINKING_METHODS,
         authDirectory: process.env.WHATSAPP_AUTH_DIR || 'local filesystem; configure a persistent mount for restart-safe pairing'
     }));
 
@@ -101,7 +105,7 @@ function startHealthServer() {
             io.currentStatus = 'Preparing WhatsApp pairing code...';
             io.emit('status', io.currentStatus);
             const code = await startpairing.requestPairingCode(SESSION_NAME, phoneNumber, io);
-            return res.json({ ok: true, code, expiresInSeconds: 120, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
+            return res.json({ ok: true, code, expiresInSeconds: 120, multiDevice: MULTI_DEVICE_ENABLED, instruction: 'Open WhatsApp → Linked devices → Link with phone number and enter this code.' });
         } catch (error) {
             console.error(`Pairing-code request failed: ${error.message}`);
             const isInputError = /WhatsApp number with country code/i.test(error.message || '');
@@ -190,7 +194,7 @@ const initializeBot = async () => {
     try {
         console.log(chalk.blue('📱 Starting WhatsApp Web QR pairing...'));
         await startpairing(SESSION_NAME, webRuntime.io);
-        console.log(chalk.green('✅ WhatsApp Web pairing is ready at the public dashboard.'));
+        console.log(chalk.green('✅ WhatsApp Multi-Device pairing is ready at the public dashboard (QR + phone-code linking).'));
     } catch (error) {
         console.log(chalk.red(`❌ Failed to start WhatsApp Web pairing: ${error.message}`));
         if (webRuntime?.io) {
