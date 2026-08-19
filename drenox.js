@@ -32,6 +32,9 @@ const API_BASE = 'https://api.nexoracle.com/stalking';
 
 const NEXORACLE_API = 'https://api.nexoracle.com/';
 const NEXORACLE_KEY = process.env.NEXORACLE_API_KEY || process.env.NEXORACLE_KEY || '';
+const DEFAULT_MANIX_CHANNEL_URL = String(process.env.WHATSAPP_CHANNEL_URL || 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f').trim();
+const COBALT_API_URL = String(process.env.COBALT_API_URL || '').trim().replace(/\/$/, '');
+const COBALT_API_KEY = String(process.env.COBALT_API_KEY || '').trim();
 const OWNER_EVAL_ENABLED = process.env.ENABLE_OWNER_EVAL === 'true'
 const OWNER_SHELL_ENABLED = process.env.ENABLE_OWNER_SHELL === 'true'
 
@@ -61,7 +64,13 @@ const COMMAND_ALIASES = Object.freeze({
   tr: 'truth',
   vv2: 'vv',
   welcomecard: 'welcome',
-  whoami: 'owner'
+  whoami: 'owner',
+  channelinfo: 'cinfo',
+  chinfo: 'cinfo',
+  channelforward: 'channelforward',
+  channelforwarder: 'channelforward',
+  forwardchannel: 'channelforward',
+  cf: 'channelforward'
 });
 const normalizeCommandName = (value) => String(value || '')
   .normalize('NFKC')
@@ -216,7 +225,13 @@ const PIPED_API_URLS = String(process.env.PIPED_API_URLS || [
   'https://pipedapi.kavin.rocks',
   'https://pipedapi.adminforge.de',
   'https://api.piped.yt',
-  'https://pipedapi.reallyaweso.me'
+  'https://pipedapi.reallyaweso.me',
+  'https://pipedapi.leptons.xyz',
+  'https://pipedapi.r4fo.com',
+  'https://pipedapi.drgns.space',
+  'https://pipedapi.ducks.party',
+  'https://pipedapi-libre.kavin.rocks',
+  'https://pipedapi.orangenet.cc'
 ].join(','))
   .split(',')
   .map(value => value.trim().replace(/\/$/, ''))
@@ -250,6 +265,127 @@ function youtubeRecoveryHint(error) {
   return 'Try another title or YouTube link.'
 }
 
+function getInstagramAuthOptions() {
+  const configuredPath = String(process.env.INSTAGRAM_COOKIES_PATH || process.env.YT_COOKIES_PATH || '').trim()
+  if (!configuredPath) return {}
+  const cookiePath = path.resolve(configuredPath)
+  if (!fs.existsSync(cookiePath)) {
+    console.warn(`Instagram/YT cookies file does not exist: ${cookiePath}`)
+    return {}
+  }
+  return { cookies: cookiePath }
+}
+
+async function fetchInstagramWithYtdlp(input) {
+  const ytdlp = require('youtube-dl-exec')
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'manix-instagram-'))
+  try {
+    const options = {
+      noWarnings: true,
+      noCheckCertificates: true,
+      noPlaylist: true,
+      noPart: true,
+      format: 'best[ext=mp4]/best',
+      output: path.join(tempDir, 'media.%(ext)s'),
+      jsRuntime: 'node',
+      remoteComponents: 'ejs:github',
+      ...getInstagramAuthOptions()
+    }
+    const info = await ytdlp(input, { ...options, dumpSingleJson: true, skipDownload: true })
+    await ytdlp(input, options)
+    const files = (await fs.promises.readdir(tempDir)).filter(file => /\.(mp4|webm|mov|mkv|jpg|jpeg|png|webp)$/i.test(file))
+    if (!files.length) throw new Error('yt-dlp downloaded no Instagram media file')
+    const items = []
+    for (const file of files) {
+      const filePath = path.join(tempDir, file)
+      const buffer = await fs.promises.readFile(filePath)
+      if (!buffer.length) continue
+      const ext = path.extname(file).toLowerCase()
+      const isVideo = /\.(mp4|webm|mov|mkv)$/i.test(ext)
+      items.push({
+        buffer,
+        mimetype: isVideo ? (ext === '.webm' ? 'video/webm' : 'video/mp4') : `image/${ext === '.jpg' || ext === '.jpeg' ? 'jpeg' : ext.slice(1)}`,
+        isVideo,
+        title: info.title || 'Instagram media',
+        uploader: info.uploader || info.channel || 'Instagram'
+      })
+    }
+    if (!items.length) throw new Error('Instagram media file was empty')
+    return { items, title: info.title || 'Instagram media', uploader: info.uploader || info.channel || 'Instagram' }
+  } finally {
+    await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(error => {
+      console.warn('Instagram temporary directory cleanup failed:', error.message)
+    })
+  }
+}
+
+async function fetchInstagramWithCobalt(input) {
+  if (!COBALT_API_URL) throw new Error('No authorized COBALT_API_URL is configured')
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'MANI-XMD/1.0'
+  }
+  if (COBALT_API_KEY) headers.Authorization = `Api-Key ${COBALT_API_KEY}`
+  const response = await axios.post(COBALT_API_URL, {
+    url: input,
+    downloadMode: 'auto',
+    videoQuality: '720',
+    filenameStyle: 'basic'
+  }, { headers, timeout: 45000, validateStatus: status => status >= 200 && status < 500 })
+  const data = response.data || {}
+  if (response.status >= 400 || data.status === 'error') {
+    throw new Error(`Cobalt returned ${response.status}: ${data.error?.code || data.text || 'request rejected'}`)
+  }
+  const urls = []
+  if (data.url) urls.push(data.url)
+  if (Array.isArray(data.tunnel)) urls.push(...data.tunnel)
+  if (data.status === 'picker' && Array.isArray(data.picker)) {
+    urls.push(...data.picker.filter(item => item?.url).map(item => item.url))
+  }
+  if (!urls.length) throw new Error(`Cobalt returned unsupported status: ${data.status || 'unknown'}`)
+  const items = []
+  for (const url of urls.slice(0, 10)) {
+    const media = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 90000,
+      maxContentLength: 80 * 1024 * 1024,
+      maxBodyLength: 80 * 1024 * 1024
+    })
+    const contentType = String(media.headers?.['content-type'] || 'video/mp4').split(';')[0]
+    items.push({
+      buffer: Buffer.from(media.data),
+      mimetype: contentType,
+      isVideo: contentType.startsWith('video/'),
+      title: data.filename || 'Instagram media',
+      uploader: 'Instagram'
+    })
+  }
+  return { items, title: data.filename || 'Instagram media', uploader: 'Instagram' }
+}
+
+async function fetchInstagramMedia(input) {
+  let ytdlpError = null
+  try {
+    return await fetchInstagramWithYtdlp(input)
+  } catch (error) {
+    ytdlpError = error
+    console.warn('Instagram yt-dlp download failed:', error.stderr || error.message)
+  }
+  try {
+    return await fetchInstagramWithCobalt(input)
+  } catch (fallbackError) {
+    fallbackError.previous = ytdlpError
+    throw fallbackError
+  }
+}
+function instagramRecoveryHint(error) {
+  const message = `${error?.message || ''} ${error?.stderr || ''} ${error?.previous?.message || ''}`.toLowerCase()
+  if (/login page|rate-limit|rate limit|cookies|http 400|http 401|http 403|unauthorized/.test(message)) {
+    return 'Instagram is rate-limiting anonymous server downloads. Configure INSTAGRAM_COOKIES_PATH with a valid Netscape cookies file, or configure an authorized COBALT_API_URL.'
+  }
+  return 'Try a public Instagram post/reel URL or configure INSTAGRAM_COOKIES_PATH for protected content.'
+}
 function getYtdlpAuthOptions() {
   const configuredPath = String(process.env.YT_COOKIES_PATH || '').trim()
   if (!configuredPath) return {}
@@ -270,10 +406,11 @@ async function fetchPipedAudio(videoUrl) {
     try {
       const streamResponse = await axios.get(`${apiBase}/streams/${encodeURIComponent(videoId)}`, {
         timeout: 20000,
+        headers: { Accept: 'application/json', 'User-Agent': 'MANI-XMD/1.0' },
         validateStatus: status => status >= 200 && status < 300
       })
-      if (streamResponse.status >= 400 || !streamResponse.data) {
-        throw new Error(`Piped streams request returned HTTP ${streamResponse.status}`)
+      if (streamResponse.status >= 400 || !streamResponse.data || typeof streamResponse.data !== 'object' || Array.isArray(streamResponse.data)) {
+        throw new Error(`Piped streams request returned non-JSON HTTP ${streamResponse.status}`)
       }
       const streams = Array.isArray(streamResponse.data.audioStreams) ? streamResponse.data.audioStreams : []
       const selected = streams
@@ -284,13 +421,17 @@ async function fetchPipedAudio(videoUrl) {
       const audioResponse = await axios.get(selected.url, {
         responseType: 'arraybuffer',
         timeout: 90000,
+        headers: { 'User-Agent': 'MANI-XMD/1.0', Referer: apiBase },
         maxContentLength: 80 * 1024 * 1024,
-        maxBodyLength: 80 * 1024 * 1024
+        maxBodyLength: 80 * 1024 * 1024,
+        validateStatus: status => status >= 200 && status < 300
       })
+      const audioBuffer = Buffer.from(audioResponse.data || [])
+      if (!audioBuffer.length) throw new Error('Piped returned an empty audio response')
       const mimeType = String(selected.mimeType || 'audio/mp4').split(';')[0]
       const extension = /mpeg|mp3/i.test(mimeType) ? 'mp3' : /webm/i.test(mimeType) ? 'webm' : 'm4a'
       return {
-        buffer: Buffer.from(audioResponse.data),
+        buffer: audioBuffer,
         mimetype: mimeType,
         fileName: `manix-xmd-audio.${extension}`,
         title: streamResponse.data.title || 'YouTube Audio',
@@ -2627,6 +2768,9 @@ case 'funmenu': {
 ┃✮│➣ ${prefix}ɴᴇᴡs
 ┃✮│➣ ${prefix}sʜᴏʀᴛʟɪɴᴋ
 ┃✮│➣ ${prefix}ᴍᴏᴠɪᴇ
+┃✮│➣ ${prefix}ɪɴsᴛᴀɢʀᴀᴍ <link>
+┃✮│➣ ${prefix}ᴄɪɴғᴏ <channel link>
+┃✮│➣ ${prefix}ᴄʜᴀɴɴᴇʟғᴏʀᴡᴀʀᴅ <channel link> [destination]
 ┃✮│➣ ${prefix}ᴘɪᴄᴋᴜᴘʟɪɴᴇ
 ╰━━━━━━━━━━━━━━━━━━━━━┈⊷`
 
@@ -6712,7 +6856,8 @@ case "ytmp4": {
             mergeOutputFormat: 'mp4',
             output: `${base}.%(ext)s`,
             jsRuntime: 'node',
-            remoteComponents: 'ejs:github'
+            remoteComponents: 'ejs:github',
+      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } }
         })
         if (!fs.existsSync(videoPath)) throw new Error('Video file was not created')
         await bad.sendMessage(m.chat, {
@@ -6775,6 +6920,7 @@ case 'song': {
         output: `${outputBase}.%(ext)s`,
         jsRuntime: 'node',
         remoteComponents: 'ejs:github',
+      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } },
         ...getYtdlpAuthOptions()
       })
       if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
@@ -6786,6 +6932,7 @@ case 'song': {
         skipDownload: true,
         jsRuntime: 'node',
         remoteComponents: 'ejs:github',
+      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } },
         ...getYtdlpAuthOptions()
       }).catch(() => ({}))
     } catch (downloadError) {
@@ -6944,49 +7091,24 @@ case "instagram":
 case "ig":
 case "igdl": {
     if (!text) return reply(example("https://instagram.com/p/xxxxx"));
-    if (!text.includes('instagram.com')) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ɪɴsᴛᴀɢʀᴀᴍ ʟɪɴᴋ");
+    if (!/^https?:\/\/(www\.)?instagram\.com\//i.test(text)) return reply("ᴘʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ ɪɴsᴛᴀɢʀᴀᴍ ʟɪɴᴋ");
 
     try {
-        await bad.sendMessage(m.chat, {react: {text: '⏳', key: m.key}});
-
-        const response = await axios.get(`https://api.nexoracle.com/downloader/insta?apikey=${encodeURIComponent(NEXORACLE_KEY)}&url=${encodeURIComponent(text)}`);
-
-        const data = response.data.result;
-
-        if (data && data.url_list && data.url_list.length > 0) {
-            for (let media of data.url_list) {
-                if (media.includes('.mp4') || data.media_details?.type === 'video') {
-                    await bad.sendMessage(m.chat, {
-                        video: {url: media},
-                        caption: `╭━━━〔 *ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮
-
-👤 *ᴜsᴇʀ:* ${data.post_info?.owner_username || 'N/A'}
-❤️ *ʟɪᴋᴇs:* ${data.post_info?.likes?.toLocaleString() || 'N/A'}
-
-╰━━━━━━━━━━━━━━━━━╯`,
-                        mimetype: 'video/mp4'
-                    }, {quoted: m});
-                } else {
-                    await bad.sendMessage(m.chat, {
-                        image: {url: media},
-                        caption: `╭━━━〔 *ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮
-
-👤 *ᴜsᴇʀ:* ${data.post_info?.owner_username || 'N/A'}
-❤️ *ʟɪᴋᴇs:* ${data.post_info?.likes?.toLocaleString() || 'N/A'}
-
-╰━━━━━━━━━━━━━━━━━╯`
-                    }, {quoted: m});
-                }
+        await bad.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+        const mediaResult = await fetchInstagramMedia(text)
+        for (const media of mediaResult.items.slice(0, 10)) {
+            const caption = `╭━━━〔 *ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* 〕━━━╮\n\n📝 *ᴛɪᴛʟᴇ:* ${mediaResult.title || 'Instagram media'}\n👤 *ᴜsᴇʀ:* ${mediaResult.uploader || 'Instagram'}\n\n╰━━━━━━━━━━━━━━━━━╯`
+            if (media.isVideo || String(media.mimetype).startsWith('video/')) {
+                await bad.sendMessage(m.chat, { video: media.buffer, caption, mimetype: media.mimetype || 'video/mp4' }, { quoted: m })
+            } else {
+                await bad.sendMessage(m.chat, { image: media.buffer, caption, mimetype: media.mimetype || 'image/jpeg' }, { quoted: m })
             }
-            await bad.sendMessage(m.chat, {react: {text: '✅', key: m.key}});
-        } else {
-            throw new Error('ɴᴏ ᴍᴇᴅɪᴀ ғᴏᴜɴᴅ');
         }
-
+        await bad.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
     } catch (error) {
-        console.error('Instagram Error:', error.message);
-        await bad.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
-        return reply(`❌ ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${error.message}`);
+        console.error('Instagram Error:', error.stderr || error.message)
+        await bad.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+        return reply(`❌ ɪɴsᴛᴀɢʀᴀᴍ ᴅᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ\n\n${instagramRecoveryHint(error)}`);
     }
 }
 break;
@@ -7373,6 +7495,7 @@ case 'ytaudio': {
         output: `${base}.%(ext)s`,
         jsRuntime: 'node',
         remoteComponents: 'ejs:github',
+      extractorArgs: { youtube: { player_client: ['android_vr', 'web_safari', 'tv'] } },
         ...getYtdlpAuthOptions()
       })
       if (!fs.existsSync(audioPath)) throw new Error('Audio file was not created')
@@ -7805,6 +7928,73 @@ break
 case 'dice': case 'roll': {
   const result = Math.floor(Math.random() * 6) + 1
   reply(`*◆ ᴅɪᴄᴇ ʀᴏʟʟ*\n\n🎲 You rolled: ${result}\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ ☠︎︎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 𝗠𝗗 ☠`)
+}
+break
+
+case 'cinfo':
+case 'channelinfo':
+case 'chinfo': {
+    const channelLink = String(text || DEFAULT_MANIX_CHANNEL_URL).trim().split(/\s+/)[0]
+    const inviteMatch = channelLink.match(/whatsapp\.com\/channel\/([^/?#\s]+)/i)
+    if (!inviteMatch) return reply(`❌ ᴜsᴀɢᴇ: ${prefix}cinfo <WhatsApp channel link>\n\nExample: ${prefix}cinfo ${DEFAULT_MANIX_CHANNEL_URL}`)
+    try {
+        const metadata = await bad.newsletterMetadata('invite', inviteMatch[1])
+        if (!metadata?.id) throw new Error('WhatsApp could not resolve that channel invite')
+        const thread = metadata.thread_metadata || metadata.threadMetadata || metadata
+        const name = thread.name || thread.subject || metadata.name || 'WhatsApp Channel'
+        const description = thread.description || metadata.description || 'No description available'
+        const followers = thread.subscribers_count ?? thread.subscribersCount ?? metadata.subscribers_count ?? metadata.subscribersCount ?? 'Unknown'
+        const created = thread.creation_time || metadata.creation_time || metadata.creationTime
+        const createdText = created ? new Date(Number(created) * 1000).toISOString() : 'Unknown'
+        reply(`╭━━〔 📰 ᴄʜᴀɴɴᴇʟ ɪɴғᴏ 〕━━┈⊷\n┃\n┃ 🏷️ *ɴᴀᴍᴇ:* ${name}\n┃ 🆔 *ᴊɪᴅ:* ${metadata.id}\n┃ 👥 *ғᴏʟʟᴏᴡᴇʀs:* ${followers}\n┃ 📝 *ᴅᴇsᴄʀɪᴘᴛɪᴏɴ:* ${description}\n┃ 🕒 *ᴄʀᴇᴀᴛᴇᴅ:* ${createdText}\n┃ 🔗 *ʟɪɴᴋ:* ${channelLink}\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+    } catch (error) {
+        console.error('Channel info error:', error.message)
+        reply(`❌ ᴄʜᴀɴɴᴇʟ ɪɴғᴏ ғᴀɪʟᴇᴅ\n\n${error.message}`)
+    }
+}
+break
+
+case 'channelforward': {
+    if (!isCreator) return reply('❌ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
+    const forwardArgs = String(text || '').trim().split(/\s+/).filter(Boolean)
+    const existingForwarder = getSetting('bot', 'channelForwarder', null)
+    if (!forwardArgs.length || /^(status|info)$/i.test(forwardArgs[0])) {
+        if (!existingForwarder?.enabled) {
+            return reply(`╭━━〔 📡 ᴄʜᴀɴɴᴇʟ ғᴏʀᴡᴀʀᴅᴇʀ 〕━━┈⊷\n┃\n┃ 🔴 *sᴛᴀᴛᴜs:* ᴏғғ\n┃\n┃ ᴜsᴀɢᴇ: ${prefix}channelforward <channel link> [destination]\n┃ ᴅᴇsᴛɪɴᴀᴛɪᴏɴ ᴅᴇғᴀᴜʟᴛs ᴛᴏ ᴛʜɪs ᴄʜᴀᴛ\n┃ ᴛᴜʀɴ ᴏғғ: ${prefix}channelforward off\n┃\n╰━━━━━━━━━━━━━━━━━━━━━┈⊷`)
+        }
+        return reply(`📡 *ᴄʜᴀɴɴᴇʟ ғᴏʀᴡᴀʀᴅᴇʀ sᴛᴀᴛᴜs*\n\n🟢 ᴇɴᴀʙʟᴇᴅ\n📰 sᴏᴜʀᴄᴇ: ${existingForwarder.sourceInvite}\n📥 ᴅᴇsᴛɪɴᴀᴛɪᴏɴ: ${existingForwarder.destinationJid}`)
+    }
+    if (/^(off|disable|stop)$/i.test(forwardArgs[0])) {
+        setSetting('bot', 'channelForwarder', { enabled: false, updatedAt: new Date().toISOString(), updatedBy: m.sender })
+        return reply('✅ ᴄʜᴀɴɴᴇʟ ғᴏʀᴡᴀʀᴅᴇʀ ᴅɪsᴀʙʟᴇᴅ.')
+    }
+    const sourceLink = forwardArgs[0]
+    const inviteMatch = sourceLink.match(/whatsapp\.com\/channel\/([^/?#\s]+)/i)
+    if (!inviteMatch) return reply(`❌ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠᴀʟɪᴅ WhatsApp channel link.\n\nᴜsᴀɢᴇ: ${prefix}channelforward <channel link> [destination]`)
+    let destinationJid = forwardArgs[1] || m.chat
+    if (!/@(g\.us|s\.whatsapp\.net|newsletter)$/.test(destinationJid)) {
+        const digits = destinationJid.replace(/\D/g, '')
+        if (!digits) return reply('❌ ᴅᴇsᴛɪɴᴀᴛɪᴏɴ ᴍᴜsᴛ ʙᴇ ᴛʜɪs ᴄʜᴀᴛ, ᴀ ɢʀᴏᴜᴘ ᴊɪᴅ, ᴏʀ ᴀ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ.')
+        destinationJid = `${digits}@s.whatsapp.net`
+    }
+    try {
+        const metadata = await bad.newsletterMetadata('invite', inviteMatch[1])
+        if (!metadata?.id) throw new Error('WhatsApp could not resolve that channel invite')
+        const config = {
+            enabled: true,
+            sourceJid: metadata.id,
+            sourceInvite: sourceLink,
+            destinationJid,
+            updatedAt: new Date().toISOString(),
+            updatedBy: m.sender
+        }
+        setSetting('bot', 'channelForwarder', config)
+        if (bad.newsletterJids instanceof Set) bad.newsletterJids.add(metadata.id)
+        reply(`✅ *ᴄʜᴀɴɴᴇʟ ғᴏʀᴡᴀʀᴅᴇʀ ᴇɴᴀʙʟᴇᴅ*\n\n📰 sᴏᴜʀᴄᴇ: ${sourceLink}\n📥 ᴅᴇsᴛɪɴᴀᴛɪᴏɴ: ${destinationJid}\n\nɴᴇᴡ ᴘᴏsᴛs ᴡɪʟʟ ʙᴇ ғᴏʀᴡᴀʀᴅᴇᴅ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ.`)
+    } catch (error) {
+        console.error('Channel forwarder error:', error.message)
+        reply(`❌ ᴄʜᴀɴɴᴇʟ ғᴏʀᴡᴀʀᴅᴇʀ ғᴀɪʟᴇᴅ\n\n${error.message}`)
+    }
 }
 break
 
@@ -12933,6 +13123,8 @@ case 'repo': {
 
 ◆ 📲 WHATSAPP CHANNEL ◆
 ➥ https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f
+➥ ${prefix}cinfo <channel link>
+➥ ${prefix}channelforward <channel link> [destination]
 
 ◆ ☎ CONTACT ◆
 ➥ wa.me/9779807044421
@@ -13745,12 +13937,16 @@ module.exports.checkAdminStatus = checkAdminStatus;
 module.exports.commandAliases = COMMAND_ALIASES;
 module.exports.commandCharMap = COMMAND_CHAR_MAP;
 module.exports.mediaHelpers = {
+  fetchPipedAudio,
   extractTikTokVideoId,
   parseTikTokEmbedState,
   findTikTokItemInfo,
   selectTikTokMediaUrl,
   fetchTikTokEmbedVideo,
-  fetchTikTokVideo
+  fetchTikTokVideo,
+  fetchInstagramWithYtdlp,
+  fetchInstagramWithCobalt,
+  fetchInstagramMedia
 };
 // ═══════════════════════════════════════════════════════════
 // FILE WATCHER

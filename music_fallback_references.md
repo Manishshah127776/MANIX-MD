@@ -30,3 +30,11 @@ The official Cobalt API documentation supports `POST /` with `audioFormat: mp3`,
 Source: https://github.com/yt-dlp/yt-dlp/issues/17403
 
 The current yt-dlp TikTok extractor issue #17403 was closed after a site break affecting current/nightly yt-dlp builds. The issue records two practical workarounds: use a realistic Chrome user-agent, optionally with an authorized cookies file, and resolve the video through TikTok’s official embed page to obtain the signed `tiktokcdn.com` media URL before downloading. The issue links merged PR #17452. This confirms that simply upgrading yt-dlp is necessary but may not be sufficient for TikTok on hosted server IPs. The linked merged PR #17452 fixes the TikTok extractor by removing impersonation from webpage requests, improving blocker-header generation, and randomizing the HTTP header fingerprint. The project’s bundled stable binary reports 2026.07.04, which includes that merged fix.
+
+## YouTube and Instagram fallback verification — 2026-08-19
+
+The current bundled yt-dlp binary reports `2026.07.04`, but all tested YouTube player clients (`android_vr`, `android`, `ios`, `web_safari`, `tv`, `web_creator`, and `web_embedded`) returned YouTube’s `Sign in to confirm you’re not a bot` response for a public test video without cookies. The configured Piped hosts were also checked: `pipedapi.kavin.rocks` returned HTTP 526, `pipedapi.adminforge.de` returned HTTP 403, `api.piped.yt` failed DNS resolution, `pipedapi.reallyaweso.me` returned HTTP 502, and several documented hosts were unreachable or returned non-API HTML. This confirms that a server-side YouTube fallback cannot be promised without either a valid Netscape cookie file or a healthy alternative instance.
+
+The current Cobalt service at `https://api.cobalt.tools/` reports version `11.7.1` and lists Instagram among supported services, while its retired `/api/json` endpoint explicitly reports that the v7 API was shut down. The upstream documentation is `https://github.com/imputnet/cobalt/blob/main/docs/api.md`; implementation must use the documented current v11 request schema rather than the retired v7 path.
+
+References: https://raw.githubusercontent.com/TeamPiped/documentation/refs/heads/main/content/docs/public-instances/index.md ; https://github.com/imputnet/cobalt/blob/main/docs/api.md ; https://github.com/yt-dlp/yt-dlp/issues/17403

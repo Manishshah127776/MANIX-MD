@@ -153,3 +153,24 @@ The TikTok path was repaired after Render reported `Unexpected response from web
 The missing `.bugmenu` dispatcher case was added as a reliable text-only diagnostic menu advertising only real handlers: `.ping`, `.speed`, `.runtime`, `.debug`, `.admincheck`, `.glitch`, `.glitchtext`, and `.menu`. This avoids image-payload failures and prevents the command from falling through to the unknown-command response.
 
 Local verification passed with a public TikTok video: yt-dlp downloaded a valid 4,172,714-byte MP4, with title and uploader metadata returned. The final dispatcher inventory is now **726 labels, 726 unique labels, and zero duplicates**, reflecting the original 723 labels plus `.fixowner`, `.enc`, and `.bugmenu`.
+
+## YouTube, Instagram, cinfo, and channel-forwarder repair release
+
+The YouTube recovery path was hardened again. The primary yt-dlp calls now use the current EJS remote components and explicit `android_vr`, `web_safari`, and `tv` player clients before trying the expanded, JSON-validated Piped instance list. Piped responses that return an HTML error page with HTTP 200 are rejected instead of being treated as stream metadata. Downloaded audio is checked for non-empty bytes, and the final user-facing message distinguishes an upstream YouTube server block from a local command failure.
+
+This validation environment still observed YouTube’s anonymous server challenge and no reachable Piped instance returned playable audio for the public test video. That is an upstream provider restriction, not a dispatcher failure. The reliable production solution is an authorized Netscape-format cookie file configured through `YT_COOKIES_PATH`; the code now supports it consistently, while the Render postinstall continues to refresh the bundled yt-dlp binary through `scripts/update-ytdlp.js`.
+
+Instagram was changed from the retired NexOracle-only HTTP route to current yt-dlp extraction with an explicitly configured authorized Cobalt v11 fallback. Raw HTTP 400/login/rate-limit responses are no longer exposed to users; they are converted into a concise recovery message explaining `INSTAGRAM_COOKIES_PATH` and authorized `COBALT_API_URL`. The local public-reel probe confirmed Instagram’s current anonymous rate limit, so protected or rate-limited accounts still require valid cookies or an authorized provider endpoint.
+
+The new `.cinfo <WhatsApp channel link>` command resolves native newsletter metadata and reports the channel name, JID, follower count, description, creation time, and invite link. The owner-only `.channelforward <channel link> [destination]` command persists a source channel and destination JID in `setting.json`, supports `.channelforward off`, and forwards new newsletter messages in `pair.js` with a bounded per-session deduplication set. Aliases `.channelinfo`, `.chinfo`, `.channelforwarder`, `.forwardchannel`, and `.cf` are registered. The commands are also listed in the utility menu and repository help response.
+
+The current release candidate has **730 dispatcher labels, 730 unique labels, zero duplicates, and no inventory mismatch**. The focused feature test passed for cinfo, channel forwarding, Instagram provider wiring, newsletter deduplication, and YouTube cookie recovery; JavaScript syntax checks for `drenox.js` and `pair.js` passed.
+
+### Provider configuration requirements
+
+| Feature | Required configuration for protected or rate-limited providers |
+|---|---|
+| YouTube `.play` / `.song` | `YT_COOKIES_PATH` pointing to an authorized Netscape cookies file; Piped remains best-effort |
+| Instagram `.instagram` / `.ig` / `.igdl` | `INSTAGRAM_COOKIES_PATH` for login/rate-limited posts, or an authorized `COBALT_API_URL` and optional `COBALT_API_KEY` |
+| Channel forwarding | Owner runs `.channelforward <source channel link> [destination JID]`; destination defaults to the current chat |
+| Channel information | Any user can run `.cinfo <channel link>` after WhatsApp is connected |

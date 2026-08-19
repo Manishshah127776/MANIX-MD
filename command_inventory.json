@@ -1,6 +1,6 @@
 {
-  "totalLabels": 726,
-  "uniqueLabels": 726,
+  "totalLabels": 730,
+  "uniqueLabels": 730,
   "duplicateLabels": [],
   "labels": [
     "allmenu",
@@ -341,6 +341,10 @@
     "flip",
     "dice",
     "roll",
+    "cinfo",
+    "channelinfo",
+    "chinfo",
+    "channelforward",
     "rch",
     "reactch",
     "channelreact",
@@ -750,6 +754,12 @@
     "tr": "truth",
     "vv2": "vv",
     "welcomecard": "welcome",
-    "whoami": "owner"
+    "whoami": "owner",
+    "channelinfo": "cinfo",
+    "chinfo": "cinfo",
+    "channelforward": "channelforward",
+    "channelforwarder": "channelforward",
+    "forwardchannel": "channelforward",
+    "cf": "channelforward"
   }
 }

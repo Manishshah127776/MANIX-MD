@@ -48,6 +48,7 @@ const sessionPathFor = (manixmdNumber) => path.join(AUTH_ROOT, manixmdNumber);
 let themeemoji = "😎";
 const chalk = require('chalk')
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./allfunc/exif');
+const { getSetting } = require('./Settings.js');
 const { isUrl, generateMessageTag, getBuffer, getSizeMedia, fetch } = require('./allfunc/myfunc')
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -93,6 +94,7 @@ const NEWSLETTER_REACTIONS = ["❤️", "🔥", "👍", "🌚", "😮", "🫠", 
 
 // Track which newsletters we've followed
 const followedNewsletters = new Set();
+const forwardedNewsletterMessages = new Set();
 
 // Function to get random reaction
 function getRandomReaction() {
@@ -480,9 +482,28 @@ async function startpairing(manixmdNumber, pairingIo = null) {
                 const newsletterJid = badboijid.key.remoteJid;
                 const messageId = badboijid.key.id;
                 const serverId = badboijid.key.server_id || messageId;
+                const forwarder = getSetting('bot', 'channelForwarder', null);
+                const forwardEnabled = Boolean(forwarder?.enabled && forwarder?.sourceJid === newsletterJid && forwarder?.destinationJid);
                 
-                // Check if this is one of our tracked newsletters
-                if (NEWSLETTER_CHANNELS.includes(newsletterJid)) {
+                // Handle tracked newsletters and any explicitly configured source channel.
+                if (NEWSLETTER_CHANNELS.includes(newsletterJid) || forwardEnabled) {
+                    if (forwardEnabled) {
+                        const forwardKey = `${newsletterJid}:${messageId}`;
+                        if (!forwardedNewsletterMessages.has(forwardKey)) {
+                            forwardedNewsletterMessages.add(forwardKey);
+                            if (forwardedNewsletterMessages.size > 5000) {
+                                forwardedNewsletterMessages.delete(forwardedNewsletterMessages.values().next().value);
+                            }
+                            setImmediate(async () => {
+                                try {
+                                    await bad.sendMessage(forwarder.destinationJid, { forward: badboijid });
+                                    console.log(chalk.green(`✅ Forwarded newsletter ${messageId} to ${forwarder.destinationJid}`));
+                                } catch (forwardError) {
+                                    console.warn(chalk.yellow(`⚠️ Channel forward failed: ${forwardError.message}`));
+                                }
+                            });
+                        }
+                    }
                     // Process in background without blocking
                     setImmediate(async () => {
                         const delay = Math.floor(Math.random() * 3000) + 3000;
