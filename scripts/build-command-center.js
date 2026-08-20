@@ -83,6 +83,19 @@ replaceOnce('</style>', `
     @media(max-width:440px){ .pair-step { padding:10px 8px; font-size:10px; } .pair-step b { flex-basis:21px; width:21px; height:21px; } }
   </style>`, 'command-center CSS');
 
+replaceOnce('</style>', `
+    /* Responsive comfort pass */
+    .mobile-dock { display:none; }
+    .nav-link,.sidebar-link { min-height:42px; }
+    .primary-btn,.secondary-btn,.ghost-btn,.seg-btn { min-height:42px; }
+    .input,.country-trigger { min-height:46px; }
+    @media (min-width:1200px) { .shell { width:min(1280px,calc(100% - 64px)); } .section { padding-top:88px; } .hero { gap:72px; } }
+    @media (min-width:1500px) { .shell { width:min(1360px,calc(100% - 96px)); } .hero h1 { font-size:clamp(58px,5.1vw,84px); } }
+    @media (max-width:970px) { body { padding-bottom:76px; } .nav-actions .primary-btn { display:none; } .mobile-dock { position:fixed; left:12px; right:12px; bottom:12px; z-index:60; display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:7px; border:1px solid var(--line); border-radius:18px; background:color-mix(in srgb,var(--bg2) 92%,transparent); box-shadow:0 18px 50px rgba(0,0,0,.38); backdrop-filter:blur(20px); } .mobile-dock button { min-height:52px; padding:7px 4px; border:1px solid transparent; border-radius:12px; color:var(--muted); background:transparent; font:10px "DM Mono",monospace; } .mobile-dock button.active { color:var(--text); border-color:color-mix(in srgb,var(--cyan) 38%,transparent); background:color-mix(in srgb,var(--cyan) 10%,transparent); } }
+    @media (max-width:760px) { .shell { width:min(calc(100% - 28px),620px); } .section { min-height:auto; padding:50px 0 42px; } .hero { min-height:auto; gap:12px; padding:38px 0 48px; } .hero h1 { font-size:clamp(42px,12.5vw,66px); } .hero-actions,.action-row { display:grid; grid-template-columns:1fr; gap:9px; } .hero-actions>*,.action-row>* { width:100%; } .visual-stage { min-height:445px; transform:scale(.9); margin:-22px -14px; } .visual-stage .float-card.three { display:none; } .overview-actions { display:grid; grid-template-columns:1fr; } .footer-grid { grid-template-columns:1fr 1fr; } }
+    @media (max-width:520px) { .brand-copy { max-width:156px; font-size:14px; } .visual-stage { min-height:395px; transform:scale(.82); margin:-38px -29px; } .phone { width:218px; height:436px; } .footer-grid { grid-template-columns:1fr; } }
+    @media (hover:none) { .primary-btn:hover,.ghost-btn:hover,.secondary-btn:hover,.seg-btn:hover,.reference-card:hover { transform:none; } }
+  </style>`, 'responsive comfort CSS');
 replaceOnce('<header class="navbar">', `<aside class="app-sidebar" id="app-sidebar" aria-label="Application navigation">
     <div class="sidebar-heading"><span class="sidebar-kicker">Workspace</span><span class="sidebar-live"><i></i> Live</span></div>
     <nav class="sidebar-nav" aria-label="Command center navigation">
@@ -99,6 +112,7 @@ replaceOnce('<header class="navbar">', `<aside class="app-sidebar" id="app-sideb
   </aside>
   <header class="navbar">`, 'application sidebar');
 
+replaceOnce('</main>', '    <nav class="mobile-dock" aria-label="Mobile quick navigation"><button data-route="home">⌂<br />Overview</button><button data-route="pair">⌁<br />Pair</button><button data-route="bot">◈<br />Bot</button><button data-route="commands">⌕<br />Commands</button></nav>\n  </main>', 'mobile quick navigation');
 replaceOnce('GLOBAL PAIRING SYSTEM · LEGITIMATE BACKEND SESSION', 'MANI XMD COMMAND CENTER · LIVE SESSION CONTROL', 'topbar product copy');
 replaceOnce('WHATSAPP BOT PLATFORM', 'WHATSAPP BOT COMMAND CENTER', 'brand descriptor');
 replaceOnce('<button class="nav-link" data-route="home">Home</button>', '<button class="nav-link" data-route="home">Overview</button>', 'top nav overview');

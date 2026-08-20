@@ -189,6 +189,94 @@
     }
     @media(max-width:760px){ .overview-workbench { padding:17px; border-radius:20px; } .pair-stepper { grid-template-columns:repeat(2,1fr); } .health-grid { grid-template-columns:1fr; } .overview-metrics { grid-template-columns:1fr; } .scene-controls { right:5%; bottom:2%; } }
     @media(max-width:440px){ .pair-step { padding:10px 8px; font-size:10px; } .pair-step b { flex-basis:21px; width:21px; height:21px; } }
+    /* Responsive comfort pass: phone, tablet, and desktop */
+    .mobile-dock { display:none; }
+    button, .nav-link, .sidebar-link, .icon-btn, .scene-control { -webkit-tap-highlight-color:transparent; }
+    .nav-link, .sidebar-link { min-height:42px; }
+    .primary-btn, .secondary-btn, .ghost-btn, .seg-btn { min-height:42px; }
+    .input, .country-trigger { min-height:46px; }
+    @media (min-width:1200px) {
+      .shell { width:min(1280px,calc(100% - 64px)); }
+      .section { padding-top:88px; }
+      .hero { gap:72px; }
+      .overview-workbench { padding:30px; }
+    }
+    @media (min-width:1500px) {
+      .shell { width:min(1360px,calc(100% - 96px)); }
+      .hero h1 { font-size:clamp(58px,5.1vw,84px); }
+    }
+    @media (max-width:970px) {
+      body { padding-bottom:76px; }
+      .topbar .shell { width:calc(100% - 32px); }
+      .navbar { position:sticky; }
+      .nav-inner { min-height:68px; gap:10px; }
+      .brand { min-width:0; }
+      .brand-copy { font-size:15px; overflow:hidden; text-overflow:ellipsis; }
+      .brand-copy small { font-size:8px; letter-spacing:.045em; }
+      .nav-actions { flex:0 0 auto; }
+      .nav-actions .primary-btn { display:none; }
+      .mobile-toggle { display:block; }
+      .mobile-dock { position:fixed; left:12px; right:12px; bottom:12px; z-index:60; display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:7px; border:1px solid var(--line); border-radius:18px; background:color-mix(in srgb,var(--bg2) 92%,transparent); box-shadow:0 18px 50px rgba(0,0,0,.38); backdrop-filter:blur(20px); }
+      .mobile-dock button { min-height:52px; padding:7px 4px; border:1px solid transparent; border-radius:12px; color:var(--muted); background:transparent; font:10px "DM Mono",monospace; }
+      .mobile-dock button::first-line { color:var(--cyan); }
+      .mobile-dock button.active { color:var(--text); border-color:color-mix(in srgb,var(--cyan) 38%,transparent); background:color-mix(in srgb,var(--cyan) 10%,transparent); }
+      .mobile-dock button:focus-visible { outline:none; box-shadow:var(--focus); }
+      .overview-workbench { margin-top:0; }
+      .section-head { gap:16px; }
+    }
+    @media (max-width:760px) {
+      .shell { width:min(calc(100% - 28px),620px); }
+      .topbar { font-size:9px; }
+      .topbar .shell { flex-direction:column; gap:3px; padding:3px 0; }
+      .section { min-height:auto; padding:50px 0 42px; }
+      .hero { min-height:auto; gap:12px; padding:38px 0 48px; }
+      .hero h1 { margin-top:14px; font-size:clamp(42px,12.5vw,66px); line-height:.99; }
+      .hero p { font-size:14px; line-height:1.68; }
+      .hero-actions, .action-row { display:grid; grid-template-columns:1fr; gap:9px; margin-top:22px; }
+      .hero-actions > *, .action-row > * { width:100%; }
+      .trust-row { gap:10px 14px; margin-top:24px; line-height:1.4; }
+      .visual-stage { min-height:445px; transform:scale(.9); margin:-22px -14px; }
+      .visual-stage .float-card { transform:scale(.84); }
+      .visual-stage .float-card.three { display:none; }
+      .orb { width:330px; height:200px; }
+      .overview-workbench { padding:15px; border-radius:17px; }
+      .overview-workbench .section-head { margin-bottom:15px; }
+      .overview-card { min-height:0; padding:16px; }
+      .overview-status strong { font-size:19px; }
+      .pair-stepper { gap:6px; margin-bottom:16px; }
+      .pair-step { min-height:52px; padding:9px 8px; gap:7px; font-size:10px; }
+      .pair-step b { flex-basis:22px; width:22px; height:22px; }
+      .card { border-radius:17px; }
+      .reference-rail { padding:16px; border-radius:18px; }
+      .reference-rail-head h3 { font-size:20px; }
+      .footer { padding-bottom:18px; }
+      .footer-grid { grid-template-columns:1fr 1fr; gap:18px 14px; }
+      .footer-grid > div:first-child { grid-column:1/-1; }
+      .footer-bottom { display:block; line-height:1.8; }
+      .footer-bottom span { display:block; }
+    }
+    @media (max-width:520px) {
+      .nav-inner { min-height:62px; }
+      .brand-mark { width:34px; height:34px; border-radius:11px; font-size:14px; }
+      .brand-copy { max-width:156px; font-size:14px; }
+      .icon-btn { width:42px; height:42px; }
+      .visual-stage { min-height:395px; transform:scale(.82); margin:-38px -29px; }
+      .phone { width:218px; height:436px; border-radius:34px; }
+      .phone-screen { border-radius:25px; }
+      .orb { width:292px; height:178px; }
+      .scene-hud { left:6%; bottom:3%; max-width:72%; font-size:8px; }
+      .scene-controls { right:6%; bottom:3%; }
+      .overview-actions { display:grid; grid-template-columns:1fr; }
+      .overview-metrics { gap:7px; }
+      .overview-metric { padding:10px; }
+      .kv { grid-template-columns:repeat(2,1fr); }
+      .demo-buttons { grid-template-columns:repeat(2,1fr); }
+      .footer-grid { grid-template-columns:1fr; }
+      .footer-grid > div:first-child { grid-column:auto; }
+    }
+    @media (hover:none) {
+      .primary-btn:hover, .ghost-btn:hover, .secondary-btn:hover, .seg-btn:hover, .reference-card:hover { transform:none; }
+    }
   </style>
 </head>
 <body data-effects="on" data-cursor="off">
@@ -242,6 +330,7 @@
     <section class="section" id="page-legal" data-page="legal"><div class="shell"><div class="section-head"><div><span class="eyebrow">Trust & safety</span><h2>Clear by<br /><span class="gradient">design.</span></h2></div></div><div class="card doc-content"><h2>Privacy policy</h2><p>MANI XMD uses pairing information only to establish and maintain the requested bot session. Pairing codes are temporary. Do not publish or share them.</p><h3>Responsible use</h3><p>Use the bot only with people and groups where you have permission to send automated messages. Avoid bulk unsolicited messaging, scraping, and behavior that may trigger platform restrictions.</p><h3>Terms and disclaimer</h3><p>Actual linking depends on the user’s WhatsApp account, device-linking availability, and legitimate backend integration. No frontend screen can guarantee that every phone number will successfully link.</p><h3>Security</h3><p>Use HTTPS, keep pairing codes private, disconnect sessions you no longer use, and report suspicious behavior through the official support channel.</p></div></div></section>
     <section class="section" id="page-maintenance" data-page="maintenance"><div class="shell"><div class="card" style="max-width:650px;margin:70px auto;text-align:center"><span class="eyebrow">Maintenance mode</span><h1 style="font-size:clamp(42px,8vw,78px);margin:18px 0" class="gradient">Back shortly.</h1><p class="muted" style="line-height:1.8">The pairing backend is temporarily unavailable. No fake QR or pairing code will be shown. Please retry when the live server returns.</p><button class="primary-btn" data-route="pair" style="margin-top:15px">Return to pairing</button></div></div></section>
     <section class="section" id="page-404" data-page="404"><div class="shell" style="text-align:center;padding-top:100px"><span class="eyebrow">Route not found</span><h1 style="font-size:clamp(64px,12vw,140px);margin:18px 0;letter-spacing:-.1em" class="gradient">404</h1><p class="muted">This signal drifted out of range.</p><button class="primary-btn" data-route="home" style="margin-top:20px">Return home</button></div></section>
+    <nav class="mobile-dock" aria-label="Mobile quick navigation"><button data-route="home">⌂<br />Overview</button><button data-route="pair">⌁<br />Pair</button><button data-route="bot">◈<br />Bot</button><button data-route="commands">⌕<br />Commands</button></nav>
   </main>
   <footer class="footer"><div class="shell"><div class="footer-grid"><div><a class="brand" href="#home" data-route="home"><span class="brand-mark">☏</span><span class="brand-copy">𝙼𝙰𝙽𝙸 𝚇𝙼𝙳<small>WHATSAPP BOT COMMAND CENTER</small></span></a><p class="muted" style="font-size:12px;line-height:1.7;max-width:290px;margin-top:15px">Pair once. Run smarter. A polished command layer for connected workflows.</p></div><div><h4>Platform</h4><a href="#pair" data-route="pair">Pairing</a><a href="#bot" data-route="bot">Bot</a><a href="#commands" data-route="commands">Commands</a><a href="#dashboard" data-route="dashboard">Dashboard</a></div><div><h4>Resources</h4><a href="#docs" data-route="docs">Documentation</a><a href="#updates" data-route="updates">Updates</a><a href="#support" data-route="support">Support</a></div><div><h4>Connect</h4><a href="https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f" target="_blank" rel="noopener">WhatsApp channel</a><a href="https://wa.me/9779807044421" target="_blank" rel="noopener">9779807044421</a><a href="#legal" data-route="legal">Privacy & security</a><button class="ghost-btn" id="settings-footer" style="margin-top:10px">Settings</button></div></div><div class="footer-bottom"><span>© 2026 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳. Built for connected workflows.</span><span class="mono">POWERED BY 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳</span></div></div></footer>
 
