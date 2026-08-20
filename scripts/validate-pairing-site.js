@@ -15,7 +15,7 @@ const required = [
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`missing website fragment: ${fragment}`);
 }
-for (const asset of ['bot-avatar.jpg', 'mani-xmd-orb.jpg', 'manix-md-banner.png']) {
+for (const asset of ['bot-avatar.jpg', 'professional-pairing-hero.jpg', 'professional-operations-dashboard.jpg', 'professional-global-network.jpg']) {
   if (!fs.existsSync(path.join(root, 'public', 'assets', asset))) throw new Error(`missing asset: ${asset}`);
 }
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).filter(Boolean);
@@ -26,4 +26,4 @@ const check = spawnSync(process.execPath, ['--check', scriptPath], { encoding: '
 fs.unlinkSync(scriptPath);
 if (check.status !== 0) throw new Error(check.stderr || 'inline website script syntax check failed');
 const pageCount = (html.match(/data-page=/g) || []).length;
-console.log(JSON.stringify({ success: true, pageCount, scriptCount: scripts.length, requiredFragments: required.length, assetsChecked: 3 }, null, 2));
+console.log(JSON.stringify({ success: true, pageCount, scriptCount: scripts.length, requiredFragments: required.length, assetsChecked: 4 }, null, 2));
