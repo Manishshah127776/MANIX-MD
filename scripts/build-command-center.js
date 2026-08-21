@@ -96,6 +96,25 @@ replaceOnce('</style>', `
     @media (max-width:520px) { .brand-copy { max-width:156px; font-size:14px; } .visual-stage { min-height:395px; transform:scale(.82); margin:-38px -29px; } .phone { width:218px; height:436px; } .footer-grid { grid-template-columns:1fr; } }
     @media (hover:none) { .primary-btn:hover,.ghost-btn:hover,.secondary-btn:hover,.seg-btn:hover,.reference-card:hover { transform:none; } }
   </style>`, 'responsive comfort CSS');
+replaceOnce('</style>', `
+    /* MANI XMD glassmorphism design system */
+    :root { --glass-bg:rgba(12,25,48,.58); --glass-bg-strong:rgba(11,23,43,.84); --glass-border:rgba(145,210,255,.18); --glass-border-hover:rgba(145,225,255,.38); --glass-highlight:rgba(255,255,255,.08); --glass-shadow:0 18px 60px rgba(0,0,0,.28); --accent-cyan:#68e6ff; --accent-violet:#9d8cff; --accent-green:#32e875; --glass-blur:18px; }
+    html[data-palette="clean"],html[data-appearance="light"] { --glass-bg:rgba(255,255,255,.62); --glass-bg-strong:rgba(255,255,255,.9); --glass-border:rgba(43,70,100,.16); --glass-border-hover:rgba(8,126,163,.38); --glass-highlight:rgba(255,255,255,.72); --glass-shadow:0 18px 60px rgba(40,80,115,.14); }
+    html[data-palette="amoled"],html[data-appearance="amoled"] { --glass-bg:rgba(8,10,13,.68); --glass-bg-strong:rgba(8,10,13,.94); }
+    .glass-soft { background:color-mix(in srgb,var(--glass-bg) 58%,transparent); border:1px solid color-mix(in srgb,var(--glass-border) 72%,transparent); backdrop-filter:blur(12px) saturate(1.08); }
+    .glass-standard { background:var(--glass-bg); border:1px solid var(--glass-border); backdrop-filter:blur(var(--glass-blur)) saturate(1.12); box-shadow:var(--glass-shadow); }
+    .glass-strong { background:var(--glass-bg-strong); border:1px solid var(--glass-border-hover); backdrop-filter:blur(24px) saturate(1.15); box-shadow:var(--glass-shadow); }
+    .glass-panel,.overview-workbench,.card,.reference-rail { background:var(--glass-bg); border-color:var(--glass-border); }
+    .app-sidebar,.navbar,.mobile-dock,.settings-panel { border-color:var(--glass-border); }
+    .qr-wrap { background:var(--glass-bg-strong); border-style:solid; border-color:color-mix(in srgb,var(--accent-cyan) 44%,var(--glass-border)); box-shadow:inset 0 0 0 1px var(--glass-highlight),var(--glass-shadow); }
+    .qr-wrap img { background:#fff; box-shadow:0 0 0 8px rgba(255,255,255,.96),0 10px 34px rgba(0,0,0,.28); }
+    .code-box { background:var(--glass-bg-strong); border-color:color-mix(in srgb,var(--accent-violet) 48%,var(--glass-border)); box-shadow:inset 0 0 0 1px var(--glass-highlight),var(--glass-shadow); }
+    :where(button,a,input,select,textarea,summary):focus-visible { outline:2px solid var(--accent-cyan); outline-offset:3px; }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; } #scene-canvas { opacity:0 !important; } }
+    @media (max-width:760px) { :root { --glass-blur:12px; } .card,.overview-workbench,.reference-rail { box-shadow:0 12px 34px rgba(0,0,0,.22); } }
+    @media (max-width:520px) { .glass-standard,.glass-strong,.card,.overview-workbench,.reference-rail { backdrop-filter:blur(9px) saturate(1.04); } }
+    @media (forced-colors:active) { .card,.overview-workbench,.reference-rail,.qr-wrap,.code-box,.mobile-dock { background:Canvas; border:1px solid CanvasText; box-shadow:none; } .muted { color:CanvasText; } }
+  </style>`, 'glassmorphism design system');
 replaceOnce('<header class="navbar">', `<aside class="app-sidebar" id="app-sidebar" aria-label="Application navigation">
     <div class="sidebar-heading"><span class="sidebar-kicker">Workspace</span><span class="sidebar-live"><i></i> Live</span></div>
     <nav class="sidebar-nav" aria-label="Command center navigation">
