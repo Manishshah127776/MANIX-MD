@@ -3,7 +3,6 @@ const {
     jidDecode,
     jidNormalizedUser,
     DisconnectReason,
-    PHONENUMBER_MCC,
     makeCacheableSignalKeyStore,
     useMultiFileAuthState,
     Browsers,
@@ -12,7 +11,7 @@ const {
     downloadContentFromMessage,
     makeInMemoryStore,
     generateWAMessageContent  
-} = require("@whiskeysockets/baileys");
+} = require("malvin-baileys");
 const handleMessage = require("./drenox");
 const NodeCache = require("node-cache");
 const _ = require('lodash')

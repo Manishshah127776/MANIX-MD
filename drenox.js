@@ -1,4 +1,4 @@
-const baileys = require("@whiskeysockets/baileys")
+const baileys = require("malvin-baileys")
 const {
   default: makeWASocket,
   proto,
@@ -219,7 +219,8 @@ const isSameUser = (jid1, jid2) => {
 
 const areJidsSameUser = (jid1, jid2) => {
   try {
-    return require('@whiskeysockets/baileys').areJidsSame(jid1, jid2)
+    const baileysAreSame = require('malvin-baileys').areJidsSameUser
+    return typeof baileysAreSame === 'function' ? baileysAreSame(jid1, jid2) : isSameUser(jid1, jid2)
   } catch {
     return isSameUser(jid1, jid2)
   }

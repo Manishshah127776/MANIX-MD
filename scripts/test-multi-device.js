@@ -8,7 +8,7 @@ const dashboard = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 
 const checks = [
-  ['Baileys dependency is present', Boolean(packageJson.dependencies?.['@whiskeysockets/baileys'])],
+  ['malvin-baileys dependency is present', Boolean(packageJson.dependencies?.['malvin-baileys'])],
   ['Multi-file auth state is enabled', pair.includes('useMultiFileAuthState')],
   ['Auth state is supplied to the socket', pair.includes('auth: state')],
   ['Credential updates are persisted', pair.includes('bad.ev.on("creds.update", saveCreds)') || pair.includes("bad.ev.on('creds.update', saveCreds)")],

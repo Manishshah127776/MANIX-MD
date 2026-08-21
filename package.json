@@ -22,7 +22,7 @@
   "author": "manixtech",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
@@ -30,7 +30,6 @@
     "@distube/ytdl-core": "^4.14.4",
     "@hapi/boom": "^10.0.0",
     "@vitalets/google-translate-api": "^9.2.0",
-    "@whiskeysockets/baileys": "7.0.0-rc14",
     "api-dylux": "^1.4.4",
     "awesome-phonenumber": "^2.64.0",
     "axios": "^1.7.7",
@@ -98,7 +97,8 @@
     "youtube-dl-exec": "^3.1.12",
     "youtubedl-core": "^4.11.4",
     "yt-search": "^2.12.1",
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "^4.11.5",
+    "malvin-baileys": "2.2.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

@@ -4,7 +4,7 @@
 */
 
 
-const { proto, delay, getContentType } = require('@whiskeysockets/baileys')
+const { proto, delay, getContentType } = require('malvin-baileys')
 const chalk = require('chalk')
 const axios = require('axios');
 const { sizeFormatter } = require('human-readable');

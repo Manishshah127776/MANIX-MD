@@ -53,7 +53,7 @@ Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏**.
 
 ## ⚡ Core Features
 
-- **Multi-Device Architecture**: Fully synchronized with the modern WhatsApp Multi-Device protocol (`@whiskeysockets/baileys`).
+- **Multi-Device Architecture**: Fully synchronized with the modern WhatsApp Multi-Device protocol (`malvin-baileys`).
 - **Web QR Pairing System**: Professional web dashboard to pair your bot visually.
 - **Advanced AI Integration**: Direct connectivity with top-tier LLMs (Groq, GPT, Gemini, DeepSeek, Mistral).
 - **Robust Group Moderation**: Automated anti-link defense, welcome greetings, and admin commands.
@@ -66,7 +66,7 @@ Crafted and maintained by **𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 ☏**.
 | Component | Technology | Version / Details |
 | :--- | :--- | :--- |
 | **Runtime** | Node.js | `>= 18.0.0` |
-| **WhatsApp Library** | Baileys (`@whiskeysockets/baileys`) | Latest Stable |
+| **WhatsApp Library** | Baileys (`malvin-baileys`) | Latest Stable |
 | **Web Dashboard** | Express & Socket.io | Real-time QR updates |
 | **AI Engine** | Groq & OpenAI APIs | Llama 3.3 / GPT |
 

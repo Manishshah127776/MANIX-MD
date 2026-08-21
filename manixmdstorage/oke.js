@@ -1,4 +1,4 @@
-const config = require("@whiskeysockets/baileys");
+const config = require("malvin-baileys");
 const fs = require('node:fs');
 const PhoneNumber = require("awesome-phonenumber");
 const axios = require('axios');
