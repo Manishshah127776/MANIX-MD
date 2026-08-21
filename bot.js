@@ -97,23 +97,23 @@ const gracefulShutdown = (signal) => {
 // WhatsApp membership cannot be verified through the Telegram API, so this
 // invitation is informational and must never block Telegram pairing/commands.
 const MANIX_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XvFqD8SDvDPkdqG1f';
-const MANIX_CHANNEL_TEXT = 'Follow the MANIX MD 💐 channel on WhatsApp: ' + MANIX_CHANNEL_URL;
+const MANIX_CHANNEL_TEXT = 'Follow the 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 channel on WhatsApp: ' + MANIX_CHANNEL_URL;
 const checkUserJoinedChannels = async (_userId) => true;
 const PAIRING_DASHBOARD_URL = process.env.PAIRING_DASHBOARD_URL || 'https://manix-md.onrender.com/';
 
 const sendPairingDashboardMessage = async (chatId) => {
   return bot.sendMessage(chatId,
-    `📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 WhatsApp Pairing*\n\n` +
-    `Open the dashboard for QR pairing or enter your WhatsApp number to request an optional pairing code:\n${PAIRING_DASHBOARD_URL}\n\n` +
-    `QR: WhatsApp → Linked devices → Link a device.\nPairing code: WhatsApp → Linked devices → Link with phone number.`,
+    `📲 *𝙼𝙰𝙽𝙸 𝚇𝙼𝙳*\n\n` +
+    `Use the MANI XMD pairing dashboard to connect your WhatsApp number. Choose QR pairing or request a real phone-number pairing code:\n${PAIRING_DASHBOARD_URL}\n\n` +
+    `QR: WhatsApp → Linked devices → Link a device.\nPhone code: WhatsApp → Linked devices → Link with phone number.`,
     {
       parse_mode: 'Markdown',
       disable_web_page_preview: false,
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📲 Open Pairing Dashboard', url: PAIRING_DASHBOARD_URL }],
-          [{ text: '📢 MANIX MD 💐 Channel', url: MANIX_CHANNEL_URL }],
-          [{ text: '☎ Contact: 9779807044421', url: 'https://wa.me/9779807044421' }]
+          [{ text: '📲 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 Pairing', url: PAIRING_DASHBOARD_URL }],
+          [{ text: '📢 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 Channel', url: MANIX_CHANNEL_URL }],
+          [{ text: '☎ 𝙼𝙰𝙽𝙸 𝚇𝙼𝙳 Contact', url: 'https://wa.me/9779807044421' }]
         ]
       }
     }
